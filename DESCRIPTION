@@ -1,0 +1,16 @@
+Package: transport
+Type: Package
+Title: Optimal transport in various forms
+Version: 0.6-1
+Date: 2014-05-30
+Author: Dominic Schuhmacher <dominic.schuhmacher@mathematik.uni-goettingen.de> with substantial contributions of code by Bjoern Baehre and Carsten Gottschlich
+Maintainer: Dominic Schuhmacher <dominic.schuhmacher@mathematik.uni-goettingen.de>
+Depends: R (>= 3.0.0), utils, grDevices, graphics, stats
+Description: Solve optimal transport problems in statistics. Compute Wasserstein metrics (a.k.a. Kantorovitch, Fortet--Mourier, Mallows, Earth Mover's, or minimal L_p metrics), return the corresponding transference plans, and display them graphically. Objects that can be compared include grey-scale images, point patterns, and mass vectors.
+License: GPL (>= 2)
+URL: http://www.dominic.schuhmacher.name
+LazyData: yes
+Packaged: 2014-05-30 20:11:11 UTC; schumi
+NeedsCompilation: yes
+Repository: CRAN
+Date/Publication: 2014-05-31 01:29:01
