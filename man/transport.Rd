@@ -120,7 +120,7 @@ D. P. Bertsekas (1988). The auction algorithm: a distributed relaxation method f
 
 D. P. Bertsekas (1992). Auction algorithms for network flow problems: a tutorial introduction. Computational Optimization and Applications 1, 7-66. 
 
-C. Gottschlich and D. Schuhmacher (2014). The shortlist method for finding an optimal solution to the transportation problem. Preprint, available on \url{arxiv.org}.
+C. Gottschlich and D. Schuhmacher (2014). The shortlist method for finding an optimal solution to the transportation problem. Preprint, available at \url{http://arxiv.org/abs/1405.7903}.
 
 D.G. Luenberger (2003). Linear and nonlinear programming, 2nd ed. Kluwer.
 

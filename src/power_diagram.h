@@ -70,14 +70,14 @@ Triangle;
 // edge handler, used to navigate and operate
 // on a triangulation via macros;
 // e.g. an edge handler pointing to a triangle abc
-// with orientation 1 represents the edge bc;
-// incrementing the orientation (modulo 3) means
+// with shift=1 represents the edge bc;
+// incrementing the value of shift (modulo 3) means
 // iterating over the edges of the triangle in 
 // counterclockwise oder 
 typedef struct Edge
 {
     Triangle *triangle;
-    int orientation;
+    int shift;
 } 
 Edge;
 
@@ -117,22 +117,22 @@ Edge __macro_e = { NULL, 0 };
 // abc and represents the edge ab, then
 // ORG(e) = a, DEST(e) = b, APEX(e) = c
 #define ORG(e) \
-    ((e).triangle->vertex[((e).orientation+1)%3])
+    ((e).triangle->vertex[((e).shift+1)%3])
 
 #define DEST(e) \
-    ((e).triangle->vertex[((e).orientation+2)%3])
+    ((e).triangle->vertex[((e).shift+2)%3])
 
 #define APEX(e) \
-    ((e).triangle->vertex[(e).orientation])
+    ((e).triangle->vertex[(e).shift])
 
 #define SET_ORG(e,v) \
-    ((e).triangle)->vertex[((e).orientation+1)%3] = (v)
+    ((e).triangle)->vertex[((e).shift+1)%3] = (v)
 
 #define SET_DEST(e,v) \
-    ((e).triangle)->vertex[((e).orientation+2)%3] = (v)
+    ((e).triangle)->vertex[((e).shift+2)%3] = (v)
 
 #define SET_APEX(e,v) \
-    ((e).triangle)->vertex[(e).orientation] = (v)
+    ((e).triangle)->vertex[(e).shift] = (v)
 
 #define SET_ALL(e,o,d,a) \
     SET_ORG(e,o); \
@@ -143,46 +143,46 @@ Edge __macro_e = { NULL, 0 };
 // then SWITCH(e) will point to the neighbour of abc at ab,
 // representing the edge ba
 #define SWITCH(e) \
-    __macro_i = (e).orientation; \
-    (e).orientation = ((e).triangle)->neighbour_edge[(e).orientation]; \
+    __macro_i = (e).shift; \
+    (e).shift = ((e).triangle)->neighbour_edge[(e).shift]; \
     (e).triangle = ((e).triangle)->neighbour[__macro_i]
 
 // next edge in couterclockwise oder
 #define NEXT(e) \
-    (e).orientation = ((e).orientation+1)%3
+    (e).shift = ((e).shift+1)%3
 
 // next edge in clockwise oder
 #define PREV(e) \
-    (e).orientation = ((e).orientation+2)%3
+    (e).shift = ((e).shift+2)%3
 
 // f becomes a copy of e
 #define COPY(e,f) \
     (f).triangle = (e).triangle; \
-    (f).orientation = (e).orientation
+    (f).shift = (e).shift
 
 // equivalent to COPY(e,f); SWITCH(f);
 #define TO_SWITCHED(e,f) \
-    (f).triangle = (e).triangle->neighbour[(e).orientation]; \
-    (f).orientation = (e).triangle->neighbour_edge[(e).orientation]
+    (f).triangle = (e).triangle->neighbour[(e).shift]; \
+    (f).shift = (e).triangle->neighbour_edge[(e).shift]
 
 // equivalent to COPY(e,f); NEXT(f);
 #define TO_NEXT(e,f) \
     (f).triangle = (e).triangle; \
-    (f).orientation = ((e).orientation+1)%3
+    (f).shift = ((e).shift+1)%3
 
 // equivalent to COPY(e,f); PREV(f);
 #define TO_PREV(e,f) \
     (f).triangle = (e).triangle; \
-    (f).orientation = ((e).orientation+2)%3
+    (f).shift = ((e).shift+2)%3
 
 // the triangles e and f point to will become
 // neighbours so that SWITCH(e)==f 
 // and SWITCH(f)==e holds
 #define GLUE(e,f) \
-    (e).triangle->neighbour[(e).orientation] = (f).triangle; \
-    (f).triangle->neighbour[(f).orientation] = (e).triangle; \
-    (e).triangle->neighbour_edge[(e).orientation] = (f).orientation; \
-    (f).triangle->neighbour_edge[(f).orientation] = (e).orientation
+    (e).triangle->neighbour[(e).shift] = (f).triangle; \
+    (f).triangle->neighbour[(f).shift] = (e).triangle; \
+    (e).triangle->neighbour_edge[(e).shift] = (f).shift; \
+    (f).triangle->neighbour_edge[(f).shift] = (e).shift
 
 // equivalent to SWITCH(e); GLUE(e,f); SWITCH(e);
 #define SWITCH_GLUE(e,f) \
@@ -687,7 +687,7 @@ void create_new_level(Triangulation *rt, Site *s)
                      level };
 
     f.triangle = &rt->t_inf;
-    f.orientation = 0;
+    f.shift = 0;
 
     // create bounding triangle
     create_triangle(rt, &e, level);
@@ -717,10 +717,10 @@ void insert_site(Triangulation *rt, Site *s, Triangle *t, int level, int is_on_b
 
     // insert v
     if (is_on_border >= 0) {
-        e.orientation = is_on_border;
+        e.shift = is_on_border;
         flip2_4(rt, s, e, level);
     } else {
-        e.orientation = 0;
+        e.shift = 0;
         flip1_3(rt, s, e, level);
     }
     // flip irregular edges
@@ -802,11 +802,11 @@ void add_site(Triangulation *rt, Site *s, Site *start, int level)
 
         // now e.triangle must contain s
         if (ori1 == 0) 
-            is_on_border = e.orientation;
+            is_on_border = e.shift;
         else if (ori2 == 0) 
-            is_on_border = (e.orientation+2)%3;
+            is_on_border = (e.shift+2)%3;
         else if (ori3 == 0) 
-            is_on_border = (e.orientation+1)%3;
+            is_on_border = (e.shift+1)%3;
         else
             is_on_border = -1;
 
@@ -829,9 +829,9 @@ void add_site(Triangulation *rt, Site *s, Site *start, int level)
         if ((ori1 >= 0) &&
             (ori2 >= 0)) {
             if (ori1 == 0)
-                is_on_border = (e.orientation+2)%3;
+                is_on_border = (e.shift+2)%3;
             else if (ori2 == 0)
-                is_on_border = (e.orientation+1)%3;
+                is_on_border = (e.shift+1)%3;
             else
                 is_on_border = -1;
 

@@ -1,0 +1,21 @@
+
+	CHANGES IN transport VERSION 0.6-2  (2014-06-21)
+
+OVERVIEW
+
+    o  Minor changes in the documentation and a bug fix
+
+BUG FIXES
+
+    o  aha
+    In the underlying c code integer overflows were possible (usually
+    without noticable effects on the result).
+    Fixed.
+
+
+
+	CHANGES IN transport VERSION 0.6-1  (2014-05-30)
+
+OVERVIEW
+
+    o  First public release

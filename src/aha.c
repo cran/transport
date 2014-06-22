@@ -214,7 +214,7 @@ void pixel_range(int *ix1, int *ix2, double x1, double x2, double y1, double y2,
 void raster_cell(Site *v, int n, double *x, double *y)
 {
     if (n<3) return;
-    double a, b, x1, x2, y1, y2, ymin=R_PosInf, ymax=R_NegInf;
+    double a, b, x1, x2, y1, y2, ty1, ty2, ymin=R_PosInf, ymax=R_NegInf;
     int ix1, ix2, iy1, iy2, ity1, ity2, i, j, k;
 
     // determine min/max of cell y-coordinates
@@ -260,10 +260,18 @@ void raster_cell(Site *v, int n, double *x, double *y)
             // y=a*x+b
             a = (y2-y1)/(x2-x1);
             b = y1-a*x1;
+
             for (i=ix1;i<=ix2;i++) {
-                pixel_range(&ity1,&ity2,a*i+b,a*(i+1)+b,0,0,aha_n);
+            	ty1 = a*i+b;
+            	ty2 = a*(i+1)+b;
+
+            	if (i==ix1)
+                	ty1 = (x1<x2 ? y1 : y2);
+            	if (i==ix2)
+                	ty2 = (x1<x2 ? y2 : y1);
+
+            	pixel_range(&ity1,&ity2,ty1,ty2,0,0,aha_n);
                 for (j=ity1;j<=ity2;j++) {
-                    if (j<iy1 || j>iy2) continue;
                     ++(aha_edge_pixel[j*aha_m+i]);
                     aha_area[j*aha_m+i] = pixel_edge_area(x1-i,y1-j,x2-i,y2-j);
                     if (i<aha_ixmin[j]) aha_ixmin[j] = i;

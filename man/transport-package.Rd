@@ -12,13 +12,13 @@ Solve optimal transport problems in statistics. Compute Wasserstein metrics (a.k
 \tabular{ll}{
 Package: \tab transport\cr
 Type: \tab Package\cr
-Version: \tab 0.6-1\cr
-Date: \tab 2014-05-30\cr
+Version: \tab 0.6-2\cr
+Date: \tab 2014-06-21\cr
 License: \tab GPL (>=2) \cr
 LazyData: \tab yes\cr
 }
 
-The main end-user function is \code{\link{transport}}. It computes optimal transference plans between images (class \code{\link{pgrid}}), point patterns (class \code{\link{pp}}), or mass vectors, based on various algorithms. These transference plans can \code{\link[=plot.pgrid]{plot}}ed. The function \code{\link{wasserstein}} allows for the numerical computation
+The main end-user function is \code{\link{transport}}. It computes optimal transference plans between images (class \code{\link{pgrid}}), point patterns (class \code{\link{pp}}), or mass vectors, based on various algorithms. These transference plans can be \code{\link[=plot.pgrid]{plot}}ed. The function \code{\link{wasserstein}} allows for the numerical computation
 of \eqn{p}-th order Wasserstein distances.
 }
 \author{
