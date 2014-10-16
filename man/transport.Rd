@@ -118,15 +118,15 @@ F. Aurenhammer, F. Hoffmann and B. Aronov (1998). Minkowski-type theorems and le
 
 D. P. Bertsekas (1988). The auction algorithm: a distributed relaxation method for the assignment problem. Annals of Operations Research 14(1), 105--123.
 
-D. P. Bertsekas (1992). Auction algorithms for network flow problems: a tutorial introduction. Computational Optimization and Applications 1, 7-66. 
+D. P. Bertsekas (1992). Auction algorithms for network flow problems: a tutorial introduction. Computational Optimization and Applications 1, 7--66. 
 
-C. Gottschlich and D. Schuhmacher (2014). The shortlist method for finding an optimal solution to the transportation problem. Preprint, available at \url{http://arxiv.org/abs/1405.7903}.
+C. Gottschlich and D. Schuhmacher (2014). The shortlist method for fast computation of the earth mover's distance and finding optimal solutions to transportation problems. PLOS ONE 9(10), e110214. \href{http://dx.doi.org/10.1371/journal.pone.0110214}{doi:10.1371/journal.pone.0110214}
 
 D.G. Luenberger (2003). Linear and nonlinear programming, 2nd ed. Kluwer.
 
 D.G. Luenberger and Y. Ye (2008). Linear and nonlinear programming, 3rd ed. Springer.
 
-Q. Mérigot (2011). A multiscale approach to optimal transport. Computer Graphics Forum 30(5), 1583--1592.
+Q. Mérigot (2011). A multiscale approach to optimal transport. Computer Graphics Forum 30(5), 1583--1592. \href{http://dx.doi.org/10.1111/j.1467-8659.2011.02032.x}{doi:10.1111/j.1467-8659.2011.02032.x}
 }
 \author{
   Dominic Schuhmacher \email{dschuhm1@uni-goettingen.de} \cr  
