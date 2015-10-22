@@ -1,8 +1,13 @@
 # transport NAMESPACE file
 #
 
-# Import nothing
+# Import form standard packages (except for base)
 #
+importFrom("grDevices", "grey", "heat.colors")
+importFrom("graphics", "arrows", "image", "matplot", "par", "plot",
+             "points", "segments")
+importFrom("stats", "aggregate", "dist", "optim", "runif")
+
 
 # Entry points into compiled code
 useDynLib(transport,

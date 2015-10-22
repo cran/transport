@@ -11,7 +11,7 @@
 
    shortsimplex.c
 
-   $Revision: 0.4 $   $Date: 2014/04/13 20:56:00 $
+   $Revision: 0.4.1 $   $Date: 2015/10/21 20:56:00 $
 
    Ported by Dominic Schuhmacher
    based on java code for class Shortlist2014 by Carsten Gottschlich
@@ -432,7 +432,10 @@ void init_assignment(State *state)
   int i, j, k;
   int assigmass, totmass, mass;
   int indexJ;  /* the selected colindex where we transport mass to */
-  int mini;
+  double mini;   /* 2015/10/21: in fact the large homogeneous examples get quite a bit slower
+                    by this, but this leads to proper shortlist init assignment, whereas before
+                    the init assignment was really random due to interpreting temporary minima
+                    in rows of costm as ints. */
 
   int m,n;  
   int *aleft, *bleft;   /* row/col masses left (CG: prod, cons) */
@@ -482,8 +485,8 @@ void init_assignment(State *state)
 
         if (indexJ == -1) {  /* we didn't get rid of all the rowmass in row i 
                                 by assigning to cols from the shortlist */
-          mini = INT_MAX;  /* always 2147483647 I think
-                              Note that R_PosInf does not work (is only for doubles) */
+          mini = R_PosInf;  
+	  
           for (j = 0; j < n; j++) {
             if (bdone[j] == 0) {
               if (MAT(costm,i,j) < mini) {

@@ -155,6 +155,16 @@ image2 <- function(x,y,z,rot=FALSE,...) {
 }
 
 
+image3 <- function(z,x=1:dim(z)[1],y=1:dim(z)[2],rot=TRUE,...) {
+  rotclock <- function(m) t(m)[,nrow(m):1]	
+  if (rot) {
+  	image(y,x,rotclock(z),...)
+  } else {
+    image(x,y,z,...)
+  }
+}
+
+
 print.pgrid <- function(x, ...) {
   stopifnot(class(x) == "pgrid")
   if (x$dimension == 2) {

@@ -1,5 +1,7 @@
 wasserstein <- function(a, b, p=1, tplan=NULL, prob=TRUE, ...) {
   stopifnot(compatible(a,b))
+  if (a$dimension < 2) stop("pixel grids of dimension >= 2 required")
+  
   if (is.null(tplan)) {
   	tplan <- transport(a,b,p=p,...)
   }
@@ -23,16 +25,14 @@ wasserstein <- function(a, b, p=1, tplan=NULL, prob=TRUE, ...) {
   }
   
   if (class(a) == "pgrid" && class(b) == "pgrid") {
-    xi <- a$generator[[1]]
-    eta <- a$generator[[2]]  
-    gg <- expand.grid(xi,eta)
+    gg <- expand.grid(a$generator)
     orig <- gg[tplan$from,]
     dest <- gg[tplan$to,]
   } else if (class(a) == "pp" && class(b) == "pp") {
   	orig <- a$coordinates[tplan$from,]
     dest <- b$coordinates[tplan$to,]
   } else {
-  	stop("x and y must be either both of class 'pgrid' or both of class 'pp'")
+  	stop("a and b must be either both of class 'pgrid' or both of class 'pp'")
   }
   
   dd <- apply(orig-dest,1,wpsum,pp=2)
@@ -58,7 +58,7 @@ transport <- function(a, b, ...) {
 }
 
 trcontrol <- function(method = c("shortsimplex", "revsimplex", "primaldual", "aha", "auction", "auctionbf"),
-  para=list(), start = c("auto", "altrcmin", "nwcorner", "russell"), nscales = 1, scmult = 2, returncoarse = FALSE,
+  para=list(), start = c("auto", "modrowmin", "nwcorner", "russell"), nscales = 1, scmult = 2, returncoarse = FALSE,
   a=NULL, b=NULL, M=NULL, N=NULL) {
 # a,b,M,N serve for computing parameters or start solutions automatically
 # by default M=a$N, N=b$N, which are overridden if M and/or N are specified
@@ -66,7 +66,12 @@ trcontrol <- function(method = c("shortsimplex", "revsimplex", "primaldual", "ah
   start <- match.arg(start)
   if (is.null(M) && !is.null(a) && class(a) %in% c("pgrid","pp")) { M <- a$N }
   if (is.null(N) && !is.null(b) && class(b) %in% c("pgrid","pp")) { N <- b$N }
-
+  if (is.null(M) && !is.null(N)) {M <- N}
+  if (is.null(N) && !is.null(M)) {N <- M}
+  if (is.null(N) && method %in% c("shortsimplex","auction")) {
+  	stop("At least M or N must be specified for method ", method)
+  }
+    
   if (method == "aha") {
 
     if (is.numeric(para) && length(para) == 2) {
@@ -168,12 +173,12 @@ trcontrol <- function(method = c("shortsimplex", "revsimplex", "primaldual", "ah
 
   if (method == "auction" || method == "auctionbf") {
 
-  # lasteps Wert muss < 1/n sein für exaktes Ergebnis (an gewissen Stellen in altem Code steht = 1/n, aber ich sehe
-  # keinen guten Grund dafür)
-  # lasteps und epsfac sind nur für auction und auctionbf relevant
+  # lasteps Wert muss < 1/n sein fuer exaktes Ergebnis (an gewissen Stellen in altem Code steht = 1/n, aber ich sehe
+  # keinen guten Grund dafuer)
+  # lasteps und epsfac sind nur fuer auction und auctionbf relevant
   # epsfac = NA bedeutet kein eps-scaling verwenden, habe experimentiert mit epsfac = 10 und = 80 
-  # Bertsekas empfiehlt 4-10, ist aber nach meiner Erfahrung für unsere Probleme zu klein
-  # ich fände einen eps-power natürlicher als einen epsfac, aber das mit dem epsfac habe ich von Bertsekas
+  # Bertsekas empfiehlt 4-10, ist aber nach meiner Erfahrung fuer unsere Probleme zu klein
+  # ich faende einen eps-power natuerlicher als einen epsfac, aber das mit dem epsfac habe ich von Bertsekas
 
     if (is.numeric(para) && length(para) == 2) {
       para = list(lasteps=para[1], epsfac=para[2])
@@ -221,15 +226,16 @@ trcontrol <- function(method = c("shortsimplex", "revsimplex", "primaldual", "ah
 
 
 
-transport.pgrid <- function(a, b, p = NULL, method = c("shortsimplex", "revsimplex", "primaldual", "aha"), control = list(), ...) {
-  # returncoarse: gibt im Falle von nscales >= 2 an, ob gröbere Probleme und deren Lösungen auch ausgegeben werden sollen;
-  # Anderenfalls wird nur die feinste Lösung (ohne Problem) zurückgegeben
+transport.pgrid <- function(a, b, p = NULL, method = c("revsimplex", "shortsimplex", "primaldual", "aha"), control = list(), ...) {
+  # returncoarse: gibt im Falle von nscales >= 2 an, ob groebere Probleme und deren Loesungen auch ausgegeben werden sollen;
+  # Anderenfalls wird nur die feinste Loesung (ohne Problem) zurueckgegeben
 
   # Check inputs
   # ======================================================================                             	
   stopifnot(class(a) == "pgrid" && class(b) == "pgrid")
   stopifnot(compatible(a,b))
-  if (a$dimension != 2) warning("transport.pgrid pixel grids of dimension > 2 is still somewhat experimental")
+  if (a$dimension < 2) stop("pixel grids of dimension >= 2 required")
+#  if (a$dimension > 2) warning("transport.pgrid for pixel grids of dimension > 2 is still somewhat experimental")
   if (!(a$structure %in% c("square", "rectangular")))
     stop("transport.pgrid is currently only implemented for rectangular pixel grids")
   ngrid <- a$n
@@ -260,12 +266,17 @@ transport.pgrid <- function(a, b, p = NULL, method = c("shortsimplex", "revsimpl
   returncoarse <- control$returncoarse
   is.natural <-
     function(x, tol = .Machine$double.eps^0.5)  all((abs(x - round(x)) < tol) & x > 0.5)
-  # aus der Hilfe zu is.integer
+  # aus der Hilfe zu is.integer, checks for a vector whether all entries are approximately natural numbers
   if (nscales != 1 && (length(unique(ngrid)) != 1 || length(ngrid) != 2)) {
   	stop("multiscale approach is currently only implemented for quadratic grids of dimension 2")
-  }     
-  if (!(is.natural(scmult) && is.natural(nscales) && is.natural(ngrid/scmult^(nscales-1))))
+  }    
+  if (nscales != 1 && !(p == 1 && method=="revsimplex") && !(p == 2 && method=="aha")) {
+  	stop('the multiscale approach is currently only implemented for p = 1 and method = "revsimplex" or p = 2 and method = "aha".
+  	Note that for p != 1 and method = "revsimplex" the default starting solution is computed by a 1-step multiscale approach')
+  }      
+  if (nscales != 1 && !(is.natural(scmult) && is.natural(nscales) && is.natural(ngrid/scmult^(nscales-1)))) {
   	stop("grid of size ", ngrid, " cannot be scaled down ", nscales, " times by a factor of ", scmult)
+  }
   
   gg <- expand.grid(a$generator)
   dd <- as.matrix(dist(gg))^p
@@ -340,7 +351,7 @@ transport.pgrid <- function(a, b, p = NULL, method = c("shortsimplex", "revsimpl
   if (method == "aha") {
     #cat(ddpos, apos, bpos, sep="\n")
     #stop("aha soon")
-    # braucht noch Verfeinerung (wir möchten idealerweise auch nur apos, bpos verwenden, was direkt nicht geht;
+    # braucht noch Verfeinerung (wir moechten idealerweise auch nur apos, bpos verwenden, was direkt nicht geht;
     # die Verwendung von ared, bred verlangsamt extrem (bei 32x32 ca. 5 sek versus 12 sek), was ok ist, denke ich)
     ti <- proc.time()
   	res <- aha(a$mass,b$mass,nscales=1,scmult=2,maxit=control$para$maxit,factr=control$para$factr,wasser=FALSE,wasser.spt=NA)
@@ -357,34 +368,47 @@ transport.pgrid <- function(a, b, p = NULL, method = c("shortsimplex", "revsimpl
     if (nscales == 1) {
       #
       # Compute starting solution
+      if (start == "auto" && (p == 1 || min(ngrid) < 8 || max(ngrid) < 16 || scmult == 1 || a$dimension > 2)) {
+      	start <- "modrowmin"
+      } else if (start == "auto" && !is.natural(ngrid/scmult)) {
+      	warning('grid dimensions are not divisible by ", scmult, "for multiscale starting solution. Using uniscale starting solution instead.
+      	Note that the computation *might* be much more efficient when setting control = list(scmult=k), where k is a small common divisor
+      	of the numbers of pixels in each direction')
+      	start <- "modrowmin"
+      }
   	  if (start == "russell") {
         temp <- russell(apos,bpos,dd)
         initassig <- temp$assignment
         initbasis <- temp$basis
-      } else {
+        startgiven <- 1
+      } else if (start == "nwcorner") {
         temp <- northwestcorner(apos,bpos)
         initassig <- temp$assignment
         initbasis <- temp$basis	
+        startgiven <- 1
+      } else if (start == "modrowmin"){   # modrowmin in C-Code
+      	initassig <- rep(0L,m*n)
+      	initbasis <- rep(0L,m*n)
+      	startgiven <- 0
+      } else {     # scalestart (is usually the best choice if p!=1 except for problems with very local optimal solutions)
+      	           # for p==1 it is suboptimal only, because the current implementation does not take reduction of problem
+      	           # due to static mass into account; use nscales = 2, scmult >= 2 for (essentially) same behaviour with p==1
+      	           # Note 1: scmult also works for scalestart
+      	           # Note 2: nscales *only* works for p=1 because it always removes static mass.
+        temp <- scalestart(ared,bred,a$generator,ngrid[1],ngrid[2],p=p,scmult=scmult)
+        initassig <- temp$assignment
+        initbasis <- temp$basis	
+        startgiven <- 1
       }
-    # print(m)
-    # print(n)
-    # print(a)
-    # print(b)
-    # print(costm)
-    # print(assignment)
-    # print(basis)
-        #cat(as.integer(m), as.integer(n), as.integer(apos), as.integer(bpos),
-	    #as.double(ddpos), "hello", assignment = as.integer(initassig), basis = as.integer(initbasis), sep="\n")
-    #stop("revsimplex soon")
     ti <- proc.time()
     res <- .C("revsimplex", as.integer(m), as.integer(n), as.integer(apos), as.integer(bpos),
-	          as.double(dd), assignment = as.integer(initassig), basis = as.integer(initbasis),
+	          as.double(dd), assignment = as.integer(initassig), basis = as.integer(initbasis), startgiven = as.integer(startgiven),
 	          DUP=TRUE, PACKAGE="transport")
 	print(proc.time()-ti)           
 	temp <- list(assignment=res$assignment, basis=res$basis)
     } else { 
 
-      if (a$dimension != 2) stop("Multi-scale approach only implemented for pixel grids of dimension 2")
+      # if (a$dimension != 2) stop("Multi-scale approach only implemented for pixel grids of dimension 2")
       x <- a$generator[[1]]
       y <- a$generator[[2]]
   	  # Compute coarser problems
@@ -394,7 +418,7 @@ transport.pgrid <- function(a, b, p = NULL, method = c("shortsimplex", "revsimpl
   	  Ngridvec <- ngridvec^2
       problem <- vector("list", nscales)
       problem[[1]] <- list(ared=ared, bred=bred, x=x, y=y)
-      # x, y are the grid sequences in x and why direction (currently always x=y)
+      # x, y are the grid sequences in x and y direction (currently always x=y)
       grmat <- matrix(unlist(lapply(as.list(1:ngridvec[2]), function(x) {rep(((x-1)*ngridvec[2]+1):(x*ngridvec[2]), 
       	              times = scmult, each = scmult)})), ngridvec[1], ngridvec[1])
       for (k in 2:nscales) {
@@ -428,31 +452,44 @@ transport.pgrid <- function(a, b, p = NULL, method = c("shortsimplex", "revsimpl
         apos <- problem[[k]]$ared[wha]
         bpos <- problem[[k]]$bred[whb]
         gg <- expand.grid(problem[[k]]$x, problem[[k]]$y)
-        dd <- as.matrix(dist(gg))
+        dd <- as.matrix(dist(gg))   # of course everything here is also already p=1
         dd <- dd[wha,whb]
-        if (k == nscales) {
-          # Compute starting solution
-          if (start == "russell") {
-            newtemp <- russell(apos,bpos,dd)
-            initassig <- newtemp$assignment
-            initbasis <- newtemp$basis
-          } else {
-            newtemp <- northwestcorner(apos,bpos)
-            initassig <- newtemp$assignment
-            initbasis <- newtemp$basis	
-          }
-        } else {
-          newtemp <- refinesol(problem[[k+1]]$ared, problem[[k+1]]$bred, problem[[k]]$ared, problem[[k]]$bred,
-                               temp$assignment, temp$basis, mult=scmult)  
-          initassig <- newtemp$assig2
-          initbasis <- newtemp$basis2       
-        }  
-        
         mcoarse <- length(apos)
         ncoarse <- length(bpos)
+        if (k == nscales) {
+          # Compute starting solution
+  	      if (start == "russell") {
+            temp <- russell(apos,bpos,dd)
+            initassig <- temp$assignment
+            initbasis <- temp$basis
+            startgiven <- 1
+          } else if (start == "nwcorner") {
+            temp <- northwestcorner(apos,bpos)
+            initassig <- temp$assignment
+            initbasis <- temp$basis	
+            startgiven <- 1
+          } else {   # modrowmin in C-Code
+      	    initassig <- rep(0L,mcoarse*ncoarse)
+      	    initbasis <- rep(0L,mcoarse*ncoarse)
+      	    startgiven <- 0
+          }
+        } else {
+            
+          if (p == 1) {  # <================================ 15/10/12: for p != 1 the strict separation in producers
+                                                # and consumers in refinesol is wrong and the removal of static mass above also
+            newtemp <- refinesol(problem[[k+1]]$ared, problem[[k+1]]$bred, problem[[k]]$ared, problem[[k]]$bred,
+                                 temp$assignment, temp$basis, mult=scmult)  
+          } else {
+          	stop("the multiscale approach for p != 1 is out of order.")
+          }
+          initassig <- newtemp$assig2
+          initbasis <- newtemp$basis2 
+          startgiven <- 1      
+        }  
+        
         ti <- proc.time()
         res <- .C("revsimplex", as.integer(mcoarse), as.integer(ncoarse), as.integer(apos), as.integer(bpos),
-	              as.double(dd), assignment = as.integer(initassig), basis = as.integer(initbasis),
+	              as.double(dd), assignment = as.integer(initassig), basis = as.integer(initbasis), startgiven = as.integer(startgiven),
 	              DUP=TRUE, PACKAGE="transport")
 	    print(proc.time()-ti)           
 	    temp <- list(assignment=res$assignment, basis=res$basis)
@@ -534,8 +571,8 @@ transport.pgrid <- function(a, b, p = NULL, method = c("shortsimplex", "revsimpl
 
 
 
-# (der Vollständigkeit halber solllte später auch der Fall m != n wieder dazu kommen)
-# vorläufig ohne Beobachtungsfenster
+# (der Vollstaendigkeit halber solllte spaeter auch der Fall m != n wieder dazu kommen)
+# vorlaeufig ohne Beobachtungsfenster
 transport.pp <- function(a, b, p = 1, method = c("auction", "auctionbf", "shortsimplex", "revsimplex", "primaldual"),
                            control = list(), ...) {
   # Check inputs
@@ -558,7 +595,7 @@ transport.pp <- function(a, b, p = 1, method = c("auction", "auctionbf", "shorts
   if (control$start != "auto") {
   	warning("control$start = ", sQuote(control), " is ignored for function transport.pp")
   }
-  # nwcorner gibt Identität (mit erster Nebendiag für Basis), Russell wohl was ähnlich Degeneriertes
+  # nwcorner gibt Identitaet (mit erster Nebendiag fuer Basis), Russell wohl was aehnlich Degeneriertes
   # der Einfachheit halber Testen wir nur mal mit nwcorner 
 
   x <- a$coordinates
@@ -572,10 +609,10 @@ transport.pp <- function(a, b, p = 1, method = c("auction", "auctionbf", "shorts
     dd <- dd/max(dd)
     dd <- round(dd*(10^precision))
   }
-    # wir sollten mit unseren Berechnungen .Machine$integer.max nicht überschreiten, gemäß R-Hilfe ist dies 
+    # wir sollten mit unseren Berechnungen .Machine$integer.max nicht ueberschreiten, gemaess R-Hilfe ist dies 
     # *auf jedem System* 2147483647 (4 Bytes)
     #
-    # Beachte: wenn wir Distanz zurückgeben wollen, müssen wir natürlich mit ursprünglichem dd^p rechnen
+    # Beachte: wenn wir Distanz zurueckgeben wollen, muessen wir natuerlich mit urspruenglichem dd^p rechnen
 
   if (method == "auction" || method == "auctionbf") {  
     dupper <- max(dd)/10
@@ -621,7 +658,7 @@ transport.pp <- function(a, b, p = 1, method = c("auction", "auctionbf", "shorts
   	           DUP=TRUE, PACKAGE="transport")
   	print(proc.time()-ti) 
   	# flowmatrix is the old term for assignment   
-  	nassig <- sum(temp$flowmatrix)  # nassig sollte natürlich gleich N sein, das ist nur zur Kontrolle
+  	nassig <- sum(temp$flowmatrix)  # nassig sollte natuerlich gleich N sein, das ist nur zur Kontrolle
     res <- data.frame(from = rep(0,nassig), to = rep(0,nassig), mass = rep(1,nassig))
     ind <- which(matrix(as.logical(temp$flowmatrix),N,N), arr.ind=TRUE) 
     res$from <- ind[,1]
@@ -643,7 +680,7 @@ transport.pp <- function(a, b, p = 1, method = c("auction", "auctionbf", "shorts
 	            as.double(dd), assignment = as.integer(initassig), basis = as.integer(initbasis),
 	            DUP=TRUE, PACKAGE="transport")
 	print(proc.time()-ti)           
-    nassig <- sum(temp$assignment)  # nassig sollte natürlich gleich N sein, das ist nur zur Kontrolle
+    nassig <- sum(temp$assignment)  # nassig sollte natuerlich gleich N sein, das ist nur zur Kontrolle
     res <- data.frame(from = rep(0,nassig), to = rep(0,nassig), mass = rep(1,nassig))
     ind <- which(matrix(as.logical(temp$assignment),N,N), arr.ind=TRUE) 
     res$from <- ind[,1]
@@ -652,6 +689,7 @@ transport.pp <- function(a, b, p = 1, method = c("auction", "auctionbf", "shorts
   }
 
   if (method == "revsimplex") {
+  	# this is nwcorner, at least modrowmin should be feasible and faster
     initassig <- initbasis <- diag(1,N,N)
     initbasis[cbind(2:N,1:(N-1))] <- 1 
     ti <- proc.time()
@@ -659,7 +697,7 @@ transport.pp <- function(a, b, p = 1, method = c("auction", "auctionbf", "shorts
 	            as.double(dd), assignment = as.integer(initassig), basis = as.integer(initbasis),
 	            DUP=TRUE, PACKAGE="transport")
 	print(proc.time()-ti)           
-    nassig <- sum(temp$assignment)  # nassig sollte natürlich gleich N sein, das ist nur zur Kontrolle
+    nassig <- sum(temp$assignment)  # nassig sollte natuerlich gleich N sein, das ist nur zur Kontrolle
     res <- data.frame(from = rep(0,nassig), to = rep(0,nassig), mass = rep(1,nassig))
     ind <- which(matrix(as.logical(temp$assignment),N,N), arr.ind=TRUE) 
     res$from <- ind[,1]
@@ -670,17 +708,17 @@ transport.pp <- function(a, b, p = 1, method = c("auction", "auctionbf", "shorts
 }
 
 
-# Achtung: längerfristig unbedingt so ändern, dass auch eine Startlösung übergeben werden kann!! 
+# Achtung: laengerfristig unbedingt so aendern, dass auch eine Startloesung uebergeben werden kann!! 
 #
 # # Input ist ein m - Vektor von Produktionsmengen a, ein n - Vektor von Konsumationsmengen b,
 # # und eine m x n - Matrix von Transportkosten
-# # primal-dual gibt in der Regel keine Basislösung zurück (>= m+n-1 assignments, evtl. weniger bei Degeneriertheit)
-# # rev-simplex ergibt Basislösung, immer (= m+n-1 assignments), bei Degeneriertheit ist es theoretisch in
-# # extrem seltenen Spezialfällen möglich, dass Endlosschleife entsteht (siehe Luenberger), sonst auch m+n-1 assignments 
+# # primal-dual gibt in der Regel keine Basisloesung zurueck (>= m+n-1 assignments, evtl. weniger bei Degeneriertheit)
+# # rev-simplex ergibt Basisloesung, immer (= m+n-1 assignments), bei Degeneriertheit ist es theoretisch in
+# # extrem seltenen Spezialfaellen moeglich, dass Endlosschleife entsteht (siehe Luenberger), sonst auch m+n-1 assignments 
 transport.default <- function(a, b, costm, method=c("shortsimplex", "revsimplex", "primaldual"),
                              control = list(), ...) {
   # maxmass=1e6, precision=9, 	
-  # wir sollten mit unseren Berechnungen .Machine$integer.max nicht überschreiten, gemäß R-Hilfe ist dies 
+  # wir sollten mit unseren Berechnungen .Machine$integer.max nicht ueberschreiten, gemaess R-Hilfe ist dies 
   # *auf jedem System* 2147483647 (4 Bytes)
   # evtl. kann man bis maxmass=1e9 gehen
   method <- match.arg(method)
@@ -774,24 +812,25 @@ transport.default <- function(a, b, costm, method=c("shortsimplex", "revsimplex"
         temp <- russell(apos,bpos,dd)
         initassig <- temp$assignment
         initbasis <- temp$basis
-      } else {
+        startgiven <- 1
+      } else if (start == "nwcorner") {
         temp <- northwestcorner(apos,bpos)
         initassig <- temp$assignment
         initbasis <- temp$basis	
+        startgiven <- 1
+      } else {   # modrowmin in C-Code
+      	initassig <- rep(0L,m*n)
+      	initbasis <- rep(0L,m*n)
+      	startgiven <- 0
       }
-    # print(m)
-    # print(n)
-    # print(a)
-    # print(b)
-    # print(costm)
-    # print(assignment)
-    # print(basis)
-        #cat(as.integer(m), as.integer(n), as.integer(apos), as.integer(bpos),
-	    #as.double(ddpos), "hello", assignment = as.integer(initassig), basis = as.integer(initbasis), sep="\n")
-    #stop("revsimplex soon")
+#        print(startgiven)
+#        cat(as.integer(m), as.integer(n), as.integer(apos), as.integer(bpos),
+#	    as.double(dd), "hello", assignment = as.integer(initassig),
+#       basis = as.integer(initbasis), as.integer(startgiven), sep="\n")
+#       stop("revsimplex soon")
     ti <- proc.time()
     res <- .C("revsimplex", as.integer(m), as.integer(n), as.integer(apos), as.integer(bpos),
-	          as.double(dd), assignment = as.integer(initassig), basis = as.integer(initbasis),
+	          as.double(dd), assignment = as.integer(initassig), basis = as.integer(initbasis), startgiven = as.integer(startgiven),
 	          DUP=TRUE, PACKAGE="transport")
 	print(proc.time()-ti)           
 	temp <- list(assignment=res$assignment, basis=res$basis)
@@ -844,7 +883,9 @@ transport.default <- function(a, b, costm, method=c("shortsimplex", "revsimplex"
 
 
 
-
+# sum(a) == sum(b) has to be checked in external function 
+# this function should deal correctly with any zeros in a and b
+# always producing exactly m+n-1 basis vectors
 northwestcorner <- function(a,b) {
   m <- length(a)
   n <- length(b)
@@ -875,13 +916,29 @@ northwestcorner <- function(a,b) {
     }
     massleft <- (sum(aleft)+sum(bleft) > 0)
   }
+  # the following lines deal with trailing zeros in a and b
+  if (icur == m+1) {   # no trailing zeros in a
+  	while (jcur < n+1) {  # deal with trailing zeros in b if any
+  	  basis[icur-1,jcur] <- 1
+  	  jcur <- jcur+1
+  	}
+  } else {  # icur < m+1 meaning trailing zeros in a
+  	while (icur < m) {  # deal with them if more than one (first one was alredy dealt with in final bleft-step above)
+  	  icur <- icur+1
+  	  basis[icur,jcur-1] <- 1
+  	}
+  	while (jcur < n+1) {
+  	  basis[icur,jcur] <- 1
+  	  jcur <- jcur+1
+  	}
+  }
   rownames(assignment) <- paste(a,"*",sep="")
   colnames(assignment) <- paste("*",b,sep="")
   if (!all(as.logical(basis)==(assignment > 0))) {
-    warning("Solutions is degenerate")
+    warning("Starting solution is degenerate. Nothing to worry about!")
   }
   if (sum(basis) != m+n-1) {
-    warning("Something went wrong. Basis contains only ", sum(basis), " != m+n-1 = ", m+n-1, " vectors")
+    stop("Basis contains only ", sum(basis), " != m+n-1 = ", m+n-1, " vectors")
   }
   return(list(assignment=assignment,basis=basis))
 }
@@ -936,22 +993,29 @@ russell <- function(a,b,costm) {
   }
 
   if (!all(as.logical(basis)==(assignment > 0))) {
-    warning("Solutions is degenerate")
+    warning("Starting solution is degenerate. Nothing to worry about!")
   }  
-  if (sum(basis) != mm+nn-1) {
-  	warning(paste(sum(basis),"basis vectors. Should be", mm+nn-1, "vectors. Solution is degenerate"))
-  }      
+
+  if (sum(basis) < mm+nn-1) {
+  	cat("Russell produced too few basis vectors. Is ", sum(basis), ", should be ", mm+nn-1,
+  	        ".\n Trying to fix this...  ", sep="")
+  	basis <- dedegenerate(basis)
+  	cat("Done.\n")
+  } else if (sum(basis) > mm+nn-1) {
+  	stop("Russell produced too many basis vectors. Is ", sum(basis), ", should be ", mm+nn-1)
+  	# this should not be possible
+  }
+      
   return(list(assignment=assignment,basis=basis))
 }
 
 
-
-
+# THIS FUNCTION NEEDS MUCH IMPROVEMENT!!!!
 # a1 ist "a_old", a2 is "a_new"
 refinesol <- function(a1,b1,a2,b2, assig1, basis1, mult=2) {
-  a1 <- as.vector(a1)   # Länge 16
-  b1 <- as.vector(b1)   # Länge 16
-  a2 <- as.vector(a2)   # Länge 64
+  a1 <- as.vector(a1)   # Laenge 16
+  b1 <- as.vector(b1)   # Laenge 16
+  a2 <- as.vector(a2)   # Laenge 64
   b2 <- as.vector(b2)
   Ngrid1 <- length(a1)
   ngrid1 <- sqrt(Ngrid1)
@@ -971,7 +1035,7 @@ refinesol <- function(a1,b1,a2,b2, assig1, basis1, mult=2) {
 
   # print(paste("REFINESOL IN:", "bvecs", sum(basis1), " ---- ", "expected", m1+n1-1))
 
-  # Hilfsgrößen  
+  # Hilfsgroessen  
   multiple <- function(v,mult2) {
     n <- sqrt(length(v))
     stopifnot(isTRUE(all.equal(round(n), n)))
@@ -982,6 +1046,7 @@ refinesol <- function(a1,b1,a2,b2, assig1, basis1, mult=2) {
   # tells us for a number in 1,..,Ngrid2, which box the corresponding index in terms of a2/b2 lies in 
   bybox <- order(whbox)
   # gives us a list of indices from 1,..,Ngrid2 that evaluate vectors like a2/b2 boxwise 
+
   isprod1 <- (a1 > 0)    # "is producer"
   isprod2old <- multiple(a1 > 0, mult)
   isprod2 <- (a2 > 0)
@@ -992,7 +1057,9 @@ refinesol <- function(a1,b1,a2,b2, assig1, basis1, mult=2) {
   cnum1[!isprod1] <- 1:n1
   pcnum1 <- pnum1 + cnum1
   # For numbers from 1 to Ngrid1: which producer or consumer number is the corresponding index in the a1/b1 matrix
-  # isprod1 tells us what it is
+  # isprod1 tells us what it is (producer or consumer)
+  # for p != 1 we usually don't have the separation in producers and consumers
+  # isprod1 is all TRUE, and pcnum1 = 1:m1 (could be a problem)
 
   pnum2 <- isprod2 
   pnum2[isprod2] <- 1:m2
@@ -1000,13 +1067,15 @@ refinesol <- function(a1,b1,a2,b2, assig1, basis1, mult=2) {
   cnum2[!isprod2] <- 1:n2
   pcnum2 <- pnum2 + cnum2
   # For numbers from 1 to Ngrid2: which producer or consumer number is the corresponding index in the a2/b2 matrix
-  # isprod2 tells us what it is
+  # isprod2 tells us what it is (producer or consumer)
+  # for p != 1 we usually don't have the separation in producers and consumers
+  # isprod1 is all TRUE, and pcnum1 = 1:m2 (could be a problem)
 
   # --------------------------------
-  # ab hier: fülle assig2 / basis2
+  # ab hier: fuelle assig2 / basis2
   # -------------------------------- 
 
-  # löse das +- Problem in einzelnen Feldern der groben Matrix
+  # loese das +- Problem in einzelnen Feldern der groben Matrix
   a2left <- a2
   b2left <- b2
 
@@ -1014,6 +1083,7 @@ refinesol <- function(a1,b1,a2,b2, assig1, basis1, mult=2) {
   for (i in 1:Ngrid1) {
   for (j in 1:Mult) {
   k <- bybox[(i-1)*Mult + j]
+  # current index in the finer grid
   # zuerst lokalen Bedarf stillen
   if (isprod2old[k] && !isprod2[k]) {
   	# k needs stuff
@@ -1029,7 +1099,7 @@ refinesol <- function(a1,b1,a2,b2, assig1, basis1, mult=2) {
   	    assig2[ pcnum2[l] , pcnum2[k] ] <- amount
   	  }	
   	}
-  # dann lokalen Überschuss abbauen	
+  # dann lokalen UEberschuss abbauen	
   } else if (!isprod2old[k] && isprod2[k]) {
   	# k gives stuff
   	for (jj in 1:Mult) {
@@ -1048,8 +1118,7 @@ refinesol <- function(a1,b1,a2,b2, assig1, basis1, mult=2) {
   }
   }
 
-
-  # Emuliere grobe Lösung auf feiner Matrix
+  # Emuliere grobe Loesung auf feiner Matrix
   for (i in 1:m1) {
     transfrom1 <- which(isprod1)[i]
     transto1 <- which(!isprod1)[basis1[i,] == 1]
@@ -1074,7 +1143,7 @@ refinesol <- function(a1,b1,a2,b2, assig1, basis1, mult=2) {
       } else {
         for (j in 1:Mult) {
         for (jj in 1:Mult) {
-          # das ist im Prinzip nix anderes als lokale Northwest-Corner-Rule (mit Löchern
+          # das ist im Prinzip nix anderes als lokale Northwest-Corner-Rule (mit Loechern
           # wegen internen Verschiebungen innerhalb der Pixel), geht vermutlich eleganter
           # beides die NW-Corner-Rule und ohne diese
   	      k <- bybox[(transfrom1-1)*Mult+j]
@@ -1095,7 +1164,7 @@ refinesol <- function(a1,b1,a2,b2, assig1, basis1, mult=2) {
   }
   
   # Das folgende ist ein rechtes Gebastel und es sollte besser im Hauptteil von refinesol dagegen vorgebeugt werden
-  # dedegenerate ist wahrsch. nicht nötig, Basisvektoren zufällig hinzufügen, sollte fast so gut sein...?
+  # dedegenerate ist wahrsch. nicht noetig, Basisvektoren zufaellig hinzufuegen, sollte fast so gut sein...?
   if (sum(basis2) < m2+n2-1) {
   	cat("Refinesol produced too few basis vectors. Is ", sum(basis2), ", should be ", m2+n2-1,
   	        ".\n Trying to fix this...  ", sep="")
@@ -1108,23 +1177,32 @@ refinesol <- function(a1,b1,a2,b2, assig1, basis1, mult=2) {
 }
 
 
-# vorläufig nur für quadratische Matrizen
-# das folgende ist eh alles viel zu mühsam, könnte aber mal noch nützlich sein
+# refinesol for p != 1 
+# currently not implemented
+refinesol2 <- function(a1,b1,a2,b2, assig1, basis1, mult=2) {
+  assig2 <- NULL
+  basis2 <- NULL  
+  return(list(basis2=basis2,assig2=assig2))
+}
+
+
+# vorlaeufig nur fuer quadratische Matrizen
+# das folgende ist eh alles viel zu muehsam, koennte aber mal noch nuetzlich sein
 triangulate <- function(basis) {
   n <- dim(basis)[1]
   stopifnot(dim(basis)[2] == n)
   stopifnot(sum(basis) <= 2*n -1)
   stopifnot(min(apply(basis,1,sum)) > 0 && min(apply(basis,2,sum)) > 0)
-  # spätere Zeilen/Spaltensummen dürfen 0 sein
+  # spaetere Zeilen/Spaltensummen duerfen 0 sein
   roworder <- rep(0,n)
   colorder <- rep(0,n)
   rowleft <- 1:n
   colleft <- 1:n
   for (k in 1:(n-1)) {
-  	print(k)
+  	# print(k)
     rsum <- apply(basis[rowleft,colleft],1,sum)
-    # wir legen hier Wert auf "möglichst viele" Einsen auf der Diagonalen
-    # rein, weil es übersichtlicher aussieht
+    # wir legen hier Wert auf "moeglichst viele" Einsen auf der Diagonalen
+    # rein, weil es uebersichtlicher aussieht
     wh <- which(rsum == 1)[1]
     target <- 1
     if (is.na(wh)) {
@@ -1139,12 +1217,12 @@ triangulate <- function(basis) {
   }
   roworder[n] <- rowleft
   colorder[n] <- colleft
-  print(basis[roworder,colorder])
+  #print(basis[roworder,colorder])
   return(list(roworder=roworder,colorder=colorder,tbasis=basis[roworder,colorder]))
 }
 
 # sollte auch ohne Triangulierung funktionieren
-# Vor allem können wir hier quadratisch gar nicht brauchen
+# Vor allem koennen wir hier quadratisch gar nicht brauchen
 findblocks <- function(tbasis) {
   blocks <- vector("list",0)
   bb <- 0
@@ -1182,6 +1260,7 @@ findblocks <- function(tbasis) {
   return(blocks)
 }
 
+
 dedegenerate <- function(basis) {
   res <- findblocks(basis)
   ll <- length(res)
@@ -1198,3 +1277,199 @@ dedegenerate <- function(basis) {
   return(basis2)
 }
 
+
+# the following function *should* be able to deal with all kinds of degeneracies;
+# even zeros in aredf,bredf, but this is not (well) tested 
+scalestart <- function(aredf,bredf,genf,n1f,n2f,p=1,scmult=2) { 
+#  stopifnot(all(aredf>0, bredf>0))   # no longer necessary I leave it for the moment
+  stopifnot(all(dim(aredf) == c(n1f,n2f) && dim(bredf) == c(n1f,n2f)))
+  is.natural <- function(x, tol = .Machine$double.eps^0.5)  all((abs(x - round(x)) < tol) & x > 0.5)
+  stopifnot(is.natural(scmult) && is.natural(n1f) && is.natural(n2f) && is.natural(n1f/scmult) && is.natural(n2f/scmult))
+  n1c <- round(n1f/scmult)
+  n2c <- round(n2f/scmult)   # f for fine, c for coarse
+  Nf <- n1f * n2f
+  Nc <- n1c * n2c
+  grmat <- matrix(unlist(lapply(as.list(1:n2c), function(x) {rep(((x-1)*n1c+1):(x*n1c), 
+      	          times = scmult, each = scmult)})), n1f, n2f)
+  aredc <- matrix( aggregate(as.vector(aredf), by=list(as.vector(grmat[1:n1f,1:n2f])),
+      	    FUN="sum")[,2], n1c, n2c)
+  bredc <- matrix( aggregate(as.vector(bredf), by=list(as.vector(grmat[1:n1f,1:n2f])),
+      	    FUN="sum")[,2], n1c, n2c)
+  genc <- list(aggregate(genf[[1]], by=list(as.vector(grmat[1:n1f,1])), FUN="mean")[,2],
+               aggregate(genf[[2]], by=list(as.vector(grmat[1,1:n2f])), FUN="mean")[,2])
+  # preliminary version where we do not distinguish between p=1 and p!=1
+  gg <- expand.grid(genc[[1]], genc[[2]])
+  costmc <- as.matrix(dist(gg))^p
+  assigc <- rep(0L,Nc*Nc)
+  basisc <- rep(0L,Nc*Nc)
+  startgiven <- 0
+  stopifnot(sum(aredc)==sum(bredc))
+  resc <- .C("revsimplex", as.integer(Nc), as.integer(Nc), as.integer(aredc), as.integer(bredc),
+	        as.double(costmc), assignment = as.integer(assigc), basis = as.integer(basisc), startgiven = as.integer(startgiven),
+	        DUP=TRUE, PACKAGE="transport")
+  assigc <- matrix(resc$assignment,Nc,Nc)
+  basisc <- matrix(resc$basis,Nc,Nc)
+  nbasis <- sum(resc$basis)
+  res2 <- data.frame(from = rep(0,nbasis), to = rep(0,nbasis), mass = rep(0,nbasis))
+  ind <- which(matrix(as.logical(resc$basis),Nc,Nc), arr.ind=TRUE) 
+  ofrom <- order(ind[,1])
+  res2$from <- ind[,1][ofrom]
+  res2$to <- ind[,2][ofrom]
+  res2$mass <- (resc$assignment[(ind[,2]-1)*Nc + ind[,1]])[ofrom]
+  stopifnot(length(res2$from) == 2*Nc-1, length(res2$to) == 2*Nc-1, length(res2$mass) == 2*Nc-1)
+
+  #######################
+  ##  refine solution  ##
+  #######################
+  assigf <- matrix(0,Nf,Nf)
+  basisf <- matrix(0,Nf,Nf)
+  qmult <- scmult^2
+  
+  # new strategy row-wise in the fine grid; this way it seems to be easier to treat degeneracies 
+  whblock <- as.vector(grmat)
+  # tells us for a number in 1,..,Nf (colmajor pos in matrix), which of the Nc blocks the corresponding index lies in 
+  byblock <- order(whblock)
+  # gives us a list of colmajor positions (from 1, ..., Nf) in matrix (nf x nf) that evaluates it (the matrix) by Nc-blocks  
+  block <- rep(1:Nc,each=qmult)
+  # same as whbox[byblock] (vector of the block numbers we are in with byblock)
+  # firstpos <- unlist(lapply(seq(1,1+(n2c-1)*qmult*n1c,qmult*n1c), function(k) {seq(k,k+(n1c-1)*scmult,scmult)}))
+  # "coarse to fine, first index"; vector of first indices in blocks
+  acleft <- aredc
+  bcleft <- bredc
+  afleft <- aredf
+  bfleft <- bredf
+  aremfpos <- rep(1,Nc)  # if-position to start with in blocks of a
+  bremfpos <- rep(1,Nc)  # jf-position to start with in blocks of b
+  # in what follows we basically use nwcorner rule for each row of blocks (later improvement: use rowmostneg)
+  # i is the block row number, icur is the row number (in the fine grid)
+  for (i in 1:Nc) {   
+#  	cat("i: ", i, "\n", sep="")
+  	allifs <- byblock[qmult*(i-1) + 1:qmult]  # the qmult if-values that make up block i
+  	icurpos <- aremfpos[i]
+  	icur <- allifs[icurpos]
+    alljcs <- which(basisc[i,] == 1)   # numbers of the to-blocks in row i
+    lenjcs <- length(alljcs)
+    for (jpos in 1:lenjcs) {    # ipos = i = 1 automatically, but we need icurs because enumeration along i not linear 
+#      cat("jpos: ", jpos, "\n", sep="")   	
+      j <- alljcs[jpos]
+      alljfs <- which(whblock == j)  # all jf-indices to which we can transport
+      jcurpos <- bremfpos[j]   
+      jcur <- alljfs[jcurpos]
+#    bcrowleft <- rep(0,Nc)   # how much mass is left for the various blocks in the i-th row
+#    bcrowleft[alljcs] <- assigc[1,alljcs] 
+      massleft <- assigc[i,j]
+      repeat {   # break condition massleft == 0
+        mass <- min(afleft[icur],bfleft[jcur],massleft)
+        # whenever two of the three above terms coincide as minima, we degeneration occurs and we have to add
+        # a basic vector with zero transport (if all three coincide, we have to add two basis vectors)
+        assigf[icur,jcur] <- mass
+        basisf[icur,jcur] <- 1
+        afleft[icur] <- afleft[icur] - mass
+        bfleft[jcur] <- bfleft[jcur] - mass
+        massleft <- massleft - mass
+        if (massleft == 0) {
+          break
+        } else {
+          if (afleft[icur] == 0 && bfleft[jcur] == 0) {
+      	    icurpos <- icurpos+1
+            icur <- allifs[icurpos]
+            basisf[icur,jcur] <- 1
+            jcurpos <- jcurpos+1
+            jcur <- alljfs[jcurpos]
+          } else if (afleft[icur] == 0) {
+            icurpos <- icurpos+1
+            icur <- allifs[icurpos]
+          } else if (bfleft[jcur] == 0) {
+            jcurpos <- jcurpos+1
+            jcur <- alljfs[jcurpos]          	
+          }
+        }
+      }  # repeat loop  
+      acleft[i] <- acleft[i] - assigc[i,j]
+      bcleft[j] <- bcleft[j] - assigc[i,j]
+      # do finishing work for block (i,j); note: we just assigned last bit of mass
+      if (acleft[i] == 0 && bcleft[j] == 0) {
+        # we do not have to check if there are any more blocks in this row or in this col
+        # because any such blocks can only have total transport zero --> code below works out  
+        # First we fill L-shape basis vectors for trailing zeros in a and b         	                                            
+        while (icurpos < qmult) {
+          icurpos <- icurpos+1
+          icur <- allifs[icurpos]
+          basisf[icur,jcur] <- 1
+        }
+        while (jcurpos < qmult) {
+          jcurpos <- jcurpos+1
+          jcur <- alljfs[jcurpos]
+          basisf[icur,jcur] <- 1
+        }
+        # Then we make sure that the potential zero-transport blocks to come fill in basis-1s
+        # from the right position
+        aremfpos[i] <- qmult   # = icurpos
+        bremfpos[j] <- qmult   # = jcurpos
+      } else if (acleft[i] == 0) {  # hence bcleft[j] > 0, hence we know that
+        	                        # there must be another block in the same col
+        if (bfleft[jcur] == 0) {
+          jcurpos <- jcurpos+1
+          jcur <- alljfs[jcurpos]
+          basisf[icur,jcur] <- 1
+        }
+        while (icurpos < qmult) {
+          icurpos <- icurpos+1
+          icur <- allifs[icurpos]
+          basisf[icur,jcur] <- 1
+        }
+        aremfpos[i] <- qmult    # = icurpos
+        bremfpos[j] <- jcurpos
+      } else if (bcleft[j] == 0) {  # hence acleft[i] > 0, hence we know that
+        	                        # there must be another block in the same row
+        if (afleft[icur] == 0) {
+          icurpos <- icurpos+1
+          icur <- allifs[icurpos]
+          basisf[icur,jcur] <- 1 
+        }
+        while (jcurpos < qmult) {
+          jcurpos <- jcurpos+1
+          jcur <- alljfs[jcurpos]
+          basisf[icur,jcur] <- 1
+        }
+        aremfpos[i] <- icurpos
+        bremfpos[j] <- qmult    # = jcurpos      	
+      } else {   # the case acleft[i] > 0 && bcleft[j] > 0
+        if (afleft[icur] == 0 && bfleft[jcur] == 0) {
+          icurpos <- icurpos+1
+          icur <- allifs[icurpos]
+          basisf[icur,jcur] <- 1
+          jcurpos <- jcurpos+1
+          jcur <- alljfs[jcurpos]
+          basisf[icur,jcur] <- 1
+        } else if (afleft[icur] == 0) {
+          icurpos <- icurpos+1
+          icur <- allifs[icurpos]
+          basisf[icur,jcur] <- 1
+        } else if (bfleft[jcur] == 0) {
+          jcurpos <- jcurpos+1
+          jcur <- alljfs[jcurpos]
+          basisf[icur,jcur] <- 1          	
+        }
+        aremfpos[i] <- icurpos
+        bremfpos[j] <- jcurpos
+      }	
+    }   # for jpos loop
+  }     # for i loop 
+  rownames(assigf) <- paste(aredf,"*",sep="")
+  colnames(assigf) <- paste("*",bredf,sep="")
+  if (!all(as.logical(basisf)==(assigf > 0))) {
+    warning("Starting solution is degenerate. Nothing to worry about!")  
+  }  
+  if (sum(basisf) != 2*Nf-1) {
+    stop("Basis contains only ", sum(basisf), " != 2*Nf-1 = ", 2*Nf-1, " vectors")
+  }
+  nbasis <- sum(basisf)
+  res3 <- data.frame(from = rep(0,nbasis), to = rep(0,nbasis), mass = rep(0,nbasis))
+  ind <- which(matrix(as.logical(basisf),Nf,Nf), arr.ind=TRUE) 
+  ofrom <- order(ind[,1])
+  res3$from <- ind[,1][ofrom]
+  res3$to <- ind[,2][ofrom]
+  res3$mass <- (assigf[(ind[,2]-1)*Nf + ind[,1]])[ofrom]
+  return(list(assignment=assigf,basis=basisf,res=res3))
+}

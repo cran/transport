@@ -1,3 +1,36 @@
+	CHANGES IN transport VERSION 0.7-0  (2015-10-21)
+
+OVERVIEW
+
+    o  There are two new ways for computing starting solutions
+    in transport.default and transport.pgrid with
+    method="revsimplex", which lead to substantial speed
+    improvements (mainly in transport.pgrid)
+       
+    o  Several minor bugfixes
+
+SIGNIFICANT CHANGES
+
+    o  transport.pgrid, transport.default
+    When method="revsimplex" is chosen, transport.pgrid can now
+    start from a solution that is based on the optimal transport
+    between two coarsened problems. This "multiscale" behaviour is invoked
+    automatically if p>1, the grid is 2-dimensional, of a certain
+    minimal size, and has an even number of vertices in each direction
+    (for p=1 use the control parameter nscales as in previous
+    versions). Both transport.pgrid and transport.default can also
+    be started from a solution based on the "Modified Row Minimum
+    Rule" (newly implemented in C Code). This is the default
+    behaviour now for transport.default, and also for transport.pgrid
+    if the multiscale starting solution described above cannot
+    be computed.
+
+    To get the behaviour of older versions, say
+    control=list(start="nwcorner") in the transport function.
+
+
+----------------------------------------------------------------
+
 	CHANGES IN transport VERSION 0.6-3  (2014-10-16)
 
 OVERVIEW
@@ -16,7 +49,7 @@ OVERVIEW
 BUG FIXES
 
     o  aha
-    In the underlying c code integer overflows were possible (usually
+    In the underlying C code integer overflows were possible (usually
     without noticable effects on the result).
     Fixed.
 

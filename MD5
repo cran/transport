@@ -1,9 +1,9 @@
-1821e6cd1217eec366de4998ab203764 *DESCRIPTION
-e26962f62ba368c11d9f345302937d7f *NAMESPACE
-eacb9e1c4d939de74e5bd2e5c117f0aa *NEWS
+f31cbfc48418de0f387e61bf45984521 *DESCRIPTION
+83aacc3f679f10373ab517d2a24d4973 *NAMESPACE
+e5332d4988afa30e6cf10aa3b5d0da3e *NEWS
 0b5a9751cd6d2a13cc9754475b8873e1 *R/aha.R
-03a26e133152ee1cee2df3e125ff687e *R/fundament.R
-1f8d656a7e01b367c661399e19294a1a *R/lilhelpers.R
+2e197a0ce2fdcd1b87061d01c66e76fa *R/fundament.R
+df3b9aa1161b1396a233ecf7b5eb3157 *R/lilhelpers.R
 bafa68a1bfc3450f1b9080f46d752cd9 *data/random32.rda
 6d9881be4dc37087f31e17d5616a1ecf *data/random64.rda
 4d8fa975e10af476a206ad1471cb8323 *man/aha.Rd
@@ -18,10 +18,10 @@ e538dc2617e1d3c8e8af1da4f42be9ed *man/pgrid.Rd
 7df6eb8058c906545eed8a2572261a85 *man/pp.Rd
 2cb4faceadb047f8cfe421c48a1ab30e *man/random.Rd
 a9eeaf180c0e3873a2eaf1e97cf73261 *man/starting_solutions.Rd
-dffcd86ef1f186c5279ae34abd1af0a1 *man/transport-internal.Rd
+73396916060196ca435399d1e31a16d0 *man/transport-internal.Rd
 96475c216cbb26cecde828a228fa6440 *man/transport-package.Rd
-65a8db9026d356300e5e91d9b06e6ce4 *man/transport.Rd
-ca8f1938180b98f49e0e1f62dfce5355 *man/trcontrol.Rd
+b1cebef4539d90ceedecc3a5f1050449 *man/transport.Rd
+27ffa82e681121cf447fffc52039680b *man/trcontrol.Rd
 52cd1418eef1564e3c40e55c9bd446c1 *man/wasserstein.Rd
 8bbdb667577c4c9e83bf94ade2176784 *src/aha.c
 714b29e13a1dd893a34378b8af9c37ee *src/auction.c
@@ -29,5 +29,5 @@ ca8f1938180b98f49e0e1f62dfce5355 *man/trcontrol.Rd
 01c077938c94017df91603f904cac911 *src/elements.h
 bef2dd0406ef1adcea96f3de6b08fcae *src/power_diagram.h
 0f263c52d1d76ee85d9e5d59c3ad15dd *src/primaldual.c
-94ea8f11c51fb4aab2ba80b72437d118 *src/revsimplex.c
-b44c40ea57f927409a32a90dd36aff5a *src/shortsimplex.c
+af3ee50a6e34cf5a7e05171b57b80645 *src/revsimplex.c
+1cea332687f6cec4badabafe53712230 *src/shortsimplex.c

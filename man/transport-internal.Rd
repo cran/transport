@@ -3,6 +3,7 @@
 \alias{findblocks}
 \alias{fudge}
 \alias{image2}
+\alias{image3}
 \alias{refinesol}
 \alias{triangulate}
 
@@ -24,6 +25,7 @@ fudge(temp, N = 1e+09)
 % transforms vectors with natural entries to vectors with natural entries of the fixed total mass N 
 % by randomly adding removing units of mass at entries that have positive mass
 image2(x, y, z, rot = FALSE, ...)
+image3(z, x=1:dim(z)[1], y=1:dim(z)[2], rot=TRUE, ...)
 % like image, but if rot=TRUE, matrices are plotted in the same orientation as they are written
 refinesol(a1, b1, a2, b2, assig1, basis1, mult = 2)
 % for the multiscale approach. Computes a starting solution on the finer grid (finer by factor mult)

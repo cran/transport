@@ -9,7 +9,7 @@
 }
 \usage{
 trcontrol(method = c("shortsimplex", "revsimplex", "primaldual", "aha",
-  "auction", "auctionbf"), para=list(), start = c("auto", "altrcmin",
+  "auction", "auctionbf"), para=list(), start = c("auto", "modrowmin",
   "nwcorner", "russell"), nscales = 1, scmult = 2, returncoarse = FALSE,
   a=NULL, b=NULL, M=NULL, N=NULL)
 }

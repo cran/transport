@@ -16,7 +16,7 @@
 transport(a, b, ...)
 \method{transport}{default}(a, b, costm, method = c("shortsimplex", "revsimplex", "primaldual"),
   control = list(), ...)
-\method{transport}{pgrid}(a, b, p = NULL, method = c("shortsimplex", "revsimplex",
+\method{transport}{pgrid}(a, b, p = NULL, method = c("revsimplex", "shortsimplex", 
   "primaldual", "aha"), control = list(), ...)
 \method{transport}{pp}(a, b, p = 1, method = c("auction", "auctionbf", "shortsimplex",
   "revsimplex", "primaldual"), control = list(), ...)
@@ -32,7 +32,7 @@ transport(a, b, ...)
     units of mass between the corresponding source and destination points. 
 }
   \item{p}{
-    for the two specialized methods the power \eqn{>0} to which the Euclidean distance between points is taken in order
+    for the two specialized methods the power \eqn{\geq 1}{>=1} to which the Euclidean distance between points is taken in order
     to compute costs.
 }
   \item{method}{
@@ -53,8 +53,7 @@ transport(a, b, ...)
   
   \code{shortsimplex}: The shortlist method based an a revised simplex algorithm, as described in Gottschlich and Schuhmacher (2014).
   
-  \code{revsimplex}: The revised simplex algorithm as described in Luenberger and Ye (2008, Section 6.4) with various speed improvements, including
-  a multiscale approach.
+  \code{revsimplex}: The revised simplex algorithm as described in Luenberger and Ye (2008, Section 6.4) with various speed improvements, including a multiscale approach.
   
   \code{primaldual}: The primal-dual algorithm as described in Luenberger (2003, Section 5.9).
   
@@ -91,10 +90,16 @@ transport(a, b, ...)
     \code{auctionbf}        \tab   -     \tab   -   \tab   \code{lasteps}, \code{epsfac}   \cr
   } 
  
-  \code{start} specifies an algorithm for computing a starting solution. Currently only the North-West Corner Rule (\code{start="nwcorner"}) and the method by Russell (1969) (\code{start="russell"}) are implemented.
+  \code{start} specifies the algorithm for computing a starting solution. Currently the Modified Row Minimum Rule
+  (\code{start="modrowmin"}), the North-West Corner Rule (\code{start="nwcorner"}) and the method by Russell (1969) (\code{start="russell"})
+  are implemented. When \code{start="auto"} (the default) the ModRowMin Rule is chosen, except in \code{transport.pgrid} if \code{p}>1,
+  where the optimal transport is first computed on a grid that is coarser by a factor of \code{scmult=2} and a refinement of this solution
+  is used as a starting solution.
   
-  The word \dQuote{multiscale} in the above table summarizes the three parameter \code{nscales}, \code{scmult}, \code{returncoarse}
-  that control a possible multiscale version of the corresponding algorithm. The default value of \code{nscales=1} suppresses
+  For \code{p=1} and \code{method="revsimplex"}, as well as \code{p=2} and \code{method="aha"} there is a proper multiscale versions of
+  the corresponding algorithm that allows for finer control over a similar behaviour and is based on separate code.
+  There are three parameters \code{nscales}, \code{scmult}, \code{returncoarse} (summarized under the title
+  \dQuote{multiscale} in the above table). The default value of \code{nscales=1} suppresses
   the multiscale version. For larger problems it is advisable to use the multiscale version, which currently is only implemented for
   square pgrids in two dimensions. The algorithm proceeds then by coarsening the pgrid \code{nscales-1} times, summarizing
   each time \code{scmult^2} pixels into one larger pixels, and then solving the various transport problems starting from the coarsest and

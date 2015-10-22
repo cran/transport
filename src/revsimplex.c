@@ -11,10 +11,10 @@
 
    revsimplex.c
 
-   $Revision: 0.2 $   $Date: 2014/04/10 21:43:00 $
+   $Revision: 0.3 $   $Date: 2015/10/10 17:36:00 $
 
-   Ported by Dominic Schuhmacher
-   based on java code for class Shortlist2014 by Carsten Gottschlich
+   By Dominic Schuhmacher, original verision ported
+   from java code for class Shortlist2014 by Carsten Gottschlich
    (the present file is without shortlist components)
    (CG: in the comments refers to correspondences with original code,
    mainly used to give the original variable names where I have changed them) 
@@ -117,13 +117,16 @@ typedef struct State {
 #define BYROW(I,J,STATE,NROW) ((STATE)->basis_byrow)[(NROW) * (J) + (I)]
 #define BYCOL(I,J,STATE,NROW) ((STATE)->basis_bycol)[(NROW) * (J) + (I)]
 */
-#define MAT(NAME, I, J) (state->NAME)[state->m * (J) + (I)]
+#define MAT(NAME, I, J) (state->NAME)[state->m * (J) + (I)]  // col-major as in R !
+// there is probably room for improvement here: several steps in the algo work row-wise
+// that C is row-major has no influence because we make C go col-major here
 #define TMAT(NAME, I, J) (state->NAME)[state->n * (J) + (I)]
 /* letzteres für basis_bycol, die n*m ist */
 #define MAX(A,B) ((A)>(B) ? (A) : (B))
 #define MIN(A,B) ((A)<(B) ? (A) : (B))
 
 int update_transport_rowmostneg(State *state);
+void init_solution(State *state);
 void init_helpers(State *state);          /*  (CG: initGraph, and more) */
 int new_basic_variable_rowmostneg(State *state);
 void find_circle(State *state);
@@ -146,11 +149,12 @@ void printvec(int n, int *a);
 
 /* ------------ The main function ----------------------------- */
 
-void revsimplex(mm, nn, a, b, costm, assignment, basis)
+void revsimplex(mm, nn, a, b, costm, assignment, basis, startgiven)
   /* inputs */
   int *mm, *nn;
   int *a, *b;
   double *costm;
+  int *startgiven;
   /* outputs */
   int *assignment;
   int *basis;
@@ -192,6 +196,9 @@ void revsimplex(mm, nn, a, b, costm, assignment, basis)
   state.rem_next_branch = (int *) R_alloc((long) maxdim, sizeof(int));
   state.rem_do_rowscan = (int *) R_alloc((long) maxdim, sizeof(int));
 
+  if (*startgiven == 0) {
+    init_solution(&state); // by modified row minimum rule
+  } 
   init_helpers(&state);
 
   is_optimal = 0;
@@ -236,6 +243,107 @@ int update_transport_rowmostneg(State *state)
 }
 
 
+/* initializes assignment and basis by using the "modified row minimum rule" 
+   (and taking care of potential degeneracies:
+   create an additional basis vector between i where degeneracy occurs and any j
+   that has still mass left, but has no more mass left when next degeneracy occurs) */
+void init_solution(State *state)
+{
+  int i, j, jstar;
+  int mass;
+  int degennum, degeni, degenj;
+  int m,n,numleft;
+  double mini;
+  int *aleft, *bleft;   
+  int *aisleft, *bisleft;    
+  int *degenisj;
+
+  m = state->m;
+  n = state->n;
+
+  aleft = (int *) Calloc((long) m, int);
+  bleft = (int *) Calloc((long) n, int);
+  aisleft = (int *) Calloc((long) m, int);
+  bisleft = (int *) Calloc((long) n, int);
+  degenisj = (int *) Calloc((long) n, int);
+
+  for (i = 0; i < m; i++) {
+  for (j = 0; j < n; j++) {
+    MAT(assignment,i,j) = 0;
+    MAT(basis,i,j) = 0;
+  }
+  }
+
+  /* in all such instances it might be more efficient
+     to copy first one array and then the other (needs only increments of 1) */
+  for (i = 0; i < m; i++) {
+    aleft[i] = state->a[i];
+    aisleft[i] = 1;
+  }
+
+  for (j = 0; j < n; j++) {
+    bleft[j] = state->b[j];
+    bisleft[j] = 1;
+    //    degenisj[j] = 0;
+  } 
+
+  degennum = 0;
+  numleft = m;
+  while (numleft > 0) {
+    R_CheckUserInterrupt();
+    for (i = 0; i < m; i++) {      
+      if (aisleft[i] == 1) {
+	mini = R_PosInf;
+	for (j = 0; j < n; j++) {
+	  if (bisleft[j] == 1) {
+            if (MAT(costm,i,j) < mini) {
+              mini = MAT(costm,i,j);
+	      jstar = j;
+	    }
+	  }
+	}
+        mass = MIN(aleft[i],bleft[jstar]);
+	aleft[i] -= mass;
+        bleft[jstar] -= mass;
+        MAT(assignment,i,jstar) = mass;
+        MAT(basis,i,jstar) = 1;
+        if (aleft[i] == 0) {
+          aisleft[i] = 0;
+	  numleft--;
+        }
+        if (bleft[jstar] == 0) {
+          bisleft[jstar] = 0;
+        }
+        if (aleft[i] == 0 && bleft[jstar] == 0) {   /* degenerate case */
+          if (degennum > 0) {
+	    for (j = 0; j < n; j++) {
+              if (degenisj[j] == 1 && bisleft[j] == 0) {
+                degenj = j;
+	        MAT(basis, degeni, degenj) = 1;
+		break;
+	      }
+	    }
+	  }
+	  degeni = i;
+	  for (j = 0; j < n; j++) {
+            degenisj[j] = bisleft[j];
+          } 
+          degennum++;
+	}         
+      }
+    }
+  }
+  if (degennum > 0) {
+    warning("Starting solution is degenerate. Nothing to worry about!");
+  }
+  Free(aleft);
+  Free(bleft);
+  Free(aisleft);
+  Free(bisleft);
+  Free(degenisj);
+}
+
+
 /* Initializes the various helper variables in state */
 void init_helpers(State *state)
 {
@@ -274,7 +382,6 @@ void init_helpers(State *state)
   }
 
 }
-
 
 
 int new_basic_variable_rowmostneg(State *state)
@@ -379,7 +486,7 @@ int new_basic_variable_rowmostneg(State *state)
 
 void find_circle(State *state)
 {
-  int i, j, k;
+  int i, j;
   int lasti, lastj;
   int candi, candj;
   int ncand;
@@ -419,7 +526,6 @@ void find_circle(State *state)
   next_branch = 0;    /*  CG: forkToTryNext    */
                       /*  this is often actually the "current branch" */ 
 
-  k = 0;
   while (finished == 0) {
 
     /* ROWSCAN */
@@ -442,8 +548,6 @@ void find_circle(State *state)
 
       if (ncand == 0) {
         /* dead end (leaf), try new branch from last fork */
-        /* KOMMEN WIR HIER UEBERHAUPT VORBEI? WIR SCHAUEN JA IMMER
-           EINS VORAUS, UM DIESEN FALL FRÜHZEITIG ABZUFANGEN! */
         curr = rem_curr[curr_fork];
         do_rowscan = rem_do_rowscan[curr_fork];
         next_branch = rem_next_branch[curr_fork];
@@ -499,7 +603,9 @@ void find_circle(State *state)
       /* count candidates and compile candlist */
       for (i = 0; i < state->basis_bycol_over[lastj]; i++) {
         candi = TMAT(basis_bycol, lastj, i);
-        if (candi == indi && curr > 3) {
+        if (candi == indi && curr > 2) {
+	  /* changed > 3 to > 2 on 15/10/07
+             as it seems a direct loop with four station has curr = 3 here */
           /* This works because by basis triangularity there are no circles in the
              original basis (i.e. without adding the (indi,indj)-vector */
           finished = 1;
@@ -570,7 +676,6 @@ void find_circle(State *state)
       Rprintf("ncand: %d \n", ncand);
       Rprintf("curr_fork/next_branch/curr: %d / %d / %d \n", curr_fork, next_branch, curr); 
       Rprintf("do_rowscan: %d \n", do_rowscan);   */
-      k++;
       /* Rprintf("%d, ", k); */
 
   }  /* end of while */
