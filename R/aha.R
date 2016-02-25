@@ -1,5 +1,5 @@
 # Computes optimal transport or wasserstein distance between n*m matrices a and b
-# where sum(a)==sum(b) must be satisfied. The algorithm treats matrix a as a
+# where sum(a)==sum(b) must be satisfied. [NO THIS IS FIXED] The algorithm treats matrix a as a
 # measure on [0,m-1]x[0,n-1] which is constant in each pixel [i,i+1)x[j,j+1),
 # while matrix b is interpreted as a discrete measure. In particular,
 # aha(a,a,wasser=T) != 0 if a!=0.

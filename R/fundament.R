@@ -64,8 +64,12 @@ trcontrol <- function(method = c("shortsimplex", "revsimplex", "primaldual", "ah
 # by default M=a$N, N=b$N, which are overridden if M and/or N are specified
   method <- match.arg(method)
   start <- match.arg(start)
-  if (is.null(M) && !is.null(a) && class(a) %in% c("pgrid","pp")) { M <- a$N }
-  if (is.null(N) && !is.null(b) && class(b) %in% c("pgrid","pp")) { N <- b$N }
+  if (is.null(M) && !is.null(a)) {
+  	M <- ifelse(class(a) %in% c("pgrid","pp"), a$N, length(a))
+  }
+  if (is.null(N) && !is.null(b)) {
+  	N <- ifelse(class(b) %in% c("pgrid","pp"), b$N, length(b))
+  }
   if (is.null(M) && !is.null(N)) {M <- N}
   if (is.null(N) && !is.null(M)) {N <- M}
   if (is.null(N) && method %in% c("shortsimplex","auction")) {
@@ -139,7 +143,7 @@ trcontrol <- function(method = c("shortsimplex", "revsimplex", "primaldual", "ah
       	stop("parameter 'slength' for shortlist algorithm has to be >= 1")
       }
     } else {
-      newpara$slength <- 15 + max(0, floor(15 * log(N/400)/log(2))) 
+      newpara$slength <- min(N,15 + max(0, floor(15 * log(N/400)/log(2)))) 
       
           # /400 since after reduction about half of the N producers disappear
       #newpara$slength <- min(b$N, newpara$slength)

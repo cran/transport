@@ -95,7 +95,7 @@ plot.pgrid <- function(x,y=NULL,tplan=NULL,mass=c("colour","thickness"),length=0
       } else {
       	stopifnot(compatible(a,b))
       	zeta <- a$mass-b$mass
-      	image(xi,eta,zeta, col=grey(0:200/200), asp=1, xlab="", ylab="", ...)
+      	image2(xi,eta,zeta, rot=rot, col=grey(0:200/200), asp=1, xlab="", ylab="", ...)
       }
       invisible()
     } else {

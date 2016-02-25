@@ -1,3 +1,22 @@
+
+	CHANGES IN transport VERSION 0.7-3  (2016-02-24)
+
+OVERVIEW
+
+    o  We thank Ludo Daemen and Stefan Kain for contributions
+
+    o  Minor changes in the documentation and a bug fix
+
+BUG FIXES
+
+    o  transport.default
+    Using transport.default with the shortlist method gave an error
+    message if no shortlist parameters were set.
+    Fixed.
+
+
+----------------------------------------------------------------
+
 	CHANGES IN transport VERSION 0.7-0  (2015-10-21)
 
 OVERVIEW

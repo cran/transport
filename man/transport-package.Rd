@@ -12,8 +12,8 @@ Solve optimal transport problems in statistics. Compute Wasserstein metrics (a.k
 \tabular{ll}{
 Package: \tab transport\cr
 Type: \tab Package\cr
-Version: \tab 0.6-3\cr
-Date: \tab 2014-10-16\cr
+Version: \tab 0.7-1\cr
+Date: \tab 2015-10-22\cr
 License: \tab GPL (>=2) \cr
 LazyData: \tab yes\cr
 }

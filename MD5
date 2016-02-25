@@ -1,9 +1,9 @@
-f31cbfc48418de0f387e61bf45984521 *DESCRIPTION
+119f95d695573af7c3954fa1e013387d *DESCRIPTION
 83aacc3f679f10373ab517d2a24d4973 *NAMESPACE
-e5332d4988afa30e6cf10aa3b5d0da3e *NEWS
-0b5a9751cd6d2a13cc9754475b8873e1 *R/aha.R
-2e197a0ce2fdcd1b87061d01c66e76fa *R/fundament.R
-df3b9aa1161b1396a233ecf7b5eb3157 *R/lilhelpers.R
+9899a5dc6c37c471bbd6997ebb5d77a7 *NEWS
+faa632d06e9a9968d130c2ccafb6e89f *R/aha.R
+49c6c5673bf0a9b83d02d460b3ba9c59 *R/fundament.R
+dbf0c4b28ac89e0d2311ab19cf5a7896 *R/lilhelpers.R
 bafa68a1bfc3450f1b9080f46d752cd9 *data/random32.rda
 6d9881be4dc37087f31e17d5616a1ecf *data/random64.rda
 4d8fa975e10af476a206ad1471cb8323 *man/aha.Rd
@@ -19,8 +19,8 @@ e538dc2617e1d3c8e8af1da4f42be9ed *man/pgrid.Rd
 2cb4faceadb047f8cfe421c48a1ab30e *man/random.Rd
 a9eeaf180c0e3873a2eaf1e97cf73261 *man/starting_solutions.Rd
 73396916060196ca435399d1e31a16d0 *man/transport-internal.Rd
-96475c216cbb26cecde828a228fa6440 *man/transport-package.Rd
-b1cebef4539d90ceedecc3a5f1050449 *man/transport.Rd
+7aed480a7ad2236b8b9b15d864b3e8a7 *man/transport-package.Rd
+68f3dec0a6bd54ec26ed2aad58207378 *man/transport.Rd
 27ffa82e681121cf447fffc52039680b *man/trcontrol.Rd
 52cd1418eef1564e3c40e55c9bd446c1 *man/wasserstein.Rd
 8bbdb667577c4c9e83bf94ade2176784 *src/aha.c

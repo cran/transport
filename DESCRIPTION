@@ -1,8 +1,8 @@
 Package: transport
 Type: Package
 Title: Optimal Transport in Various Forms
-Version: 0.7-0
-Date: 2015-10-21
+Version: 0.7-3
+Date: 2016-02-24
 Author: Dominic Schuhmacher <dominic.schuhmacher@mathematik.uni-goettingen.de> with substantial contributions of code by Bjoern Baehre and Carsten Gottschlich
 Maintainer: Dominic Schuhmacher <dominic.schuhmacher@mathematik.uni-goettingen.de>
 Depends: R (>= 3.0.0)
@@ -12,6 +12,6 @@ License: GPL (>= 2)
 URL: http://www.dominic.schuhmacher.name
 LazyData: yes
 NeedsCompilation: yes
-Packaged: 2015-10-21 21:50:26 UTC; schumi
+Packaged: 2016-02-24 20:43:02 UTC; schumi
 Repository: CRAN
-Date/Publication: 2015-10-22 08:24:48
+Date/Publication: 2016-02-25 00:28:54
