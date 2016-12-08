@@ -3,6 +3,7 @@
 \alias{transport.default}
 \alias{transport.pgrid}
 \alias{transport.pp}
+\alias{transport.wpp}
 \encoding{UTF-8}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
@@ -20,19 +21,22 @@ transport(a, b, ...)
   "primaldual", "aha"), control = list(), ...)
 \method{transport}{pp}(a, b, p = 1, method = c("auction", "auctionbf", "shortsimplex",
   "revsimplex", "primaldual"), control = list(), ...)
+\method{transport}{wpp}(a, b, p = 1, method = c("revsimplex", "shortsimplex", "primaldual"),
+  control = list(), ...) 
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{a, b}{
     two objects that describe mass distributions, between which the optimal transport map is to be computed. For the default
-    method these are vectors of non-negative values. For the other two methods these are objects of the respective classes.
+    method these are vectors of non-negative values. For the other three methods these are objects of the respective classes.
+    It is also possible to have \code{a} of class \code{pgrid} and \code{b} of class \code{wpp}.
 }
   \item{costm}{
     for the default method a \code{length(a)} by \code{length(b)} matrix specifying the cost of transporting single
     units of mass between the corresponding source and destination points. 
 }
   \item{p}{
-    for the two specialized methods the power \eqn{\geq 1}{>=1} to which the Euclidean distance between points is taken in order
+    for the three specialized methods the power \eqn{\geq 1}{>=1} to which the Euclidean distance between points is taken in order
     to compute costs.
 }
   \item{method}{
@@ -66,16 +70,16 @@ transport(a, b, ...)
   The following table gives information about the applicability of the various algorithms (or sometimes rather
   their current implementations).
   
-  \tabular{llll}{
-  	             \tab default \tab pgrid \tab pp    \cr
-    shortsimplex \tab   +     \tab   +   \tab   *   \cr  
-    revsimplex   \tab   +     \tab   +   \tab   *   \cr  
-    primaldual   \tab   *     \tab   *   \tab   *   \cr
-    aha (p=2!)   \tab   -     \tab   +   \tab   @   \cr
-    auction      \tab   -     \tab   -   \tab   +   \cr
-    auctionbf    \tab   -     \tab   -   \tab   +   \cr
+  \tabular{lllll}{
+  	             \tab default \tab pgrid \tab  pp  \tab  wpp   \cr
+    shortsimplex \tab   +     \tab   +   \tab   *   \tab   +   \cr  
+    revsimplex   \tab   +     \tab   +   \tab   *   \tab   +   \cr  
+    primaldual   \tab   *     \tab   *   \tab   *   \tab   +   \cr
+    aha (p=2!)   \tab   -     \tab   +   \tab   -   \tab   @   \cr
+    auction      \tab   -     \tab   -   \tab   +   \tab   -   \cr
+    auctionbf    \tab   -     \tab   -   \tab   +   \tab   -   \cr
   } 
-  where: + recommended, * applicable (usually slow), @ planned, - no implementation planned / combination does not make sense.
+  where: + recommended, * applicable (may be slow), - no implementation planned or combination does not make sense; @ indicates that the aha algorithm is available in the special combination where \code{a} is a \code{pgrid} object and \code{b} is a \code{wpp} object (and \code{p} is 2). For more details on this combination see the function \code{\link{semidiscrete}}.   
 
   Each algorithm has certain parameters supplied by the \code{control} argument. The following table gives an overview of parameter names and 
   their applicability.
@@ -117,6 +121,8 @@ transport(a, b, ...)
 A data frame with columns \code{from}, \code{to} and \code{mass} that specifies from which knot to which other knot what amount of mass is sent in the optimal transference plan. Knots are given as indices in terms of the usual column major enumeration of the matrices \code{a$mass} and \code{b$mass}. There are \code{\link[=plot.pgrid]{plot}} methods for the classes \code{pgrid} and \code{pp}, which can plot this solution.
 
 If \code{returncoarse} is \code{TRUE} for the \code{revsimplex} method, a list with components \code{sol} and \code{prob} giving the solutions and problems on the various scales considered. The solution on the finest scale (i.e. the output we obtain when setting \code{returncoarse} to \code{FALSE}) is in \code{sol[[1]]}.
+
+If \code{a} is of class \code{pgrid} and \code{b} of class \code{wpp} (and \code{p=2}), an object of class \code{power_diagram} as described in the help for the function \code{\link{semidiscrete}}. The \code{\link[=plot.pgrid]{plot}} method for class \code{pgrid} can plot this solution.
 }
 \references{
 F. Aurenhammer, F. Hoffmann and B. Aronov (1998). Minkowski-type theorems and least-squares clustering. Algorithmica 20(1), 61--76.
@@ -188,6 +194,34 @@ res <- transport(x,y)
 dev.new()
 par(mai=rep(0.02,4))
 plot(x,y,res)
+
+
+#
+# example for class 'wpp'
+#
+set.seed(30)
+m <- 30
+n <- 60
+massx <- rexp(m)
+massx <- massx/sum(massx)
+massy <- rexp(n)
+massy <- massy/sum(massy)
+x <- wpp(matrix(runif(2*m),m,2),massx)
+y <- wpp(matrix(runif(2*n),n,2),massy)
+res <- transport(x,y,method="revsimplex")
+plot(x,y,res)
+
+
+#
+# example for semidiscrete transport between class 'pgrid' and class 'wpp'
+#
+set.seed(33)
+n <- 100
+massb <- rexp(n)
+massb <- massb/sum(massb)*1e5
+b <- wpp(matrix(runif(2*n),n,2),massb)
+res <- transport(random32a,b,p=2)
+plot(random32a,b,res)
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

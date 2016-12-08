@@ -19,9 +19,11 @@ pgrid <- function(mass, boundary, gridtriple, generator, structure) {
   }	
   nmiss <- missing(boundary) + missing(gridtriple) + missing(generator)
   if (nmiss == 3) {
-  	  boundary <- rep(c(0,1), dimension)
-  	  gridtriple <- t(sapply(n, function(m) {c(1/(2*m), 1-1/(2*m), 1/m)}))
-  	  generator <- lapply(n, function(m) {seq(1/(2*m),1-1/(2*m),1/m)})
+  	  # changed 12/10/16: always assume square pixels and first boundaries c(0,1) if nothing is given
+  	  boundary <- rep(0,2*dimension)
+  	  boundary[seq(2,2*dimension,2)] <- n/n[1]
+  	  gridtriple <- t(sapply(n, function(m) {c(1/(2 * n[1]), m/n[1] - 1/(2 * n[1]), 1/n[1])}))
+      generator <- lapply(n, function(m) {seq(1/(2 * n[1]), m/n[1] - 1/(2 * n[1]), 1/n[1])})
   } else if (nmiss <= 1) {
   	  stop("only one of 'boundary', 'gridtriple', and 'generator' may be specified.")
   } else if (!missing(boundary)) {
@@ -54,11 +56,13 @@ pgrid <- function(mass, boundary, gridtriple, generator, structure) {
   	  boundary <- round(as.vector(t(boundarymat)), 12)
   }  	
   
+  pixelarea <- prod(gridtriple[,3])
+  totmass <- sum(mass)     # sum of masses at each pixel
+  totcontmass <- totmass*pixelarea   # mass interpreted as uniformely distributed over pixel area
   res <- list(structure=structure, dimension=dimension, n=n, N=N, boundary=boundary, gridtriple=gridtriple,
-              generator=generator, totmass=sum(mass), mass=mass)
+              generator=generator, mass=mass, totmass=totmass, totcontmass=totcontmass)
   class(res) <- "pgrid"
   return(res)
-
 }
 
 
@@ -66,11 +70,17 @@ pgrid <- function(mass, boundary, gridtriple, generator, structure) {
 # plot method
 # (this plots one pgrid object, two pgrid objects (next to each other or as diff), or two pgrid objects
 # as diff and their transportation plan)
+# it also calls plot_pgrid_wpp for plotting semi-discrete transports
 # diffpic only does something for two pgrid objects without transportation plan
 # rot=FALSE uses the usual R image-convention
 # rot=TRUE plots mass-matrices the same way as they are displayed in numeric output and adapts the tplan-arrows accordingly
 plot.pgrid <- function(x,y=NULL,tplan=NULL,mass=c("colour","thickness"),length=0.1,acol,lwd,rot=FALSE,overlay=FALSE,static.mass=TRUE,...) {
   stopifnot(class(x) == "pgrid")
+  if (class(y) == "wpp") {
+  	if (missing(acol)) { acol <- "#996699" }
+  	if (missing(lwd)) { lwd <- 1.5 }
+  	return(plot_pgrid_wpp(x,y,tplan,pmass=TRUE,cex=0.8,length=length,acol=acol,lwd=lwd,rot=TRUE,...))
+  }
   a <- x
   if (a$dimension != 2) stop("plot.pgrid is currently only implemented for 2-d grids")
   xi <- a$generator[[1]]
@@ -174,7 +184,7 @@ print.pgrid <- function(x, ...) {
   	cat("y-gridtriple:", x$gridtriple[2,], "\n")
   	cat("pixel masses range from ", min(x$mass), " to ", max(x$mass), "\n", sep="")
   	cat("total pixel mass: ", x$totmass, "\n", sep="")
-  	cat("total mass: ", x$totmass/prod(x$n), "\n", sep="")
+  	cat("total continuum mass: ", x$totcontmass, "\n", sep="")    	
   } else
   if (x$dimension == 3) {
   	cat("Regularly spaced ",x$n[1],"x",x$n[2],"x",x$n[3]," pixel grid on [",
@@ -185,7 +195,7 @@ print.pgrid <- function(x, ...) {
   	cat("z-gridtriple:", x$gridtriple[3,], "\n")
   	cat("pixel masses range from ", min(x$mass), " to ", max(x$mass), "\n", sep="")
   	cat("total pixel mass: ", x$totmass, "\n", sep="")
-  	cat("total mass: ", x$totmass/prod(x$n), "\n", sep="")
+  	cat("total continuum mass: ", x$totcontmass, "\n", sep="")    	
   } else {
   	cat("Regularly spaced pixel grid in ", x$dimension, " dimensions.\n", sep="")
     cat("number of pixels in each dimension:", x$n, "\n")
@@ -194,7 +204,7 @@ print.pgrid <- function(x, ...) {
       for (i in 1:x$dimension) cat("", x$gridtriple[i,], "\n")
   	cat("pixel masses range from ", min(x$mass), " to ", max(x$mass), "\n", sep="")
   	cat("total pixel mass: ", x$totmass, "\n", sep="")
-  	cat("total mass: ", x$totmass/prod(x$n), "\n", sep="")    	
+  	cat("total continuum mass: ", x$totcontmass, "\n", sep="")    	
   }
   invisible(x)
 }
@@ -223,14 +233,13 @@ pp <- function(coordinates) {
 
 # 
 # plot method
-# generalize to pp with mass 
-# (for more general transport one could do a multidim scaling)
-plot.pp <- function(x,y=NULL,tplan=NULL,cols=c(2,4),cex=0.8,acol=grey(0.3),lwd=1,overlay=TRUE,...) {
+#
+plot.pp <- function(x,y=NULL,tplan=NULL,cols=c(4,2),cex=0.8,acol=grey(0.3),lwd=1,overlay=TRUE,...) {
   stopifnot(class(x) == "pp" && class(x) == "pp")  
   if (x$dimension != 2) stop("plot.pp is currently only implemented for 2-d point patterns")  
   oldpars <- par(xpd=TRUE, xaxs="i", yaxs="i")
   if (missing(y)) {
-  	if (missing(cols)) { cols <- 1 }
+  	# if (missing(cols)) { cols <- 1 }
   	plot(x$coordinates, axes=FALSE, xlab="", ylab="", col=cols[1], pch=16, cex=cex, asp=1, ...)
   	invisible()
   } else {
@@ -278,6 +287,253 @@ summary.pp <- function(object, ...) {
 
 
 
+# ---------------
+# wpp
+# ---------------
+# 
+# Constructor
+#
+wpp <- function(coordinates, mass){
+  coordinates <- as.matrix(coordinates)
+  NN <- dim(coordinates)[1]
+  stopifnot(length(mass) == NN)
+  dimension <- dim(coordinates)[2]
+  totmass <- sum(mass)
+  stopifnot(all(mass >= rep(0,NN)))
+  stopifnot(totmass > 0)
+  massnonzero <- (mass != 0)
+  mass <- mass[massnonzero]
+  zeropoints <- coordinates[!massnonzero,]
+  coordinates <- coordinates[massnonzero,]
+  N <- dim(coordinates)[1]
+  res <- list(dimension = dimension, N=N, coordinates = coordinates, mass = mass, totmass = totmass)
+  class(res) <- "wpp"
+  if (N < NN) { 
+    attr(res, "zeropoints") <- zeropoints 
+  }
+  return(res)
+}
+
+
+plot.wpp <- function(x,y=NULL,tplan=NULL,pmass=TRUE,tmass=TRUE,cols=c(4,2),cex=0.8,aglevel=0.4,acol=grey(0.3),lwd=1,overlay=TRUE,...) {
+  stopifnot(class(x) == "wpp")  
+  if (x$dimension != 2) stop("plot.wpp is currently only implemented for 2-d point patterns")  
+  oldpars <- par(xpd=TRUE, xaxs="i", yaxs="i")
+#  col1 <- heat.colors(128)[1:60]
+#  xorder <- order(x$mass)
+#  col1 <- col1[as.numeric(as.character(cut(x$mass,breaks=seq(0,max(x$mass),length.out =61),labels=1:60)))]
+  if (missing(y)) {
+  	if (pmass) {
+  	  massmean <- mean(x$mass)
+  	  cexfac <- sqrt(x$mass/massmean)
+  	  toosmall <- (cexfac < 0.25)
+  	  toolarge <- (cexfac > 5)
+  	  justright <- !(toosmall | toolarge)	
+  	  cexfac <- cexfac[justright]  
+  	  plot(x$coordinates, type="n", xlab="", ylab="", asp=1, ...)	
+  	  # drop im folgenden wichtig, sonst werden bei nur einer Zeile Punkte (c_11, 1) und (c_12, 2) geplottet 
+  	  points(x$coordinates[toolarge,,drop=FALSE], col=cols[1], pch=16, cex=5*cex) 
+  	  points(x$coordinates[toolarge,,drop=FALSE], col=grey(1), pch=10, cex=5*cex, lwd=2)
+  	  # black contours vor better visibility if points overlapp:
+  	  # points(x$coordinates[toolarge,], col=1, pch=1, cex=0.92*5*cex)
+  	  points(x$coordinates[justright,,drop=FALSE], col=cols[1], pch=16, cex=cexfac*cex)
+  	  # points(x$coordinates[justright,], col=1, pch=1, cex=0.92*cexfac*cex)
+  	  points(x$coordinates[toosmall,,drop=FALSE], col=cols[1], pch="+", cex=0.4*cex)  	  
+    } else {
+      plot(x$coordinates, xlab="", ylab="", col=cols[1], pch=16, cex=cex, asp=1, ...)
+    }
+    invisible()
+  } else {
+    stopifnot(class(y) == "wpp")
+    if (y$dimension != 2) stop("plot.wpp is currently only implemented for 2-d point patterns")
+    
+    if (missing(tplan)) {
+      if (!overlay) {
+        par(mfrow=c(1,2))
+        plot(x=x,tplan=NULL,pmass=pmass,cols=cols[1],cex=0.8,lwd=lwd,overlay=FALSE,...)
+        plot(x=y,tplan=NULL,pmass=pmass,cols=cols[2],cex=0.8,lwd=lwd,overlay=FALSE,...)
+        par(mfrow=c(1,1))      	
+      } else {
+      	allcoords <- rbind(x$coordinates,y$coordinates)  
+  	    plot(allcoords, type="n", xlab="", ylab="", asp=1, ...)	
+  	    if (pmass) {
+  	      massmean <- mean(c(x$mass,y$mass))
+  	      # First pp:
+  	      cexfac <- sqrt(x$mass/massmean)
+  	      toosmall <- (cexfac < 0.25)
+  	      toolarge <- (cexfac > 5)
+  	      justright <- !(toosmall | toolarge)	
+  	      cexfac <- cexfac[justright]  
+  	      plot(x$coordinates, type="n", xlab="", ylab="", asp=1, ...)	
+  	      points(x$coordinates[toolarge,,drop=FALSE], col=cols[1], pch=16, cex=5*cex) 
+  	      points(x$coordinates[toolarge,,drop=FALSE], col=grey(1), pch=10, cex=5*cex, lwd=2)
+  	      # black contours vor better visibility if points overlapp:
+  	      # points(x$coordinates[toolarge,], col=1, pch=1, cex=0.92*5*cex)
+  	      points(x$coordinates[justright,,drop=FALSE], col=cols[1], pch=16, cex=cexfac*cex)
+  	      # points(x$coordinates[justright,], col=1, pch=1, cex=0.92*cexfac*cex)
+  	      points(x$coordinates[toosmall,,drop=FALSE], col=cols[1], pch="+", cex=0.4*cex)  	  
+  	      # Second pp:  
+  	      cexfac <- sqrt(y$mass/massmean)
+  	      toosmall <- (cexfac < 0.25)
+  	      toolarge <- (cexfac > 5)
+  	      justright <- !(toosmall | toolarge)	
+  	      cexfac <- cexfac[justright]  
+  	      # plot(y$coordinates, type="n", xlab="", ylab="", asp=1, ...)	
+  	      points(y$coordinates[toolarge,,drop=FALSE], col=cols[2], pch=16, cex=5*cex) 
+  	      points(y$coordinates[toolarge,,drop=FALSE], col=grey(1), pch=10, cex=5*cex, lwd=2)
+  	      # black contours vor better visibility if points overlapp:
+  	      # points(y$coordinates[toolarge,], col=1, pch=1, cex=0.92*5*cex)
+  	      points(y$coordinates[justright,,drop=FALSE], col=cols[2], pch=16, cex=cexfac*cex)
+  	      # points(x$coordinates[justright,], col=1, pch=1, cex=0.92*cexfac*cex)
+  	      points(y$coordinates[toosmall,,drop=FALSE], col=cols[2], pch="+", cex=0.4*cex)  	  
+        } else {
+          points(x$coordinates, col=cols[1], pch=16, cex=cex)
+          points(y$coordinates, col=cols[2], pch=16, cex=cex)
+        }
+        invisible()
+      }
+    } else {
+      allcoords <- rbind(x$coordinates,y$coordinates)  
+  	  plot(allcoords, type="n", xlab="", ylab="", asp=1, ...)
+  	  if (tmass) {
+  	    tmassrat <- sum(tplan$mass>0)*(tplan$mass/x$totmass) 
+  	    # is ratio transported mass / mean transported mass (over non-negative transports)
+  	    # 1 if same amount of mass on each non-zero transport
+  	    # The following solution is probably a bit extreme if point patterns are big and general
+  	    # (everything that is not within a factor 10 of mean mass is cut off)
+  	    colfac <- 1-log10(tmassrat)
+  	    toosmall <- (colfac > 2)  # mass to small i.e. grey value too large
+  	    toolarge <- (colfac < 0)    
+  	    justright <- !(toosmall | toolarge)	
+  	    colfac <- colfac[justright]
+  	    # im folgenden kein drop nötig, da tplan ein data.frame ist
+  	    tplansmall <- tplan[toosmall,]
+  	    tplanlarge <- tplan[toolarge,]
+  	    tplanright <- tplan[justright,]
+        segments(x$coordinates[tplanlarge$from,1], x$coordinates[tplanlarge$from,2],
+          y$coordinates[tplanlarge$to,1], y$coordinates[tplanlarge$to,2], col=1, lwd=1.5*lwd)
+        segments(x$coordinates[tplanright$from,1], x$coordinates[tplanright$from,2],
+          y$coordinates[tplanright$to,1], y$coordinates[tplanright$to,2], col=grey(colfac*aglevel), lwd=lwd)
+        segments(x$coordinates[tplansmall$from,1], x$coordinates[tplansmall$from,2],
+          y$coordinates[tplansmall$to,1], y$coordinates[tplansmall$to,2], col=grey(0.8), lwd=lwd, lty=2)
+      } else {
+      	segments(x$coordinates[tplan$from,1], x$coordinates[tplan$from,2], y$coordinates[tplan$to,1],
+      	  y$coordinates[tplan$to,2], col=acol, lwd=lwd)
+      }
+  	  if (pmass) {
+  	    massmean <- mean(c(x$mass,y$mass))
+  	    # First pp:
+  	    cexfac <- sqrt(x$mass/massmean)
+  	    toosmall <- (cexfac < 0.25)
+  	    toolarge <- (cexfac > 5)
+  	    justright <- !(toosmall | toolarge)	
+  	    cexfac <- cexfac[justright]  
+  	    # plot(x$coordinates, type="n", xlab="", ylab="", asp=1, ...)	
+  	    points(x$coordinates[toolarge,,drop=FALSE], col=cols[1], pch=16, cex=5*cex) 
+  	    points(x$coordinates[toolarge,,drop=FALSE], col=grey(1), pch=10, cex=5*cex, lwd=2)
+  	    # black contours vor better visibility if points overlapp:
+  	    # points(x$coordinates[toolarge,], col=1, pch=1, cex=0.92*5*cex)
+  	    points(x$coordinates[justright,,drop=FALSE], col=cols[1], pch=16, cex=cexfac*cex)
+  	    # points(x$coordinates[justright,], col=1, pch=1, cex=0.92*cexfac*cex)
+  	    points(x$coordinates[toosmall,,drop=FALSE], col=cols[1], pch="+", cex=0.4*cex)  	  
+  	    # Second pp:  
+  	    cexfac <- sqrt(y$mass/massmean)
+  	    toosmall <- (cexfac < 0.25)
+  	    toolarge <- (cexfac > 5)
+  	    justright <- !(toosmall | toolarge)	
+  	    cexfac <- cexfac[justright]  
+  	    # plot(y$coordinates, type="n", xlab="", ylab="", asp=1, ...)	
+  	    points(y$coordinates[toolarge,,drop=FALSE], col=cols[2], pch=16, cex=5*cex) 
+  	    points(y$coordinates[toolarge,,drop=FALSE], col=grey(1), pch=10, cex=5*cex, lwd=2)
+  	    # black contours vor better visibility if points overlapp:
+  	    # points(x$coordinates[toolarge,], col=1, pch=1, cex=0.92*5*cex)
+  	    points(y$coordinates[justright,,drop=FALSE], col=cols[2], pch=16, cex=cexfac*cex)
+  	    # points(y$coordinates[justright,], col=1, pch=1, cex=0.92*cexfac*cex)
+  	    points(y$coordinates[toosmall,,drop=FALSE], col=cols[2], pch="+", cex=0.4*cex)  	  
+      } else {
+        points(y$coordinates, col=cols[1], pch=16, cex=cex)
+        points(y$coordinates, col=cols[2], pch=16, cex=cex)
+      }
+      invisible()
+    }
+  }
+  par(oldpars)
+}
+
+
+print.wpp <- function(x, ...) {
+  stopifnot(class(x) == "wpp")
+  cat("Pattern of ",x$N," points in ",x$dimension, " dimensions with total mass ", x$totmass,".\n", sep="")
+  cat("Minimal coordinates:", apply(x$coordinates,2,min), "\n")
+  cat("Maximal coordinates:", apply(x$coordinates,2,max), "\n")
+  invisible(x)
+}
+
+
+summary.wpp <- function(object, ...) {
+  print.wpp(object)
+}
+
+
+# ---------------
+# pgrid and wpp
+# ---------------
+# 
+# plot semidiscrete transport maps
+# 
+plot_pgrid_wpp <- function(x,y,tplan,pmass=TRUE,cex=0.8,length=0.1,acol="#996699",lwd=1.5,rot=TRUE,...) {
+  # korrekterweise müsste bei rot=FALSE wpp gedreht werden
+  stopifnot(class(x) == "pgrid" && class(y) == "wpp")
+  stopifnot(class(tplan) == "power_diagram")
+  tplansites <- as.matrix(tplan$sites[,1:2])
+  if (!isTRUE(all.equal(y$coordinates[order(y$coordinates[,1]),],tplansites[order(tplansites[,1]),],check.attributes = FALSE))) {
+  	stop("y and target sites of transport tesselation do not match")
+  }
+  a <- x
+  if (a$dimension != 2) stop("plotting of transport from pgrid to wpp is currently only supported in 2-d")
+  xi <- a$generator[[1]]
+  eta <- a$generator[[2]]  
+  # b <- y
+  # N <- b$N
+  # if (b$dimension != 2) stop("plotting of transport from pgrid to wpp is currently only supported in 2-d")
+  image2(xi, eta, a$mass, rot=rot, col=grey(0:200/200), asp=1, xlab="", ylab="")
+  plot(tplan, weights=FALSE, add=TRUE, col=4, lwd=lwd)
+
+  if (pmass) {
+  	  massmean <- mean(y$mass)
+  	  cexfac <- sqrt(y$mass/massmean)
+  	  toosmall <- (cexfac < 0.25)
+  	  toolarge <- (cexfac > 5)
+  	  justright <- !(toosmall | toolarge)	
+  	  cexfac <- cexfac[justright]  
+  	  # drop im folgenden wichtig, sonst werden bei nur einer Zeile Punkte (c_11, 1) und (c_12, 2) geplottet 
+  	  points(y$coordinates[toolarge,,drop=FALSE], col="#CC0000", pch=16, cex=5*cex) 
+  	  points(y$coordinates[toolarge,,drop=FALSE], col=grey(1), pch=10, cex=5*cex, lwd=2)
+  	  # black contours vor better visibility if points overlapp:
+  	  # points(x$coordinates[toolarge,], col=1, pch=1, cex=0.92*5*cex)
+  	  points(y$coordinates[justright,,drop=FALSE], col="#CC0000", pch=16, cex=cexfac*cex)
+  	  # points(x$coordinates[justright,], col=1, pch=1, cex=0.92*cexfac*cex)
+  	  points(y$coordinates[toosmall,,drop=FALSE], col="#CC0000", pch="+", cex=0.4*cex)  	  
+  }
+  
+  cells <- tplan$cells[!sapply(tplan$cells,function(cc){all(is.na(cc))})]  # remove na cells
+  # centroid formula from https://en.wikipedia.org/wiki/Centroid#Centroid_of_polygon
+  # area <- 0.5 * sum(x[-n]*y[-1]-x[-1]*y[-n])
+  # 1-d: centroidx <- sum((x[-n]+x[-1])*(x[-n]*y[-1]-x[-1]*y[-n]))/(6*area)
+  # 1-d: centroidy <- sum((y[-n]+y[-1])*(x[-n]*y[-1]-x[-1]*y[-n]))/(6*area)
+  centroid <- function(xx,yy) {
+  	xx <- c(xx,xx[1])
+  	yy <- c(yy,yy[1])
+  	n <- length(xx)
+  	area <- 0.5 * sum(xx[-n]*yy[-1]-xx[-1]*yy[-n])
+  	cx <- sum((xx[-n]+xx[-1])*(xx[-n]*yy[-1]-xx[-1]*yy[-n]))/(6*area)
+  	cy <- sum((yy[-n]+yy[-1])*(xx[-n]*yy[-1]-xx[-1]*yy[-n]))/(6*area)
+  	return(c(cx,cy))
+  }
+  centroids <- sapply(cells,function(cc) {centroid(cc[,1],cc[,2])})  # compute centroids (gives 2 x {no. of cells} matrix)
+  arrows(centroids[1,],centroids[2,],tplan$sites[,1],tplan$sites[,2],lwd=lwd*1,col=acol,angle=20,length=length)
+  invisible()
+}
 
 
 
@@ -299,6 +555,13 @@ all.equal.pp <- function(target, current, ...) {
   NextMethod("all.equal")
 }
 
+all.equal.wpp <- function(target, current, ...) {
+  class(target) <- "list"
+  class(current) <- "list"
+  NextMethod("all.equal")
+}
+
+
 
 # the following is very minimalistic
 # --> include inner consistency tests of the two objects in later versions
@@ -308,12 +571,18 @@ compatible <- function(target, current, ...) {
 }
 
 compatible.pgrid <- function(target, current, ...) {
-  return(all(target$n == current$n) && all.equal(target$generator, current$generator))
+  return(all(target$n == current$n) && isTRUE(all.equal(target$generator, current$generator)))
 }
 
 compatible.pp <- function(target, current, ...) {
   return(target$N == current$N && target$dimension == current$dimension)
 }
+
+compatible.wpp <- function(target, current, ...) {
+  return(target$dimension == current$dimension && isTRUE(all.equal(target$totmass, current$totmass)))
+}
+
+
 
 # transforms integer measure-vectors to integer measure-vectors of fixed total mass
 # N is the target sum of the measure, afaics it's not per se a problem to go beyond

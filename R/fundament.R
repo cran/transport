@@ -1,26 +1,27 @@
 wasserstein <- function(a, b, p=1, tplan=NULL, prob=TRUE, ...) {
   stopifnot(compatible(a,b))
-  if (a$dimension < 2) stop("pixel grids of dimension >= 2 required")
+  if (a$dimension < 2) stop("dimension >= 2 required")
   
   if (is.null(tplan)) {
   	tplan <- transport(a,b,p=p,...)
   }
   
   K <- dim(tplan)[1]
+  if (K == 0) { return(0) }  # tplan = identity
 
   # computes (sum(m * x^pp))^(1/pp)
   wpsum <- function(x, m=rep(1,length(x)), pp) {
+    mmax <- max(m)
+    xmax <- max(abs(x))
+    if (mmax == 0 || xmax == 0) {
+    	  return(0)
+    }
   	if (pp == 1) {
-      mmax <- max(m)
-      xmax <- max(abs(x))
-      return(ifelse(mmax == 0, 0, mmax * xmax * sum((m/mmax)*(x/xmax))))
+      return(mmax * xmax * sum((m/mmax)*(x/xmax)))
   	} else if (length(unique(m)) == 1 && unique(m) == 1) {
-  	  xmax <- max(abs(x))
-  	  return(ifelse(xmax == 0, 0, xmax * sum((x/xmax)^pp)^(1/pp)))
+  	  return(xmax * sum((x/xmax)^pp)^(1/pp))
   	} else {
-      mmax <- max(m)
-      xmax <- max(abs(x))
-      return(ifelse(mmax == 0 || xmax == 0, 0, (mmax)^(1/pp) * xmax * sum((m/mmax)*(x/xmax)^pp)^(1/pp)))
+      return((mmax)^(1/pp) * xmax * sum((m/mmax)*(x/xmax)^pp)^(1/pp))
     }
   }
   
@@ -31,8 +32,11 @@ wasserstein <- function(a, b, p=1, tplan=NULL, prob=TRUE, ...) {
   } else if (class(a) == "pp" && class(b) == "pp") {
   	orig <- a$coordinates[tplan$from,]
     dest <- b$coordinates[tplan$to,]
+  } else if (class(a) == "wpp" && class(b) == "wpp") {
+  	orig <- a$coordinates[tplan$from,]
+    dest <- b$coordinates[tplan$to,]    
   } else {
-  	stop("a and b must be either both of class 'pgrid' or both of class 'pp'")
+  	stop("a and b must be both of the same class among 'pgrid', 'pp', 'wpp'")
   }
   
   dd <- apply(orig-dest,1,wpsum,pp=2)
@@ -53,7 +57,7 @@ wasserstein <- function(a, b, p=1, tplan=NULL, prob=TRUE, ...) {
 
 
 transport <- function(a, b, ...) {
-  stopifnot(class(a) == class(b))	
+  stopifnot(class(a) == class(b) || (class(a) == "pgrid" && class(b) == "wpp"))	
   UseMethod("transport")
 }
 
@@ -65,15 +69,17 @@ trcontrol <- function(method = c("shortsimplex", "revsimplex", "primaldual", "ah
   method <- match.arg(method)
   start <- match.arg(start)
   if (is.null(M) && !is.null(a)) {
-  	M <- ifelse(class(a) %in% c("pgrid","pp"), a$N, length(a))
+  	M <- ifelse(class(a) %in% c("pgrid","pp","wpp"), a$N, length(a))
+  	# length(a) important if called from transport.default
   }
   if (is.null(N) && !is.null(b)) {
-  	N <- ifelse(class(b) %in% c("pgrid","pp"), b$N, length(b))
+  	N <- ifelse(class(b) %in% c("pgrid","pp","wpp"), b$N, length(b))
+  	# length(b) important if called from transport.default
   }
   if (is.null(M) && !is.null(N)) {M <- N}
   if (is.null(N) && !is.null(M)) {N <- M}
   if (is.null(N) && method %in% c("shortsimplex","auction")) {
-  	stop("At least M or N must be specified for method ", method)
+    stop("At least M or N must be specified for method ", method)
   }
     
   if (method == "aha") {
@@ -225,7 +231,6 @@ trcontrol <- function(method = c("shortsimplex", "revsimplex", "primaldual", "ah
   class(res) <- "trc"
 
   return(res)
-  
 }
 
 
@@ -235,7 +240,13 @@ transport.pgrid <- function(a, b, p = NULL, method = c("revsimplex", "shortsimpl
   # Anderenfalls wird nur die feinste Loesung (ohne Problem) zurueckgegeben
 
   # Check inputs
-  # ======================================================================                             	
+  # ======================================================================   
+  if (class(a) == "pgrid" && class(b) == "wpp") {
+  	if (!missing(method) && method != "aha") {
+  	  warning('For semi-discrete optimal transport only method "aha" is implemented. Specified method parameter is ignored.')
+  	}
+  	return(semidiscrete(a=a,b=b,p=p,method="aha",control=control))
+  }                          	
   stopifnot(class(a) == "pgrid" && class(b) == "pgrid")
   stopifnot(compatible(a,b))
   if (a$dimension < 2) stop("pixel grids of dimension >= 2 required")
@@ -261,7 +272,7 @@ transport.pgrid <- function(a, b, p = NULL, method = c("revsimplex", "shortsimpl
   	control$method <- method
   	control$a <- a
   	control$b <- b
-  	control = do.call(trcontrol, control)
+  	control <- do.call(trcontrol, control)
   }
   
   start <- control$start
@@ -271,6 +282,9 @@ transport.pgrid <- function(a, b, p = NULL, method = c("revsimplex", "shortsimpl
   is.natural <-
     function(x, tol = .Machine$double.eps^0.5)  all((abs(x - round(x)) < tol) & x > 0.5)
   # aus der Hilfe zu is.integer, checks for a vector whether all entries are approximately natural numbers
+  is.naturalzero <-
+    function(x, tol = .Machine$double.eps^0.5)  all((abs(x - round(x)) < tol) & x > -0.5)
+  # same including 0
   if (nscales != 1 && (length(unique(ngrid)) != 1 || length(ngrid) != 2)) {
   	stop("multiscale approach is currently only implemented for quadratic grids of dimension 2")
   }    
@@ -285,7 +299,6 @@ transport.pgrid <- function(a, b, p = NULL, method = c("revsimplex", "shortsimpl
   gg <- expand.grid(a$generator)
   dd <- as.matrix(dist(gg))^p
   
-# we exclude aha, because currently only grid approach is implemented
   if (method != "aha") {
   	# if costs are based on metric, 
   	# moving mass that is needed at a site never pays off
@@ -308,6 +321,11 @@ transport.pgrid <- function(a, b, p = NULL, method = c("revsimplex", "shortsimpl
     }
     m <- length(apos)
     n <- length(bpos)
+    # The following catches the case that after the reduction procedure nothing is left, i.e. the two measures were equal
+    if (m==0) {
+      res <- data.frame(from = integer(0), to = integer(0), mass = double(0))
+      return(res)    	
+    }
     asum <- sum(apos)
     bsum <- sum(bpos)
     if (!isTRUE(all.equal(asum,bsum))) {
@@ -317,7 +335,7 @@ transport.pgrid <- function(a, b, p = NULL, method = c("revsimplex", "shortsimpl
   	  asum <- bsum <- 1
     }
     fudgeN <- fudgesum <- 1 
-    if (!is.natural(apos) || !is.natural(bpos)) {
+    if (!is.naturalzero(apos) || !is.naturalzero(bpos)) {
   	  fudgeN <- 1e9
   	  fudgesum <- asum
   	  apos <- round(apos/asum * fudgeN)
@@ -336,10 +354,10 @@ transport.pgrid <- function(a, b, p = NULL, method = c("revsimplex", "shortsimpl
     #cat(as.integer(ddpos), as.integer(apos), as.integer(bpos), as.integer(m), as.integer(n),
              # flowmatrix = integer(m*n), sep="\n")
     #stop("primaldual soon")
-  	ti <- proc.time()
+  	# ti <- proc.time()
     res1 <- .C("primaldual", as.integer(dd), as.integer(apos), as.integer(bpos), as.integer(m), as.integer(n),
               flowmatrix = integer(m*n), DUP=TRUE, PACKAGE="transport")
-    print(proc.time()-ti)
+    # print(proc.time()-ti)
     temp <- list(assignment=res1$flowmatrix, basis=as.numeric(res1$flowmatrix > 0))
      # make pretty output
     nbasis <- sum(temp$basis)
@@ -357,9 +375,9 @@ transport.pgrid <- function(a, b, p = NULL, method = c("revsimplex", "shortsimpl
     #stop("aha soon")
     # braucht noch Verfeinerung (wir moechten idealerweise auch nur apos, bpos verwenden, was direkt nicht geht;
     # die Verwendung von ared, bred verlangsamt extrem (bei 32x32 ca. 5 sek versus 12 sek), was ok ist, denke ich)
-    ti <- proc.time()
+    # ti <- proc.time()
   	res <- aha(a$mass,b$mass,nscales=1,scmult=2,maxit=control$para$maxit,factr=control$para$factr,wasser=FALSE,wasser.spt=NA)
-  	print(proc.time()-ti)
+  	# print(proc.time()-ti)
   	return(res)
   	# Bring in right form
   }
@@ -404,11 +422,11 @@ transport.pgrid <- function(a, b, p = NULL, method = c("revsimplex", "shortsimpl
         initbasis <- temp$basis	
         startgiven <- 1
       }
-    ti <- proc.time()
+    # ti <- proc.time()
     res <- .C("revsimplex", as.integer(m), as.integer(n), as.integer(apos), as.integer(bpos),
 	          as.double(dd), assignment = as.integer(initassig), basis = as.integer(initbasis), startgiven = as.integer(startgiven),
 	          DUP=TRUE, PACKAGE="transport")
-	print(proc.time()-ti)           
+	# print(proc.time()-ti)           
 	temp <- list(assignment=res$assignment, basis=res$basis)
     } else { 
 
@@ -491,11 +509,11 @@ transport.pgrid <- function(a, b, p = NULL, method = c("revsimplex", "shortsimpl
           startgiven <- 1      
         }  
         
-        ti <- proc.time()
+        # ti <- proc.time()
         res <- .C("revsimplex", as.integer(mcoarse), as.integer(ncoarse), as.integer(apos), as.integer(bpos),
 	              as.double(dd), assignment = as.integer(initassig), basis = as.integer(initbasis), startgiven = as.integer(startgiven),
 	              DUP=TRUE, PACKAGE="transport")
-	    print(proc.time()-ti)           
+	    # print(proc.time()-ti)           
 	    temp <- list(assignment=res$assignment, basis=res$basis)
         if (returncoarse) {
       	  nbasis <- sum(temp$basis)
@@ -552,13 +570,13 @@ transport.pgrid <- function(a, b, p = NULL, method = c("revsimplex", "shortsimpl
       #   as.integer(apos), as.integer(bpos), as.double(ddpos), assignment = length(initassig), 
       #   basis = length(initbasis), sep="\n")
          # stop("test")
-      ti <- proc.time()
+      # ti <- proc.time()
       res <- .C("shortsimplex",
           as.integer(control$para$slength), as.integer(control$para$kfound), as.double(control$para$psearched),
           as.integer(m), as.integer(n), 
           as.integer(apos), as.integer(bpos), as.double(dd), assignment = as.integer(initassig), 
           basis = as.integer(initbasis), DUP = TRUE, PACKAGE="transport")
-	  print(proc.time()-ti)           
+	  # print(proc.time()-ti)           
 	  temp <- list(assignment=res$assignment, basis=res$basis)
     }    
     nbasis <- sum(temp$basis)
@@ -586,14 +604,14 @@ transport.pp <- function(a, b, p = 1, method = c("auction", "auctionbf", "shorts
   stopifnot(compatible(a,b))
   if (a$dimension < 2) stop("dimension must be >=2")
   N <- a$N
-  
+    
   method <- match.arg(method)
 
   if (class(control) != "trc") {
   	control$method <- method
   	control$a <- a
   	control$b <- b
-  	control = do.call(trcontrol, control)
+  	control <- do.call(trcontrol, control)
   }
 
   if (control$start != "auto") {
@@ -607,10 +625,16 @@ transport.pp <- function(a, b, p = 1, method = c("auction", "auctionbf", "shorts
   
   dd <- as.matrix(dist(rbind(x,y)))[1:N,(N+1):(2*N)]
   dd <- dd^p
+  maxdd <- max(dd)
+  # catches a very special case:
+  if (maxdd == 0) {
+    res <- data.frame(from = integer(0), to = integer(0), mass = double(0))
+  	return(res)
+  }
     
   if (method != "shortsimplex" && method != "revsimplex") {
     precision=9
-    dd <- dd/max(dd)
+    dd <- dd/maxdd
     dd <- round(dd*(10^precision))
   }
     # wir sollten mit unseren Berechnungen .Machine$integer.max nicht ueberschreiten, gemaess R-Hilfe ist dies 
@@ -619,7 +643,7 @@ transport.pp <- function(a, b, p = 1, method = c("auction", "auctionbf", "shorts
     # Beachte: wenn wir Distanz zurueckgeben wollen, muessen wir natuerlich mit urspruenglichem dd^p rechnen
 
   if (method == "auction" || method == "auctionbf") {  
-    dupper <- max(dd)/10
+    dupper <- maxdd/10
     lasteps <- control$para$lasteps
     epsvec <- lasteps
     # Bertsekas von dupper/2 bis 1/(n+1) durch fortgesetzt konstante Zahl teilen
@@ -627,40 +651,44 @@ transport.pp <- function(a, b, p = 1, method = c("auction", "auctionbf", "shorts
       lasteps <- lasteps*control$para$epsfac
       epsvec <- c(epsvec,lasteps)
     }
-    epsvec <- rev(epsvec)[-1]
+    epsvec <- rev(epsvec)
     neps <- length(epsvec)
     stopifnot(neps >= 1)
+    if (neps > 1) {
+    	  epsvec <- epsvec[-1]
+    	  neps <- neps-1
+    }
   } 
 
   if (method == "auction") {
-  	desirem <- max(dd)-dd
-  	ti <- proc.time()
+  	desirem <- maxdd-dd
+  	# ti <- proc.time()
     temp <- .C("auction", as.integer(desirem), as.integer(N), pers_to_obj = as.integer(rep(-1,N)),
                price = as.double(rep(0,N)), as.integer(neps), as.double(epsvec), DUP=TRUE, PACKAGE="transport")
-    print(proc.time()-ti)           
+    # print(proc.time()-ti)           
     # make pretty output
     res <- data.frame(from = 1:N, to = temp$pers_to_obj+1, mass = rep(1,N))
     return(res)
   }
 
   if (method == "auctionbf") {
-  	desirem <- max(dd)-dd
-  	ti <- proc.time()
+  	desirem <- maxdd-dd
+  	# ti <- proc.time()
     temp <- .C("auctionbf", as.integer(desirem), as.integer(N), pers_to_obj = as.integer(rep(-1,N)),
                price = as.double(rep(0,N)), profit = as.double(rep(0,N)), as.integer(neps), as.double(epsvec),
                DUP=TRUE, PACKAGE="transport")
-    print(proc.time()-ti)           
+    # print(proc.time()-ti)           
     # make pretty output
     res <- data.frame(from = 1:N, to = temp$pers_to_obj+1, mass = rep(1,N))
     return(res)
   }
 
   if (method == "primaldual") {
-  	ti <- proc.time()
+  	# ti <- proc.time()
   	temp <- .C("primaldual", as.integer(dd), as.integer(rep.int(1,N)), as.integer(rep.int(1,N)),
   	           as.integer(N), as.integer(N), flowmatrix = as.integer(integer(N^2)), 
   	           DUP=TRUE, PACKAGE="transport")
-  	print(proc.time()-ti) 
+  	# print(proc.time()-ti) 
   	# flowmatrix is the old term for assignment   
   	nassig <- sum(temp$flowmatrix)  # nassig sollte natuerlich gleich N sein, das ist nur zur Kontrolle
     res <- data.frame(from = rep(0,nassig), to = rep(0,nassig), mass = rep(1,nassig))
@@ -677,13 +705,13 @@ transport.pp <- function(a, b, p = 1, method = c("auction", "auctionbf", "shorts
       control$para$kfound <- N
       warning("Shortlist parameter 'slength' too large...  decreased to maximal value.")
     }
-    ti <- proc.time()
+    # ti <- proc.time()
     temp <- .C("shortsimplex",
                 as.integer(control$para$slength), as.integer(control$para$kfound), as.double(control$para$psearched),
                 as.integer(N), as.integer(N), as.integer(rep.int(1,N)), as.integer(rep.int(1,N)),
 	            as.double(dd), assignment = as.integer(initassig), basis = as.integer(initbasis),
 	            DUP=TRUE, PACKAGE="transport")
-	print(proc.time()-ti)           
+	# print(proc.time()-ti)           
     nassig <- sum(temp$assignment)  # nassig sollte natuerlich gleich N sein, das ist nur zur Kontrolle
     res <- data.frame(from = rep(0,nassig), to = rep(0,nassig), mass = rep(1,nassig))
     ind <- which(matrix(as.logical(temp$assignment),N,N), arr.ind=TRUE) 
@@ -696,11 +724,11 @@ transport.pp <- function(a, b, p = 1, method = c("auction", "auctionbf", "shorts
   	# this is nwcorner, at least modrowmin should be feasible and faster
     initassig <- initbasis <- diag(1,N,N)
     initbasis[cbind(2:N,1:(N-1))] <- 1 
-    ti <- proc.time()
+    # ti <- proc.time()
     temp <- .C("revsimplex", as.integer(N), as.integer(N), as.integer(rep.int(1,N)), as.integer(rep.int(1,N)),
 	            as.double(dd), assignment = as.integer(initassig), basis = as.integer(initbasis),
 	            DUP=TRUE, PACKAGE="transport")
-	print(proc.time()-ti)           
+	# print(proc.time()-ti)           
     nassig <- sum(temp$assignment)  # nassig sollte natuerlich gleich N sein, das ist nur zur Kontrolle
     res <- data.frame(from = rep(0,nassig), to = rep(0,nassig), mass = rep(1,nassig))
     ind <- which(matrix(as.logical(temp$assignment),N,N), arr.ind=TRUE) 
@@ -710,6 +738,240 @@ transport.pp <- function(a, b, p = 1, method = c("auction", "auctionbf", "shorts
   }
   
 }
+
+
+# new transport.wpp
+transport.wpp <- function(a, b, p = 1, method = c("revsimplex", "shortsimplex", "primaldual"),
+                           control = list(), ...) {
+  # Check inputs
+  # ======================================================================
+  if (class(a) == "pgrid" && class(b) == "wpp") {
+  	warning('First argument of class "pgrid". Computing semi-discrete transport...')
+  	return(semidiscrete(a=a,b=b,p=p,method=method,control=control))
+  }                          	 
+  stopifnot((class(a) == "wpp") && (class(b) == "wpp"))
+  stopifnot(compatible.wpp(a,b))  # also tests that masses are equal
+  
+  if (a$dimension < 2) stop("dimension must be >=2")
+  m <- a$N
+  n <- b$N
+  method <- match.arg(method)
+
+  if (class(control) != "trc") {
+  	control$method <- method
+  	control$a <- a
+  	control$b <- b
+  	control <- do.call(trcontrol, control)
+  }
+
+#  if (control$start != "auto") {
+#  	warning("control$start = ", sQuote(control), " is ignored for function transport.wpp")
+#  }
+
+  x <- a$coordinates
+  y <- b$coordinates
+  
+  dd <- as.matrix(dist(rbind(x,y)))[1:m,(m+1):(m+n)]
+  dd <- dd^p
+  maxdd <- max(dd)
+  # catches a very special case:
+  if (maxdd == 0) {
+    res <- data.frame(from = integer(0), to = integer(0), mass = double(0))
+  	return(res)
+  }
+    
+  # The following catches the case that after the reduction procedure nothing is left, i.e. the two measures were equal
+  if (m==0) {
+    res <- data.frame(from = integer(0), to = integer(0), mass = double(0))
+    return(res)    	
+  }
+  apos <- a$mass
+  bpos <- b$mass
+  asum <- a$totmass
+  bsum <- b$totmass
+  if (!isTRUE(all.equal(asum,bsum))) {
+    warning("total mass in a and b differs. Normalizing a and b to probability measures.")
+    apos <- apos/asum
+    bpos <- bpos/bsum
+    asum <- bsum <- 1
+  }
+  is.natural <-
+  function(x, tol = .Machine$double.eps^0.5)  all((abs(x - round(x)) < tol) & x > 0.5)
+  # aus der Hilfe zu is.integer, checks for a vector whether all entries are approximately natural numbers
+  stopifnot(all(a$mass>0,b$mass>0))    # just to be absolutely sure
+                                       # could only be the case if somebody messed with what (s)he constructed by wpp
+
+  fudgeN <- fudgesum <- 1 
+  if (!is.natural(apos) || !is.natural(bpos) || asum != bsum) {
+    fudgeN <- 1e9
+    fudgesum <- asum
+  	apos <- round(apos/asum * fudgeN)  
+  	bpos <- round(bpos/bsum * fudgeN)  
+  	apos <- fudge(apos,fudgeN)
+  	bpos <- fudge(bpos,fudgeN)
+  } 
+
+  if (method == "primaldual") {
+  	precision=9
+    dd <- dd/maxdd
+    dd <- dd*(10^precision)
+    # wir sollten mit unseren Berechnungen .Machine$integer.max nicht ueberschreiten, gemaess R-Hilfe ist dies 
+    # *auf jedem System* 2147483647 (4 Bytes)
+    #
+    # Beachte: wenn wir Distanz zurueckgeben wollen, muessen wir natuerlich mit urspruenglichem dd^p rechnen
+
+  	# ti <- proc.time()
+    res1 <- .C("primaldual", as.integer(dd), as.integer(apos), as.integer(bpos), as.integer(m), as.integer(n),
+              flowmatrix = integer(m*n), DUP=TRUE, PACKAGE="transport")
+  	# print(proc.time()-ti) 
+    temp <- list(assignment=res1$flowmatrix, basis=as.numeric(res1$flowmatrix > 0))
+     # make pretty output
+    nbasis <- sum(temp$basis)
+    res <- data.frame(from = rep(0,nbasis), to = rep(0,nbasis), mass = rep(0,nbasis))
+    ind <- which(matrix(as.logical(temp$basis),m,n), arr.ind=TRUE) 
+    res$from <- ind[,1]
+    res$to <- ind[,2]
+    res$mass <- temp$assignment[(ind[,2]-1)*m + ind[,1]]
+    res$mass <- res$mass * fudgesum / fudgeN
+    return(res)
+  }
+
+  if (method == "shortsimplex") {
+    initassig <- rep(0,m*n)
+    initbasis <- rep(0,m*n)
+    if (control$para$slength > n) {
+      control$para$slength <- n
+      control$para$kfound <- n
+      warning("Shortlist parameter 'slength' too large...  decreased to maximal value.")
+    }
+    #
+    #Starting solution not needed
+    #   cat(as.integer(control$para$slength), as.integer(control$para$kfound), as.double(control$para$psearched),
+    #   as.integer(m), as.integer(n), 
+    #   as.integer(apos), as.integer(bpos), as.double(ddpos), assignment = length(initassig), 
+    #   basis = length(initbasis), sep="\n")
+    # stop("test")
+    # ti <- proc.time()
+    res <- .C("shortsimplex",
+        as.integer(control$para$slength), as.integer(control$para$kfound), as.double(control$para$psearched),
+        as.integer(m), as.integer(n), 
+        as.integer(apos), as.integer(bpos), as.double(dd), assignment = as.integer(initassig), 
+        basis = as.integer(initbasis), DUP = TRUE, PACKAGE="transport")
+    # print(proc.time()-ti)           
+    temp <- list(assignment=res$assignment, basis=res$basis)  
+    nbasis <- sum(temp$basis)
+    res <- data.frame(from = rep(0,nbasis), to = rep(0,nbasis), mass = rep(0,nbasis))
+    ind <- which(matrix(as.logical(temp$basis),m,n), arr.ind=TRUE) 
+    res$from <- ind[,1]
+    res$to <- ind[,2]
+    res$mass <- temp$assignment[(ind[,2]-1)*m + ind[,1]]
+    res$mass <- res$mass * fudgesum / fudgeN
+    return(res)    
+  }
+
+  if (method == "revsimplex") {
+    # Compute starting solution
+    start <- control$start
+    if (start == "auto") {
+      start <- "modrowmin"
+    }
+  	if (start == "russell") {
+      temp <- russell(apos,bpos,dd)
+      initassig <- temp$assignment
+      initbasis <- temp$basis
+      startgiven <- 1
+    } else if (start == "nwcorner") {
+      temp <- northwestcorner(apos,bpos)
+      initassig <- temp$assignment
+      initbasis <- temp$basis	
+      startgiven <- 1
+    } else if (start == "modrowmin"){   # modrowmin in C-Code
+      initassig <- rep(0L,m*n)
+      initbasis <- rep(0L,m*n)
+      startgiven <- 0
+    } 
+    # ti <- proc.time()
+    res <- .C("revsimplex", as.integer(m), as.integer(n), as.integer(apos), as.integer(bpos),
+	          as.double(dd), assignment = as.integer(initassig), basis = as.integer(initbasis), startgiven = as.integer(startgiven),
+	          DUP=TRUE, PACKAGE="transport")
+    # print(proc.time()-ti)           
+    temp <- list(assignment=res$assignment, basis=res$basis)
+    nbasis <- sum(temp$basis)
+    res <- data.frame(from = rep(0,nbasis), to = rep(0,nbasis), mass = rep(0,nbasis))
+    ind <- which(matrix(as.logical(temp$basis),m,n), arr.ind=TRUE) 
+    res$from <- ind[,1]
+    res$to <- ind[,2]
+    res$mass <- temp$assignment[(ind[,2]-1)*m + ind[,1]]
+    res$mass <- res$mass * fudgesum / fudgeN
+    return(res)
+  }  
+}
+
+
+semidiscrete <- function(a, b, p = 2, method = c("aha"), control = list(), ...) {
+  stopifnot(class(a) == "pgrid" && class(b) == "wpp")
+  stopifnot(a$dimension == b$dimension)
+  stopifnot(isTRUE(all.equal(a$totcontmass,b$totmass)))
+  if (a$dimension < 2) stop("pixel grids of dimension >= 2 required")
+#  if (a$dimension > 2) warning("transport.pgrid for pixel grids of dimension > 2 is still somewhat experimental")
+  if (!(a$structure %in% c("square", "rectangular")))
+    stop("transport.pgrid is currently only implemented for rectangular pixel grids")
+  n <- a$n[1]  # y
+  m <- a$n[2]  # x
+  Ngrid <- a$N
+  
+  if (missing(p)) {
+  	warning("Semi-discrete optimal transport... Assuming p=2...")
+  	p <- 2
+  }
+  if (p != 2 || a$dimension > 2) {
+  	stop("Semi-discrete optimal transport is currently only implemented in two dimensions and for p=2.")
+  }
+  if (!isTRUE(all.equal(a$gridtriple[1,3],a$gridtriple[2,3]))) {
+  	stop("Semi-discrete optimal transport is currently only implemented for square pixels in pgrid.")
+  }
+    
+  method <- match.arg(method)
+  
+  if (method != "aha") {
+  	warning('For semi-discrete optimal transport only method "aha" is implemented. Specified method parameter is ignored.')
+  	method <- "aha"
+  }  
+
+  if (class(control) != "trc") {
+  	control$method <- method
+  	control$a <- a
+  	control$b <- b
+  	control <- do.call(trcontrol, control)
+  }
+  
+  #start <- control$start
+  nscales <- control$nscales
+  scmult <- control$scmult
+  x <- b$coordinates[,1]
+  y <- b$coordinates[,2]
+  if (min(x) < a$boundary[1] || max(x) > a$boundary[2] || min(y) < a$boundary[3] || max(y) > a$boundary[4]) {
+  	warning("Not all points of wpp lie inside the boundary of pgrid.")
+  }
+  
+  # rigging the scale of b (aha interpretes a$mass on [0,m] x [0,n]) and
+  # orientation of a (it seems there is a problem in aha interpreting the orientation
+  # this is worked around in the original aha.c code, line 417, when interpreting the result
+  # as transport between pixel grids, but not when returning the weights)
+  magfac <- m/(a$boundary[2]-a$boundary[1])
+  stopifnot(isTRUE(all.equal(magfac,n/(a$boundary[4]-a$boundary[3]))))  # just checking
+  # rotcoclock <- function(m) t(m)[ncol(m):1,]
+  # it seems the rotclock is not needed after all
+  # Note that aha normalizes both arguments to probability measure
+  # The fact that a$mass is interpreted on pixels of side lenght one may lead to a decrease (or increase) of mass
+  # but is corrected within aha
+  res <- aha(a$mass, data.frame(x=magfac*x,y=magfac*y,mass=b$mass), nscales=nscales, scmult=scmult,
+    factr=control$para$factr, maxit=control$para$maxit, powerdiag=TRUE, wasser=FALSE, wasser.spt=NA)
+  # unrig: factors 1/magfac resp 1/magfac^2 (just changes scale from visual point of view pd stays the same)
+  pd <- power_diagram(res$xi/magfac,res$eta/magfac,res$w/magfac^2,res$rect/magfac)
+  return(pd)  # also contains the weight vector
+}
+
 
 
 # Achtung: laengerfristig unbedingt so aendern, dass auch eine Startloesung uebergeben werden kann!! 
@@ -729,7 +991,7 @@ transport.default <- function(a, b, costm, method=c("shortsimplex", "revsimplex"
   M <- length(a)
   N <- length(b)
   costm <- as.matrix(costm)
-  if (!all.equal(sum(a),sum(b))) {
+  if (!isTRUE(all.equal(sum(a),sum(b)))) {
   	warning("Sums of a and b differ substantially. sum(a)-sum(b) = ", sum(a)-sum(b), ". Scaling to probability vectors.")
   	a <- a/sum(a)
   	b <- b/sum(b)
@@ -767,6 +1029,11 @@ transport.default <- function(a, b, costm, method=c("shortsimplex", "revsimplex"
   dd <- costm[wha,whb]
   m <- length(apos)
   n <- length(bpos)
+  # catches a very special case:
+  if (m == 0) {
+  	res <- data.frame(from = integer(0), to = integer(0), mass = double(0))
+  	return(res)
+  }
   asum <- sum(apos)
   bsum <- sum(bpos)
   if (!isTRUE(all.equal(asum,bsum))) {
@@ -793,10 +1060,10 @@ transport.default <- function(a, b, costm, method=c("shortsimplex", "revsimplex"
     #cat(as.integer(ddpos), as.integer(apos), as.integer(bpos), as.integer(m), as.integer(n),
              # flowmatrix = integer(m*n), sep="\n")
     #stop("primaldual soon")
-  	ti <- proc.time()
+  	# ti <- proc.time()
     res1 <- .C("primaldual", as.integer(dd), as.integer(apos), as.integer(bpos), as.integer(m), as.integer(n),
               flowmatrix = integer(m*n), DUP=TRUE, PACKAGE="transport")
-    print(proc.time()-ti)
+    # print(proc.time()-ti)
     temp <- list(assignment=res1$flowmatrix, basis=as.numeric(res1$flowmatrix > 0))
      # make pretty output
     nbasis <- sum(temp$basis)
@@ -832,11 +1099,11 @@ transport.default <- function(a, b, costm, method=c("shortsimplex", "revsimplex"
 #	    as.double(dd), "hello", assignment = as.integer(initassig),
 #       basis = as.integer(initbasis), as.integer(startgiven), sep="\n")
 #       stop("revsimplex soon")
-    ti <- proc.time()
+    # ti <- proc.time()
     res <- .C("revsimplex", as.integer(m), as.integer(n), as.integer(apos), as.integer(bpos),
 	          as.double(dd), assignment = as.integer(initassig), basis = as.integer(initbasis), startgiven = as.integer(startgiven),
 	          DUP=TRUE, PACKAGE="transport")
-	print(proc.time()-ti)           
+	# print(proc.time()-ti)           
 	temp <- list(assignment=res$assignment, basis=res$basis)
 	
     nbasis <- sum(temp$basis)
@@ -864,13 +1131,13 @@ transport.default <- function(a, b, costm, method=c("shortsimplex", "revsimplex"
     #as.integer(m), as.integer(n), 
     #as.integer(apos), as.integer(bpos), as.double(ddpos), assignment = as.integer(initassig), basis = as.integer(initbasis), sep="\n")
     #stop("shortsimplex soon")
-    ti <- proc.time()
+    # ti <- proc.time()
     res <- .C("shortsimplex",
         as.integer(control$para$slength), as.integer(control$para$kfound), as.double(control$para$psearched),
         as.integer(m), as.integer(n), 
         as.integer(apos), as.integer(bpos), as.double(dd), assignment = as.integer(initassig), 
         basis = as.integer(initbasis), DUP = TRUE, PACKAGE="transport")
-	print(proc.time()-ti)           
+	# print(proc.time()-ti)           
 	temp <- list(assignment=res$assignment, basis=res$basis)
      
     nbasis <- sum(temp$basis)
@@ -938,9 +1205,9 @@ northwestcorner <- function(a,b) {
   }
   rownames(assignment) <- paste(a,"*",sep="")
   colnames(assignment) <- paste("*",b,sep="")
-  if (!all(as.logical(basis)==(assignment > 0))) {
-    warning("Starting solution is degenerate. Nothing to worry about!")
-  }
+#  if (!all(as.logical(basis)==(assignment > 0))) {
+#    warning("Starting solution is degenerate. Nothing to worry about!")
+#  }
   if (sum(basis) != m+n-1) {
     stop("Basis contains only ", sum(basis), " != m+n-1 = ", m+n-1, " vectors")
   }
@@ -996,9 +1263,9 @@ russell <- function(a,b,costm) {
     }
   }
 
-  if (!all(as.logical(basis)==(assignment > 0))) {
-    warning("Starting solution is degenerate. Nothing to worry about!")
-  }  
+#  if (!all(as.logical(basis)==(assignment > 0))) {
+#    warning("Starting solution is degenerate. Nothing to worry about!")
+#  }  
 
   if (sum(basis) < mm+nn-1) {
   	cat("Russell produced too few basis vectors. Is ", sum(basis), ", should be ", mm+nn-1,
@@ -1462,9 +1729,9 @@ scalestart <- function(aredf,bredf,genf,n1f,n2f,p=1,scmult=2) {
   }     # for i loop 
   rownames(assigf) <- paste(aredf,"*",sep="")
   colnames(assigf) <- paste("*",bredf,sep="")
-  if (!all(as.logical(basisf)==(assigf > 0))) {
-    warning("Starting solution is degenerate. Nothing to worry about!")  
-  }  
+#  if (!all(as.logical(basisf)==(assigf > 0))) {
+#    warning("Starting solution is degenerate. Nothing to worry about!")  
+#  }  
   if (sum(basisf) != 2*Nf-1) {
     stop("Basis contains only ", sum(basisf), " != 2*Nf-1 = ", 2*Nf-1, " vectors")
   }

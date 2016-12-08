@@ -6,19 +6,19 @@
 Optimal Transport in Various Forms
 }
 \description{
-Solve optimal transport problems in statistics. Compute Wasserstein metrics (a.k.a. Kantorovitch, Fortet--Mourier, Mallows, Earth Mover's, or minimal L_p metrics), return the corresponding transference plans, and display them graphically. Objects that can be compared include grey-scale images, point patterns, and mass vectors.
+Solve optimal transport problems. Compute Wasserstein metrics (a.k.a. Kantorovitch, Fortet--Mourier, Mallows, Earth Mover's, or minimal L_p metrics), return the corresponding transference plans, and display them graphically. Objects that can be compared include grey-scale images, (weighted) point patterns, and mass vectors.
 }
 \details{
 \tabular{ll}{
 Package: \tab transport\cr
 Type: \tab Package\cr
-Version: \tab 0.7-1\cr
-Date: \tab 2015-10-22\cr
+Version: \tab 0.8-0\cr
+Date: \tab 2016-10-14\cr
 License: \tab GPL (>=2) \cr
 LazyData: \tab yes\cr
 }
 
-The main end-user function is \code{\link{transport}}. It computes optimal transference plans between images (class \code{\link{pgrid}}), point patterns (class \code{\link{pp}}), or mass vectors, based on various algorithms. These transference plans can be \code{\link[=plot.pgrid]{plot}}ed. The function \code{\link{wasserstein}} allows for the numerical computation
+The main end-user function is \code{\link{transport}}. It computes optimal transference plans between images (class \code{\link{pgrid}}), point patterns (class \code{\link{pp}}), weighted point patterns (class \code{\link{wpp}}) and mass vectors, based on various algorithms. These transference plans can be \code{\link[=plot.pgrid]{plot}}ed. The function \code{\link{wasserstein}} allows for the numerical computation
 of \eqn{p}-th order Wasserstein distances.
 }
 \author{

@@ -1,17 +1,27 @@
 Package: transport
-Type: Package
+Version: 0.8-1
+Date: 2016-12-07
 Title: Optimal Transport in Various Forms
-Version: 0.7-3
-Date: 2016-02-24
-Author: Dominic Schuhmacher <dominic.schuhmacher@mathematik.uni-goettingen.de> with substantial contributions of code by Bjoern Baehre and Carsten Gottschlich
+Authors@R: c(person("Dominic", "Schuhmacher", email = "dominic.schuhmacher@mathematik.uni-goettingen.de", role = c("aut","cre")),
+             person("Björn", "Bähre", role = "aut", comment = "aha and power diagrams"),
+             person("Carsten", "Gottschlich", role = "aut", comment = "simplex and shortlist"),
+             person("Florian", "Heinemann", role = "aut", comment = "transport_track"),
+             person("Timo", "Wilm", role = "ctb", comment = "wpp"))
+Author: Dominic Schuhmacher [aut, cre],
+  Björn Bähre [aut] (aha and power diagrams),
+  Carsten Gottschlich [aut] (simplex und shortlist),
+  Florian Heinemann [aut] (transport_track),
+  Timo Wilm [ctb] (wpp)
 Maintainer: Dominic Schuhmacher <dominic.schuhmacher@mathematik.uni-goettingen.de>
 Depends: R (>= 3.0.0)
 Imports: grDevices, graphics, stats
-Description: Solve optimal transport problems in statistics. Compute Wasserstein metrics (a.k.a. Kantorovitch, Fortet--Mourier, Mallows, Earth Mover's, or minimal L_p metrics), return the corresponding transference plans, and display them graphically. Objects that can be compared include grey-scale images, point patterns, and mass vectors.
+Suggests: animation, ks
+Description: Solve optimal transport problems. Compute Wasserstein metrics (a.k.a. Kantorovitch, Fortet--Mourier, Mallows, Earth Mover's, or minimal L_p metrics), return the corresponding transference plans, and display them graphically. Objects that can be compared include grey-scale images, (weighted) point patterns, and mass vectors.
+LazyData: yes
+Encoding: UTF-8
 License: GPL (>= 2)
 URL: http://www.dominic.schuhmacher.name
-LazyData: yes
 NeedsCompilation: yes
-Packaged: 2016-02-24 20:43:02 UTC; schumi
+Packaged: 2016-12-07 17:33:39 UTC; schumi
 Repository: CRAN
-Date/Publication: 2016-02-25 00:28:54
+Date/Publication: 2016-12-08 02:27:41

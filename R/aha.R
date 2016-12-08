@@ -10,13 +10,10 @@
 # maxit/factr: control the quality of approximation, see 'optim'.
 # wasser: if true, compute the wasserstein distance instead of optimal transport.
 # wasser.spt: number of support points used to compute the discretisation of b.
-aha <- function(a,b,nscales=1,scmult=2,factr=1e+05,maxit=10000,wasser=FALSE,wasser.spt=NA,approx=FALSE,...) {
+aha <- function(a,b,nscales=1,scmult=2,factr=1e+05,maxit=10000,powerdiag=FALSE,
+  wasser=FALSE,wasser.spt=NA,approx=FALSE,...) {
     n <- dim(a)[1] # y
     m <- dim(a)[2] # x
-
-    #seed <- floor(runif(1,0,10000))
-    #print(seed)
-    #set.seed(seed)
 
     if (all(c("x","y","mass") %in% names(b))) {
         stopifnot(all(b$x>=0) && all(b$y>=0) && all(b$x<=m) && all(b$y<=n))
@@ -28,10 +25,11 @@ aha <- function(a,b,nscales=1,scmult=2,factr=1e+05,maxit=10000,wasser=FALSE,wass
         target_mass <- as.vector(b)
         x <- as.vector(mapply(function(k) rep(k,n),1:m))-0.5
         y <- rev(rep(1:n,m))-0.5
+        # DS 27/09/16 moved the next two lines into the "else":
+        # now there is no jitter if wpp's are passed
+        x <- x + runif(length(x),-1e-5,1e-5)
+        y <- y + runif(length(y),-1e-5,1e-5)
     }
-
-    x <- x + runif(length(x),-1e-5,1e-5)
-    y <- y + runif(length(y),-1e-5,1e-5)
 
     # permutate target measure points
     # for faster power diagram generation
@@ -120,19 +118,25 @@ aha <- function(a,b,nscales=1,scmult=2,factr=1e+05,maxit=10000,wasser=FALSE,wass
         return(data.frame(wasser.dist=res$res,error.bound=error))
     } else {
         w <- multiscale(length(x),x,y,target_mass,1)
-        #plot(power_diagram(x,y,w,rect=rect))
-
-        tmemsize <- .C("aha_compute_transport", as.integer(length(x)), as.double(x), as.double(y),
-                       as.double(w), as.double(as.vector(a)), res=integer(1),PACKAGE="transport")$res
-        res <- .C("aha_get_transport", as.integer(tmemsize), from=double(tmemsize), 
-                  to=double(tmemsize), mass=double(tmemsize),PACKAGE="transport")[2:4]
-        .C("aha_free",PACKAGE="transport")
-
-        tp <- data.frame(from=1+res$from,to=perm[1+res$to],mass=res$mass)
-        if (!("mass" %in% names(b))) {
-            tp <- tp[tp$from!=tp$to,]
+        
+        # DS 27/09/16: option to return the parameters for the optimal powerdiag included
+        if (powerdiag) {
+        	  # plot(power_diagram(x,y,w,rect=rect))
+        	  pd <- list(xi=x,eta=y,w=w,rect=c(0,m,0,n))
+        	  return(pd)
+        } else {
+          tmemsize <- .C("aha_compute_transport", as.integer(length(x)), as.double(x), as.double(y),
+                         as.double(w), as.double(as.vector(a)), res=integer(1),PACKAGE="transport")$res
+          res <- .C("aha_get_transport", as.integer(tmemsize), from=double(tmemsize), 
+                    to=double(tmemsize), mass=double(tmemsize),PACKAGE="transport")[2:4]
+          .C("aha_free",PACKAGE="transport")
+        
+          tp <- data.frame(from=1+res$from,to=perm[1+res$to],mass=res$mass)
+          if (!("mass" %in% names(b))) {
+              tp <- tp[tp$from!=tp$to,]
+          }
+          return(tp)
         }
-        return(tp)
     }
 }
 
@@ -202,7 +206,7 @@ power_diagram <- function (xi,eta,w,rect=NA) {
     return(pd)
 }
 
-plot.power_diagram <- function(x, weights=FALSE, ...) {
+plot.power_diagram <- function(x, weights=FALSE, add=FALSE, col=4, lwd=1, ...) {
     stopifnot(class(x) == "power_diagram")
     pd <- x
     segmentize <- function(pg) {
@@ -230,14 +234,16 @@ plot.power_diagram <- function(x, weights=FALSE, ...) {
 	temp <- lapply(pd$cells, segmentize)
     temp2 <- do.call(rbind, temp)
     rect <- pd$rect
-    plot(c(rect[1],rect[2]),c(rect[3],rect[4]),type="p",asp=1,axes=FALSE,xaxs="i",yaxs="i",xlab="",ylab="",pch="",...)
+    if (!add) {
+      plot(c(rect[1],rect[2]),c(rect[3],rect[4]),type="n",asp=1,axes=FALSE,xaxs="i",yaxs="i",xlab="",ylab="",...)
+    }
     sites <- pd$sites[!is.na(pd$cells),]
     points(sites[,1], sites[,2], pch=20)
     if (any(is.na(pd$cells))) { 
         hidden_sites <- pd$sites[is.na(pd$cells),]
         points(hidden_sites[,1], hidden_sites[,2], pch=20, col=grey(0.7))
     }
-    segments(temp2[,1],temp2[,2],temp2[,3],temp2[,4],col="blue")
+    segments(temp2[,1],temp2[,2],temp2[,3],temp2[,4],col=col,lwd=lwd)
     if (weights) {
         mcircle(sites[,1], sites[,2], sqrt(sapply(sites[,3],function(w) max(0,w))))
     }

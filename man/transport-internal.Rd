@@ -4,6 +4,7 @@
 \alias{fudge}
 \alias{image2}
 \alias{image3}
+\alias{gifgenerate}
 \alias{refinesol}
 \alias{triangulate}
 
@@ -24,9 +25,15 @@ findblocks(tbasis)
 fudge(temp, N = 1e+09)
 % transforms vectors with natural entries to vectors with natural entries of the fixed total mass N 
 % by randomly adding removing units of mass at entries that have positive mass
+gif.generate(M.save, M.source, M.target, K, file.name, delay.time, new.l, gif_type)
+% von transport_track aufgerufen
 image2(x, y, z, rot = FALSE, ...)
 image3(z, x=1:dim(z)[1], y=1:dim(z)[2], rot=TRUE, ...)
 % like image, but if rot=TRUE, matrices are plotted in the same orientation as they are written
+plot_pgrid_wpp(x, y, tplan, pmass=TRUE, cex=0.8, length=0.1, acol="#996699",
+  lwd=1.5, rot=TRUE, ...) 
+% internal plot function called by plot.pgrid if second argument is of class wpp
+% allows fine control over more graphics parameters
 refinesol(a1, b1, a2, b2, assig1, basis1, mult = 2)
 % for the multiscale approach. Computes a starting solution on the finer grid (finer by factor mult)
 % based on the solution given by assig1 and basis1 on the coarser grid
@@ -42,7 +49,8 @@ triangulate(basis)
   \code{transport:::name_of_fun} if you must.
 }
 \author{
-  Dominic Schuhmacher \email{dschuhm1@uni-goettingen.de}
+  Dominic Schuhmacher \email{dschuhm1@uni-goettingen.de} \cr
+  Florian Heinemann \email{florian.heinemann@stud.uni-goettingen.de} (gif.generate)
 }
 \keyword{internal}
 

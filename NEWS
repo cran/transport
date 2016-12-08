@@ -1,3 +1,163 @@
+----------------------------------------------------------------
+
+	CHANGES IN transport VERSION 0.8-1  (2016-12-03)
+
+OVERVIEW
+
+    o  We thank Atreju Tauschinsky for contributions
+
+    o  The wasserstein function supports now the wpp class
+
+    o  Several minor bug fixes
+
+
+----------------------------------------------------------------
+
+	CHANGES IN transport VERSION 0.8-0  (2016-10-15)
+
+OVERVIEW
+
+    o  We thank Florian Heinemann and Timo Wilm for contributions
+
+    o  New class weighted point patterns with full functionality
+
+    o  Optimal transport between pgrid and wpp that returns 
+       transport tesselation
+
+    o  Dynamic optimal transport (displacement interpolation)
+
+NEW CLASSES
+
+    o  wpp
+    The class wpp describes general discrete measures with
+    finite support, i.e. patterns of finitely many "weighted"
+    points (without specific structure for the locations or
+    weights). There are constructors for this class,
+    as well as plot, print and summary functions. The
+    function 'transport' can deal with this class.
+    We thank Timo Wilm for help with creating this class.
+    
+NEW FUNCTIONS
+    
+    o  semidiscrete
+    Computes the transport map (in the form of a power
+    diagram) for the semidiscrete transport problem
+    from a pgrid to a wpp object for the case p=2.
+    This function is not usually called by the user
+    because the function transport offers the same
+    flexibility now.
+
+    o  plot_pgrid_wpp
+    Plots a representation of a transport map (available
+    as a power diagram) between a pgrid and a wpp object.
+    This function gets called when using the generic plot
+    function with a pgrid and a wpp object (in that order),
+    but a direct call to plot_pgrid_wpp by the user offers
+    more possibilites for customizing the plot.
+
+    o  transport_track
+    Computes a dynamic version of a given transference plan
+    by interpolating in time. The linear interpolation of
+    the projections of the transference plan is computed,
+    which in many important cases corresponds to the
+    displacement interpolation. The result can be either
+    returned as an array or is saved as an animated gif.
+    We thank Florian Heinemann for contributing large
+    parts of this function.
+
+SIGNIFICANT CHANGES
+
+    o  transport
+    Can now deal with two wpp objects and in the case p=2
+    also with one pgrid and one wpp object as inputs
+    (in that order).
+
+    o  aha
+    It is now possible to return the parameters for the optimal
+    power diagram, rather than the (approximative) optimal transference
+    plan in terms of the pixel centers of the source measure. For
+    this, use the new option powerdiag.
+
+OTHER USER-VISIBLE CHANGES
+
+    o  pgrid
+    If no information is provided on the positions of the pixels, it is
+    now assumed that we have square pixels and the boundary points
+    in the first dimension are 0 and 1 (previous behaviour: boundary
+    points in every dimension are 0 and 1, leading to non-square pixels
+    if the pgrid is non-square).
+
+    o  pgrid
+    A pgrid object has two additional components 'totmass' giving
+    the sum of pixel values, and 'totcontmass' giving the sum of
+    pixel values divided by pixel areas. The former may be interpreted
+    as totol mass of pgrid if interpreted as a discrete measure on the
+    grid of pixel centers. The latter may be interpreted as total
+    mass of pgrid if interpreted as a continuous measure with constant
+    density on each pixel (seen as small contiguous rectangles).
+
+BUG FIXES
+
+    Various smaller bug fixes for special input.
+
+
+----------------------------------------------------------------
+
+	CHANGES IN transport VERSION 0.7-5  (2016-09-28)
+
+OVERVIEW
+
+    o  We thank Ramon Diaz-Uriarte for contributions
+
+    o  aha can return optimal power diagram now
+
+    o  Several minor bug fixes
+
+SIGNIFICANT CHANGES
+
+    o  aha
+    It is now possible to return the parameters for the optimal
+    power diagram, rather than the (approximative) optimal transference
+    plan in terms of the pixel centers of the source measure. For
+    this, use the new option powerdiag.
+
+BUG FIXES
+
+    o  transport.pp, transport.default
+    Computing the optimal transport from a mass distribution
+    to itself resulted in an error.
+    Fixed.
+
+
+----------------------------------------------------------------
+
+	CHANGES IN transport VERSION 0.7-4  (2016-06-28)
+
+OVERVIEW
+
+    o  We thank Yann Abraham and Stefan Kain for contributions
+
+    o  Several unnecessary outputs are now suppressed by default
+       (timing information, warnings about degenerate bases that 
+       did not affect the result)
+
+    o  Several minor bug fixes
+
+BUG FIXES
+
+    o  transport.pgrid
+    For p=1 computing the optimal transport from a mass distribution
+    to itself resulted in a segfault or an error (depending on the
+    method used).
+    Fixed.
+
+    o  transport.pgrid
+    Having a mass distribution of integers and at least one zero could
+    cause an integer overflow.
+    Fixed.
+
+
+----------------------------------------------------------------
 
 	CHANGES IN transport VERSION 0.7-3  (2016-02-24)
 

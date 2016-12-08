@@ -11,7 +11,7 @@
 }
 \usage{
 power_diagram(xi, eta, w, rect = NA)
-\method{plot}{power_diagram}(x, weights=FALSE, ...)
+\method{plot}{power_diagram}(x, weights=FALSE, add=FALSE, col=4, lwd=1, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -29,8 +29,11 @@ power_diagram(xi, eta, w, rect = NA)
     logical. If \code{TRUE}, weights of non-redundant sites with non-negative weight are represented as circles whose radii
     are equal to the square roots of the corresponding weights.
 }
-  \item{\ldots}{
-    further arguments passed to \code{\link{plot.default}}.
+  \item{add}{
+    logical. Should the power diagram be plotted on top of current graphics?
+}
+  \item{col,lwd,\ldots}{
+    further arguments graphic parameters used by \code{\link{plot.default}}.
 }
 }
 \details{
@@ -44,7 +47,8 @@ power_diagram(xi, eta, w, rect = NA)
   O. Devillers (2002), The Delaunay Hierarchy, International Journal of Foundations of Computer Science 13, 163--180.
 }
 \author{
-  Björn Bähre \email{bjobae@gmail.com}
+  Björn Bähre \email{bjobae@gmail.com} \cr
+  (slightly modified by Dominic Schuhmacher \email{dschuhm1@uni-goettingen.de})
 }
 %\note{
 %%  ~~further notes~~

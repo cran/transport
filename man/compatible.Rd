@@ -2,6 +2,7 @@
 \alias{compatible}
 \alias{compatible.pgrid}
 \alias{compatible.pp}
+\alias{compatible.wpp}
 %
 \title{
   Test whether Two Objects are Compatible
@@ -14,6 +15,7 @@
 compatible(target, current, ...)
 \method{compatible}{pgrid}(target, current, ...)
 \method{compatible}{pp}(target, current, ...)
+\method{compatible}{wpp}(target, current, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{

@@ -1,12 +1,18 @@
 # transport NAMESPACE file
 #
 
-# Import form standard packages (except for base)
+# Import from standard packages (except for base)
 #
-importFrom("grDevices", "grey", "heat.colors")
+importFrom("grDevices", "grey", "heat.colors", "png", "dev.off")
 importFrom("graphics", "arrows", "image", "matplot", "par", "plot",
              "points", "segments")
 importFrom("stats", "aggregate", "dist", "optim", "runif")
+
+# Import from other packages
+#
+# importFrom("ks", "binning", "kde")
+# importFrom("animation", "ani.options", "im.convert")
+# (apparently not needed for suggested packages)
 
 
 # Entry points into compiled code
@@ -26,30 +32,38 @@ useDynLib(transport,
 export(aha,
 all.equal.pgrid,
 all.equal.pp,
+all.equal.wpp,
 compatible,
 compatible.pgrid,
 compatible.pp,
+compatible.wpp,
 dedegenerate,
 # findblocks,
 # fudge,
+# gif.generate
 # image2,
 northwestcorner,
 pgrid,
 plot.pgrid,
 plot.power_diagram,
 plot.pp,
+plot.wpp,
 power_diagram,
 pp,
 # refinesol,
 russell,
+semidiscrete,
 transport,
 transport_apply,
 transport_error,
 transport.default,
 transport.pgrid,
 transport.pp,
+transport.wpp,
+transport_track,
 trcontrol,
-wasserstein)
+wasserstein,
+wpp)
 # triangulate)
 
 
@@ -59,16 +73,22 @@ wasserstein)
 S3method("plot", "pgrid")
 S3method("plot", "power_diagram")
 S3method("plot", "pp")
+S3method("plot", "wpp")
 S3method("print", "pgrid")
 S3method("print", "pp")
+S3method("print", "wpp")
 S3method("summary", "pgrid")
 S3method("summary", "pp")
+S3method("summary", "wpp")
 S3method("all.equal", "pgrid")
 S3method("all.equal", "pp")
+S3method("all.equal", "wpp")
 S3method("compatible", "pgrid")
 S3method("compatible", "pp")
+S3method("compatible", "wpp")
 S3method("transport", "pgrid")
 S3method("transport", "pp")
+S3method("transport", "wpp")
 S3method("transport", "default")
 
 

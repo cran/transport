@@ -11,9 +11,9 @@
 
    revsimplex.c
 
-   $Revision: 0.3 $   $Date: 2015/10/10 17:36:00 $
+   $Revision: 0.3.1 $   $Date: 2016/06/28 17:36:00 $
 
-   By Dominic Schuhmacher, original verision ported
+   By Dominic Schuhmacher, original version ported
    from java code for class Shortlist2014 by Carsten Gottschlich
    (the present file is without shortlist components)
    (CG: in the comments refers to correspondences with original code,
@@ -333,9 +333,9 @@ void init_solution(State *state)
       }
     }
   }
-  if (degennum > 0) {
+  /* if (degennum > 0) {
     warning("Starting solution is degenerate. Nothing to worry about!");
-  }
+  } */
   Free(aleft);
   Free(bleft);
   Free(aisleft);

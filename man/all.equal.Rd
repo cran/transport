@@ -1,16 +1,18 @@
 \name{all.equal (transport objects)}
 \alias{all.equal.pgrid}
 \alias{all.equal.pp}
+\alias{all.equal.wpp}
 %  
 \title{
-  Methods for Judging Near Equality of Objects of Class pgrid or pp
+  Methods for Judging Near Equality of Objects of Class pgrid, pp or wpp
 }
 \description{
-  Methods for judging near equality of objects of class pgrid or pp.
+  Methods for judging near equality of objects of class pgrid or pp or wpp
 }
 \usage{
 \method{all.equal}{pgrid}(target, current, ...)
 \method{all.equal}{pp}(target, current, ...)
+\method{all.equal}{wpp}(target, current, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
