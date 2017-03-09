@@ -24,11 +24,9 @@
 
 /*  Call by
 
-   .C("revsimplex", mm = as.integer(m), nn = as.integer(n), a = as.integer(a), b = as.integer(b),
-       costm = as.double(costm), assignment = as.integer(assignment), basis = as.integer(basis),
-       DUP=TRUE) 
-   # DUP kann man später auf falsch setzen um Zeit zu sparen SOLLTE MAN ABER NUR IN NOTFAELLEN!!! 
-   # in package mit zusaetzlicher Option PACKAGE = "blabla"   
+   .C("revsimplex", as.integer(m), as.integer(n), as.integer(apos), as.integer(bpos),
+	          as.double(dd), assignment = as.integer(initassig), basis = as.integer(initbasis), startgiven = as.integer(startgiven),
+	          DUP=TRUE, PACKAGE="transport")
 
 */
 

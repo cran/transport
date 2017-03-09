@@ -723,10 +723,11 @@ transport.pp <- function(a, b, p = 1, method = c("auction", "auctionbf", "shorts
   if (method == "revsimplex") {
   	# this is nwcorner, at least modrowmin should be feasible and faster
     initassig <- initbasis <- diag(1,N,N)
-    initbasis[cbind(2:N,1:(N-1))] <- 1 
+    initbasis[cbind(2:N,1:(N-1))] <- 1
+    startgiven <- 1  
     # ti <- proc.time()
     temp <- .C("revsimplex", as.integer(N), as.integer(N), as.integer(rep.int(1,N)), as.integer(rep.int(1,N)),
-	            as.double(dd), assignment = as.integer(initassig), basis = as.integer(initbasis),
+	            as.double(dd), assignment = as.integer(initassig), basis = as.integer(initbasis), startgiven = as.integer(startgiven),
 	            DUP=TRUE, PACKAGE="transport")
 	# print(proc.time()-ti)           
     nassig <- sum(temp$assignment)  # nassig sollte natuerlich gleich N sein, das ist nur zur Kontrolle

@@ -1,27 +1,27 @@
 Package: transport
-Version: 0.8-1
-Date: 2016-12-07
+Version: 0.8-2
+Date: 2017-03-09
 Title: Optimal Transport in Various Forms
 Authors@R: c(person("Dominic", "Schuhmacher", email = "dominic.schuhmacher@mathematik.uni-goettingen.de", role = c("aut","cre")),
              person("Björn", "Bähre", role = "aut", comment = "aha and power diagrams"),
              person("Carsten", "Gottschlich", role = "aut", comment = "simplex and shortlist"),
              person("Florian", "Heinemann", role = "aut", comment = "transport_track"),
              person("Timo", "Wilm", role = "ctb", comment = "wpp"))
-Author: Dominic Schuhmacher [aut, cre],
-  Björn Bähre [aut] (aha and power diagrams),
-  Carsten Gottschlich [aut] (simplex und shortlist),
-  Florian Heinemann [aut] (transport_track),
-  Timo Wilm [ctb] (wpp)
 Maintainer: Dominic Schuhmacher <dominic.schuhmacher@mathematik.uni-goettingen.de>
 Depends: R (>= 3.0.0)
 Imports: grDevices, graphics, stats
 Suggests: animation, ks
-Description: Solve optimal transport problems. Compute Wasserstein metrics (a.k.a. Kantorovitch, Fortet--Mourier, Mallows, Earth Mover's, or minimal L_p metrics), return the corresponding transference plans, and display them graphically. Objects that can be compared include grey-scale images, (weighted) point patterns, and mass vectors.
+Description: Solve optimal transport problems. Compute Wasserstein distances (a.k.a. Kantorovitch, Fortet--Mourier, Mallows, Earth Mover's, or minimal L_p distances), return the corresponding transference plans, and display them graphically. Objects that can be compared include grey-scale images, (weighted) point patterns, and mass vectors.
 LazyData: yes
 Encoding: UTF-8
 License: GPL (>= 2)
 URL: http://www.dominic.schuhmacher.name
 NeedsCompilation: yes
-Packaged: 2016-12-07 17:33:39 UTC; schumi
+Packaged: 2017-03-09 14:23:21 UTC; schumi
+Author: Dominic Schuhmacher [aut, cre],
+  Björn Bähre [aut] (aha and power diagrams),
+  Carsten Gottschlich [aut] (simplex and shortlist),
+  Florian Heinemann [aut] (transport_track),
+  Timo Wilm [ctb] (wpp)
 Repository: CRAN
-Date/Publication: 2016-12-08 02:27:41
+Date/Publication: 2017-03-09 15:54:21

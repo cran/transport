@@ -16,10 +16,11 @@ importFrom("stats", "aggregate", "dist", "optim", "runif")
 
 
 # Entry points into compiled code
-useDynLib(transport,
-"primaldual","auction","auctionbf","revsimplex","shortsimplex",
-"decompose_c","aha_phi","aha_dphi","aha_init","aha_free","aha_wasserstein","aha_compute_transport","aha_get_transport",
-"compute_power_diagram","get_power_diagram")
+useDynLib(transport, .registration = TRUE)
+#useDynLib(transport,
+# "primaldual","auction","auctionbf","revsimplex","shortsimplex",
+# "decompose_c","aha_phi","aha_dphi","aha_init","aha_free","aha_wasserstein","aha_compute_transport","aha_get_transport",
+# "compute_power_diagram","get_power_diagram")
 #
 
 # Export all names unless they start with a period
@@ -63,6 +64,7 @@ transport.wpp,
 transport_track,
 trcontrol,
 wasserstein,
+wasserstein1d,
 wpp)
 # triangulate)
 

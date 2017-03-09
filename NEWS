@@ -1,5 +1,15 @@
 ----------------------------------------------------------------
 
+	CHANGES IN transport VERSION 0.8-2  (2017-03-09)
+
+OVERVIEW
+
+    o  New function wasserstein1d to compute the Wasserstein
+       distance between two univariate samples (with weights)
+
+
+----------------------------------------------------------------
+
 	CHANGES IN transport VERSION 0.8-1  (2016-12-03)
 
 OVERVIEW

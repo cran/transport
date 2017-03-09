@@ -14,8 +14,8 @@ wasserstein(a, b, p=1, tplan=NULL, prob=TRUE, ...)
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{a, b}{
-    two objects that describe mass distributions, between which the optimal transport map is to be computed. Either two 
-    objects of class \code{\link{pgrid}} or two objects of class \code{\link{pp}}.
+    two objects that describe mass distributions in \eqn{R^d}. Either both of class \code{\link{pgrid}} or \code{\link{pp}}
+    or \code{\link{wpp}}. Their dimension \eqn{d} must be at least 2; see function \code{\link{wasserstein1d}} for \eqn{d=1}.
 }
   \item{p}{
     the power \eqn{\geq 1}{>=1} to which the Euclidean distance between points is taken in order to
@@ -43,7 +43,7 @@ wasserstein(a, b, p=1, tplan=NULL, prob=TRUE, ...)
   For further details on the algorithms used, see help of \code{\link{transport}}. 
 }
 \value{
-  A single numeric, the Wasserstein distance for the specified problem.
+  A single number, the Wasserstein distance for the specified problem.
 }
 \author{
   Dominic Schuhmacher \email{dschuhm1@uni-goettingen.de}
@@ -55,7 +55,7 @@ wasserstein(a, b, p=1, tplan=NULL, prob=TRUE, ...)
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-  \code{\link[=plot.pgrid]{plot}}, \code{\link{transport}}
+  \code{\link[=plot.pgrid]{plot}}, \code{\link{transport}}, \code{\link{wasserstein1d}}
 }
 \examples{
 #
@@ -71,12 +71,13 @@ wasserstein(random32a,random32b,p=1,res)
 # example for class 'pp'
 #
 set.seed(27)
-x <- pp(matrix(runif(1000),500,2))
-y <- pp(matrix(runif(1000),500,2))
+x <- pp(matrix(runif(500),250,2))
+y <- pp(matrix(runif(500),250,2))
 wasserstein(x,y,p=1)
 wasserstein(x,y,p=2)
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
-\keyword{main function}
+\keyword{mallows}
+\keyword{earth mover}
 %\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
