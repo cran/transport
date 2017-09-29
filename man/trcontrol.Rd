@@ -8,10 +8,10 @@
   Set the control parameters for the algorithm used by the function \code{\link{transport}}.
 }
 \usage{
-trcontrol(method = c("shortsimplex", "revsimplex", "primaldual", "aha",
-  "auction", "auctionbf"), para=list(), start = c("auto", "modrowmin",
-  "nwcorner", "russell"), nscales = 1, scmult = 2, returncoarse = FALSE,
-  a=NULL, b=NULL, M=NULL, N=NULL)
+trcontrol(method = c("revsimplex", "shortsimplex", "primaldual", "aha",
+          "shielding", "auction", "auctionbf"), para = list(), start = c("auto",
+          "modrowmin", "nwcorner", "russell"), nscales = 1, scmult = 2,
+          returncoarse = FALSE, a = NULL, b = NULL, M = NULL, N = NULL)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{

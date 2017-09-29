@@ -1,0 +1,3 @@
+If you have CPLEX available, the computation of optimal transports on grids for squared Euclidean cost can be accelerated considerably by linking against it. To do so, adapt the file src/Makevars according to the instructions given there.
+
+Then/otherwise installation is as usual for source packages.

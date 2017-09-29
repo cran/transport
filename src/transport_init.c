@@ -1,5 +1,15 @@
+#include <R.h>
+#include <Rinternals.h>
 #include <stdlib.h> // for NULL
 #include <R_ext/Rdynload.h>
+
+/*
+  The following symbols/expressions for .NAME have been omitted
+
+    _transport_SolveHierarchicalTransport
+
+  Most likely possible values need to be added below.
+*/
 
 /* FIXME: 
    Check these declarations against the C/Fortran source code.
@@ -22,6 +32,10 @@ extern void primaldual(void *, void *, void *, void *, void *, void *);
 extern void revsimplex(void *, void *, void *, void *, void *, void *, void *, void *);
 extern void shortsimplex(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
 
+/* .Call calls */
+extern SEXP _transport_SolveHierarchicalTransport(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP _transport_cplex_present();
+
 static const R_CMethodDef CEntries[] = {
     {"aha_compute_transport", (DL_FUNC) &aha_compute_transport,  6},
     {"aha_dphi",              (DL_FUNC) &aha_dphi,               8},
@@ -41,8 +55,14 @@ static const R_CMethodDef CEntries[] = {
     {NULL, NULL, 0}
 };
 
+static const R_CallMethodDef CallEntries[] = {
+    {"_transport_SolveHierarchicalTransport", (DL_FUNC) &_transport_SolveHierarchicalTransport, 13},
+    {"_transport_cplex_present", (DL_FUNC) &_transport_cplex_present, 0},
+    {NULL, NULL, 0}
+};
+
 void R_init_transport(DllInfo *dll)
 {
-    R_registerRoutines(dll, CEntries, NULL, NULL, NULL);
+    R_registerRoutines(dll, CEntries, CallEntries, NULL, NULL);
     R_useDynamicSymbols(dll, FALSE);
 }

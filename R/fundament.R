@@ -61,7 +61,7 @@ transport <- function(a, b, ...) {
   UseMethod("transport")
 }
 
-trcontrol <- function(method = c("shortsimplex", "revsimplex", "primaldual", "aha", "auction", "auctionbf"),
+trcontrol <- function(method = c("revsimplex", "shortsimplex", "primaldual", "aha", "shielding", "auction", "auctionbf"),
   para=list(), start = c("auto", "modrowmin", "nwcorner", "russell"), nscales = 1, scmult = 2, returncoarse = FALSE,
   a=NULL, b=NULL, M=NULL, N=NULL) {
 # a,b,M,N serve for computing parameters or start solutions automatically
@@ -122,7 +122,7 @@ trcontrol <- function(method = c("shortsimplex", "revsimplex", "primaldual", "ah
   
     para <- newpara
   }
-  # fi (method == "shortsimplex")
+  # fi (method == "aha")
 
 
   if (method == "shortsimplex") {
@@ -235,14 +235,14 @@ trcontrol <- function(method = c("shortsimplex", "revsimplex", "primaldual", "ah
 
 
 
-transport.pgrid <- function(a, b, p = NULL, method = c("revsimplex", "shortsimplex", "primaldual", "aha"), control = list(), ...) {
+transport.pgrid <- function(a, b, p = NULL, method = c("auto", "revsimplex", "shortsimplex", "shielding", "aha", "primaldual"), control = list(), ...) {
   # returncoarse: gibt im Falle von nscales >= 2 an, ob groebere Probleme und deren Loesungen auch ausgegeben werden sollen;
   # Anderenfalls wird nur die feinste Loesung (ohne Problem) zurueckgegeben
 
   # Check inputs
   # ======================================================================   
   if (class(a) == "pgrid" && class(b) == "wpp") {
-  	if (!missing(method) && method != "aha") {
+  	if (!missing(method) && method != "aha" && method != "auto") {
   	  warning('For semi-discrete optimal transport only method "aha" is implemented. Specified method parameter is ignored.')
   	}
   	return(semidiscrete(a=a,b=b,p=p,method="aha",control=control))
@@ -253,20 +253,45 @@ transport.pgrid <- function(a, b, p = NULL, method = c("revsimplex", "shortsimpl
 #  if (a$dimension > 2) warning("transport.pgrid for pixel grids of dimension > 2 is still somewhat experimental")
   if (!(a$structure %in% c("square", "rectangular")))
     stop("transport.pgrid is currently only implemented for rectangular pixel grids")
+         
   ngrid <- a$n
   Ngrid <- a$N
-  
+
+  # assuming of course the object is consistent
+  if (!isTRUE(all.equal(a$totmass,b$totmass))) {
+    warning("total mass in a and b differs. Normalizing a and b to probability measures (totcontmass=1).")
+    atcm <- a$totcontmass
+    btcm <- b$totcontmass
+    a$mass <- a$mass/atcm
+    b$mass <- b$mass/btcm
+    a$totcontmass <- 1
+    b$totcontmass <- 1  	
+    a$totmass <- a$totmass/atcm
+    b$totmass <- b$totmass/btcm
+  }
+      
   method <- match.arg(method)
-    
-  if (is.null(p))
-  	p <- ifelse(method == "aha",2,1)
+      
+  if (is.null(p)) {
+    p <- ifelse(method %in% c("aha","shielding"),2,1)
+    cat("Power p of Euclidean distance assumed to be", p,"\n")	
+  }
   if (method == "aha" && p != 2)
-    stop("method 'aha' works only for p = 2")
+    stop("method 'aha' currently works only for p = 2")
   if (method == "aha" && a$dimension != 2)
-    stop("method 'aha' works only in two dimensions")    
+    stop("method 'aha' currently works only in two dimensions")  
+  if (method == "shielding" && p != 2)
+    stop("method 'shielding' currently works only for p = 2")  
   if (p < 1) {
   	stop("p has to be >= 1")
   }  
+
+  if (method == "auto") {
+  	if (p == 2 && a$N > 200)  
+  	  method <- "shielding"
+  	else 
+  	  method <- "revsimplex"
+  }
 
   if (class(control) != "trc") {
   	control$method <- method
@@ -279,12 +304,51 @@ transport.pgrid <- function(a, b, p = NULL, method = c("revsimplex", "shortsimpl
   nscales <- control$nscales
   scmult <- control$scmult
   returncoarse <- control$returncoarse
+
   is.natural <-
     function(x, tol = .Machine$double.eps^0.5)  all((abs(x - round(x)) < tol) & x > 0.5)
   # aus der Hilfe zu is.integer, checks for a vector whether all entries are approximately natural numbers
   is.naturalzero <-
     function(x, tol = .Machine$double.eps^0.5)  all((abs(x - round(x)) < tol) & x > -0.5)
   # same including 0
+    
+  if (method == "shielding") {
+    unfudgeratio <- 1
+    aa <- a$mass
+    bb <- b$mass
+    # the following is in particular for the integer case
+    # shielding method cannot cope with zeros so we add something and fudge sum to 1e9 as for non-integer case
+    totsum <- a$totmass 
+    addtopix <- 1e-9*totsum - min(min(aa),min(bb))
+    if (addtopix > 0) {
+      aa <- aa+addtopix  
+      bb <- bb+addtopix
+      warning("total masses of a and b were increased by a fraction of ", addtopix*Ngrid/totsum, " to remove zero pixels for shielding method")
+    }	   
+    if (!is.natural(a$mass) || !is.natural(b$mass) || max(a$mass) > .Machine$integer.max) {
+      fudgesum <- 1e9
+      unfudgeratio <- totsum/fudgesum
+      aa <- round(aa/unfudgeratio)
+      bb <- round(bb/unfudgeratio)
+      aa <- fudge(aa,fudgesum)
+      bb <- fudge(bb,fudgesum)
+    } 
+    res1 <- shielding(aa,bb,nscales=trunc(log2(ngrid)-1+0.1),startscale=3,flood=0,measureScale=1,basisKeep=1,basisRefine=1)
+     # measureScale is number of layers between root (1x1, not computed) and finest level, refinements
+     # are by a factor of 2 and then there is a (potential) jump to the finest level. So for a 64x64 pic
+     # 2^0 is root 2^6 is finest level, i.e. the right nscales is 5. Bernhard recommends adding smthg like
+     # 0.1, because there is a transition region.
+    assignment <- res1[[4]]
+    ind <- res1[[5]]
+    nbasis <- dim(ind)[1]
+    res <- data.frame(from = rep(0,nbasis), to = rep(0,nbasis), mass = rep(0,nbasis))
+    res$from <- ind[,1]
+    res$to <- ind[,2]
+    res$mass <- assignment[(ind[,2]-1)*Ngrid + ind[,1]]
+    res$mass <- res$mass * unfudgeratio
+    return(res)
+  }
+    
   if (nscales != 1 && (length(unique(ngrid)) != 1 || length(ngrid) != 2)) {
   	stop("multiscale approach is currently only implemented for quadratic grids of dimension 2")
   }    
@@ -329,9 +393,10 @@ transport.pgrid <- function(a, b, p = NULL, method = c("revsimplex", "shortsimpl
     asum <- sum(apos)
     bsum <- sum(bpos)
     if (!isTRUE(all.equal(asum,bsum))) {
-      warning("total mass in a and b differs. Normalizing a and b to probability measures.")
-  	  apos <- apos/asum
-  	  bpos <- bpos/bsum
+      warning("total mass in a and b differs after subtraction of common mass. This should not normally happen. Renormalizing a and b to probability measures.
+      Please check if inputs a and b have been generated with pgrid.")
+  	  apos <- apos/(asum*prod(a$gridtriple[,3]))
+  	  bpos <- bpos/(bsum*prod(b$gridtriple[,3]))
   	  asum <- bsum <- 1
     }
     fudgeN <- fudgesum <- 1 
@@ -417,7 +482,7 @@ transport.pgrid <- function(a, b, p = NULL, method = c("revsimplex", "shortsimpl
       	           # due to static mass into account; use nscales = 2, scmult >= 2 for (essentially) same behaviour with p==1
       	           # Note 1: scmult also works for scalestart
       	           # Note 2: nscales *only* works for p=1 because it always removes static mass.
-        temp <- scalestart(ared,bred,a$generator,ngrid[1],ngrid[2],p=p,scmult=scmult)
+        temp <- scalestart(apos,bpos,a$generator,ngrid[1],ngrid[2],p=p,scmult=scmult)
         initassig <- temp$assignment
         initbasis <- temp$basis	
         startgiven <- 1

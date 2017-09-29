@@ -7,18 +7,18 @@
 \encoding{UTF-8}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-  Find Optimal Transference Plan (a.k.a. Optimal Transport Map) Between Two Objects.
+  Find Optimal Transport Plan Between Two Objects
 }
 \description{
   Given two objects \code{a} and \code{b} that specify distributions of mass and an object that specifies (a way to compute) costs,
-  find the transference plan for going from \code{a} to \code{b} that minimizes the total cost.
+  find the transport plan for going from \code{a} to \code{b} that minimizes the total cost.
 }
 \usage{
 transport(a, b, ...)
 \method{transport}{default}(a, b, costm, method = c("shortsimplex", "revsimplex", "primaldual"),
   control = list(), ...)
-\method{transport}{pgrid}(a, b, p = NULL, method = c("revsimplex", "shortsimplex", 
-  "primaldual", "aha"), control = list(), ...)
+\method{transport}{pgrid}(a, b, p = NULL, method = c("auto", "revsimplex", "shortsimplex",
+  "shielding", "aha", "primaldual"), control = list(), ...)
 \method{transport}{pp}(a, b, p = 1, method = c("auction", "auctionbf", "shortsimplex",
   "revsimplex", "primaldual"), control = list(), ...)
 \method{transport}{wpp}(a, b, p = 1, method = c("revsimplex", "shortsimplex", "primaldual"),
@@ -52,32 +52,38 @@ transport(a, b, ...)
 }
 \details{
   There is a number of algorithms that are currently implemented and more will be added in future versions of the package. 
-  The following is a brief description of each abbreviation used. Much more details can be found in the cited references 
+  The following is a brief description of each key word used. Much more details can be found in the cited references 
   and in a forthcoming package vignette.
-  
-  \code{shortsimplex}: The shortlist method based an a revised simplex algorithm, as described in Gottschlich and Schuhmacher (2014).
-  
-  \code{revsimplex}: The revised simplex algorithm as described in Luenberger and Ye (2008, Section 6.4) with various speed improvements, including a multiscale approach.
-  
-  \code{primaldual}: The primal-dual algorithm as described in Luenberger (2003, Section 5.9).
-  
-  \code{aha}: The Aurenhammer--Hoffmann--Aronov (1998) method with the multiscale approach presented in Mérigot (2011). 
-  
+
+  \code{aha}: The Aurenhammer--Hoffmann--Aronov (1998) method with the multiscale approach presented in Mérigot (2011).
+
   \code{auction}: The auction algorithm by Bertsekas (1988) with epsilon-scaling, see Bertsekas (1992).
-  
+
   \code{auctionbf}: A refined auction algorithm that combines forward and revers auction, see Bertsekas (1992).
   
+  \code{primaldual}: The primal-dual algorithm as described in Luenberger (2003, Section 5.9).
+
+  \code{revsimplex}: The revised simplex algorithm as described in Luenberger and Ye (2008, Section 6.4) with various speed improvements, including a multiscale approach.
+
+  \code{shielding}: The shielding (or shortcut) method, as described in Schmitzer (2016).
+  
+  \code{shortsimplex}: The shortlist method based an a revised simplex algorithm, as described in Gottschlich and Schuhmacher (2014).
+
+  The order of the \emph{default} key words specified for the argument \code{method} gives a rough idea of the relative efficiency of the algorithms for the corresponding class of objects. For a given \code{a} and \code{b} the actual computation times may deviate significantly from this order.
+  For class \code{pgrid} the default method is \code{"auto"}, which resolves to \code{"revsimplex"} if \code{p} is not 2 or the problem is very small, and to \code{"shielding"} otherwise.
+
   The following table gives information about the applicability of the various algorithms (or sometimes rather
   their current implementations).
   
   \tabular{lllll}{
-  	             \tab default \tab pgrid \tab  pp  \tab  wpp   \cr
-    shortsimplex \tab   +     \tab   +   \tab   *   \tab   +   \cr  
-    revsimplex   \tab   +     \tab   +   \tab   *   \tab   +   \cr  
-    primaldual   \tab   *     \tab   *   \tab   *   \tab   +   \cr
-    aha (p=2!)   \tab   -     \tab   +   \tab   -   \tab   @   \cr
-    auction      \tab   -     \tab   -   \tab   +   \tab   -   \cr
-    auctionbf    \tab   -     \tab   -   \tab   +   \tab   -   \cr
+  	                 \tab default \tab pgrid \tab  pp  \tab  wpp   \cr
+  	aha (p=2!)       \tab   -     \tab   +   \tab   -   \tab   @   \cr
+    auction          \tab   -     \tab   -   \tab   +   \tab   -   \cr
+    auctionbf        \tab   -     \tab   -   \tab   +   \tab   -   \cr
+    primaldual       \tab   *     \tab   *   \tab   *   \tab   +   \cr  
+    revsimplex       \tab   +     \tab   +   \tab   *   \tab   +   \cr      
+    shielding (p=2!) \tab   -     \tab   +   \tab   -   \tab   -   \cr
+    shortsimplex     \tab   +     \tab   +   \tab   *   \tab   +   \cr  
   } 
   where: + recommended, * applicable (may be slow), - no implementation planned or combination does not make sense; @ indicates that the aha algorithm is available in the special combination where \code{a} is a \code{pgrid} object and \code{b} is a \code{wpp} object (and \code{p} is 2). For more details on this combination see the function \code{\link{semidiscrete}}.   
 
@@ -85,40 +91,41 @@ transport(a, b, ...)
   their applicability.
   
   \tabular{llll}{
-  	                        \tab \code{start} \tab multiscale \tab individual parameters    \cr
-    \code{shortsimplex}     \tab   -     \tab   -   \tab   \code{slength}, \code{kfound}, \code{psearched}   \cr  
-    \code{revsimplex}       \tab   +     \tab   +   \tab      \cr  
-    \code{primaldual}       \tab   -     \tab   -   \tab      \cr
-    \code{aha} (\eqn{p=2}!) \tab   -     \tab   +   \tab   \code{factr}, \code{maxit}  \cr
-    \code{auction}          \tab   -     \tab   -   \tab   \code{lasteps}, \code{epsfac}   \cr
-    \code{auctionbf}        \tab   -     \tab   -   \tab   \code{lasteps}, \code{epsfac}   \cr
+  	                               \tab \code{start} \tab multiscale \tab individual parameters    \cr
+
+    \code{aha} (\eqn{p=2}!)        \tab   -     \tab   +   \tab   \code{factr}, \code{maxit}  \cr  	                        
+  	\code{auction}                 \tab   -     \tab   -   \tab   \code{lasteps}, \code{epsfac}   \cr
+  	\code{auctionbf}               \tab   -     \tab   -   \tab   \code{lasteps}, \code{epsfac}   \cr
+  	\code{primaldual}              \tab   -     \tab   -   \tab      \cr
+  	\code{revsimplex}              \tab   +     \tab   +   \tab      \cr  
+  	\code{shielding} (\eqn{p=2}!)  \tab   -     \tab   +   \tab      \cr  
+    \code{shortsimplex}            \tab   -     \tab   -   \tab   \code{slength}, \code{kfound}, \code{psearched}   \cr  
   } 
  
-  \code{start} specifies the algorithm for computing a starting solution. Currently the Modified Row Minimum Rule
+  \code{start} specifies the algorithm for computing a starting solution (if needed). Currently the Modified Row Minimum Rule
   (\code{start="modrowmin"}), the North-West Corner Rule (\code{start="nwcorner"}) and the method by Russell (1969) (\code{start="russell"})
-  are implemented. When \code{start="auto"} (the default) the ModRowMin Rule is chosen, except in \code{transport.pgrid} if \code{p}>1,
-  where the optimal transport is first computed on a grid that is coarser by a factor of \code{scmult=2} and a refinement of this solution
-  is used as a starting solution.
+  are implemented. When \code{start="auto"} (the default) the ModRowMin Rule is chosen. However,
+  for \code{transport.pgrid} and \code{p} larger than 1, there are two cases where an automatic multiscale procedure is also performed, i.e. the optimal transport is first computed on coarser grids and information from these solutions is then used for the finer girds.
+  This happens for 
+  \code{method = "revsimplex"}, where a single coarsening at factor \code{scmult=2} is performed, and for \code{method = "shielding"}, where a number of coarsenings adapted to the dimensions of the array is performed.   
   
-  For \code{p=1} and \code{method="revsimplex"}, as well as \code{p=2} and \code{method="aha"} there is a proper multiscale versions of
-  the corresponding algorithm that allows for finer control over a similar behaviour and is based on separate code.
-  There are three parameters \code{nscales}, \code{scmult}, \code{returncoarse} (summarized under the title
-  \dQuote{multiscale} in the above table). The default value of \code{nscales=1} suppresses
+  For \code{p=1} and \code{method="revsimplex"}, as well as \code{p=2} and \code{method="aha"} there are multiscale versions of
+  the corresponding algorithms that allows for finer control via the parameters
+  \code{nscales}, \code{scmult} and \code{returncoarse}. The default value of \code{nscales=1} suppresses
   the multiscale version. For larger problems it is advisable to use the multiscale version, which currently is only implemented for
   square pgrids in two dimensions. The algorithm proceeds then by coarsening the pgrid \code{nscales-1} times, summarizing
   each time \code{scmult^2} pixels into one larger pixels, and then solving the various transport problems starting from the coarsest and
   using each previous problem to compute a starting solution to the next finer problem. If \code{returncoarse} is \code{TRUE}, the coarser
   problems and their solutions are returned as well (\code{revsimplex} only).
   
-  \code{slength}, \code{kfound}, \code{psearched} are the shortlist length, the number of pivot candidates needed, and the percentage of
-  shortlists searched, respectively.
-  
   \code{factr}, \code{maxit} are the corresponding components of the \code{control} argument in the \code{\link{optim}} L-BFGS-B method.
   
   \code{lasteps}, \code{epsfac} are parameters used for epsilon scaling in the auction algortihm. The algorithm starts with a \dQuote{transaction cost} per bid of \code{epsfac^k * lasteps} for some reasonable \code{k} generating finer and finer approximate solutions as the \code{k} counts down to zero. Note that in order for the procedure to make sense, \code{epsfac} should be larger than one (typically two- to three-digit) and in order for the final solution to be exact \code{lasteps} should be smaller than \code{1/n}, where \code{n} is the total number of points in either of the point patterns.
+  \code{slength}, \code{kfound}, \code{psearched} are the shortlist length, the number of pivot candidates needed, and the percentage of
+  shortlists searched, respectively.
 }
 \value{
-A data frame with columns \code{from}, \code{to} and \code{mass} that specifies from which knot to which other knot what amount of mass is sent in the optimal transference plan. Knots are given as indices in terms of the usual column major enumeration of the matrices \code{a$mass} and \code{b$mass}. There are \code{\link[=plot.pgrid]{plot}} methods for the classes \code{pgrid} and \code{pp}, which can plot this solution.
+A data frame with columns \code{from}, \code{to} and \code{mass} that specifies from which element of \code{a} to which element of \code{b} what amount of mass is sent in the optimal transport plan. For class \code{pgrid} elements are specified as vector indices in terms of the usual column major enumeration of the matrices \code{a$mass} and \code{b$mass}. There are \code{\link[=plot.pgrid]{plot}} methods for the classes \code{pgrid} and \code{pp}, which can plot this solution.
 
 If \code{returncoarse} is \code{TRUE} for the \code{revsimplex} method, a list with components \code{sol} and \code{prob} giving the solutions and problems on the various scales considered. The solution on the finest scale (i.e. the output we obtain when setting \code{returncoarse} to \code{FALSE}) is in \code{sol[[1]]}.
 
@@ -138,15 +145,17 @@ D.G. Luenberger (2003). Linear and nonlinear programming, 2nd ed. Kluwer.
 D.G. Luenberger and Y. Ye (2008). Linear and nonlinear programming, 3rd ed. Springer.
 
 Q. Mérigot (2011). A multiscale approach to optimal transport. Computer Graphics Forum 30(5), 1583--1592. \href{http://dx.doi.org/10.1111/j.1467-8659.2011.02032.x}{doi:10.1111/j.1467-8659.2011.02032.x}
+
+B. Schmitzer (2016). A sparse multiscale algorithm for dense optimal transport. J. Math. Imaging Vision 56(2), 238--259. \href{https://arxiv.org/abs/1510.05466}{https://arxiv.org/abs/1510.05466}
 }
 \author{
   Dominic Schuhmacher \email{dschuhm1@uni-goettingen.de} \cr  
   Björn Bähre \email{bjobae@gmail.com} \cr (code for \code{\link{aha}}-method) \cr  
-  Carsten Gottschlich \email{gottschlich@math.uni-goettingen.de} \cr (original java code for \code{shortlist}- and \code{revsimplex}-methods)
+  Carsten Gottschlich \email{gottschlich@math.uni-goettingen.de} \cr (original java code for \code{shortlist}- and \code{revsimplex}-methods) \cr
+  Bernhard Schmitzer \email{schmitzer@uni-muenster.de} \cr (code for \code{\link{shielding}}-method)
 }
-%\note{
-%%  ~~further notes~~
-%}
+\section{Use of CPLEX}{The combination of the shielding-method with the CPLEX numerical solver outperforms the other algorithms by an order of magnitude for large problems (only applicable for \code{p=2} and objects of class \code{"pgrid"}). If a local installation of CPLEX is available, the transport package can be linked against it during installation. See the file src/Makevars in the source package for instructions.
+}
 
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
@@ -188,8 +197,8 @@ plot(random32a,random32b,res,lwd=1)
 # example for class 'pp'
 #
 set.seed(27)
-x <- pp(matrix(runif(1000),500,2))
-y <- pp(matrix(runif(1000),500,2))
+x <- pp(matrix(runif(400),200,2))
+y <- pp(matrix(runif(400),200,2))
 res <- transport(x,y)
 dev.new()
 par(mai=rep(0.02,4))

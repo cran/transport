@@ -1,27 +1,31 @@
 Package: transport
-Version: 0.8-2
-Date: 2017-03-09
+Version: 0.9-3
+Date: 2017-09-29
 Title: Optimal Transport in Various Forms
 Authors@R: c(person("Dominic", "Schuhmacher", email = "dominic.schuhmacher@mathematik.uni-goettingen.de", role = c("aut","cre")),
              person("Björn", "Bähre", role = "aut", comment = "aha and power diagrams"),
              person("Carsten", "Gottschlich", role = "aut", comment = "simplex and shortlist"),
              person("Florian", "Heinemann", role = "aut", comment = "transport_track"),
+             person("Bernhard", "Schmitzer", role = "aut", comment = "shielding"),
              person("Timo", "Wilm", role = "ctb", comment = "wpp"))
 Maintainer: Dominic Schuhmacher <dominic.schuhmacher@mathematik.uni-goettingen.de>
 Depends: R (>= 3.0.0)
-Imports: grDevices, graphics, stats
+Imports: grDevices, graphics, stats, Rcpp (>= 0.12.10)
 Suggests: animation, ks
+LinkingTo: Rcpp
 Description: Solve optimal transport problems. Compute Wasserstein distances (a.k.a. Kantorovitch, Fortet--Mourier, Mallows, Earth Mover's, or minimal L_p distances), return the corresponding transference plans, and display them graphically. Objects that can be compared include grey-scale images, (weighted) point patterns, and mass vectors.
 LazyData: yes
 Encoding: UTF-8
 License: GPL (>= 2)
 URL: http://www.dominic.schuhmacher.name
+RoxygenNote: 6.0.1
 NeedsCompilation: yes
-Packaged: 2017-03-09 14:23:21 UTC; schumi
+Packaged: 2017-09-29 14:05:27 UTC; schumi
 Author: Dominic Schuhmacher [aut, cre],
   Björn Bähre [aut] (aha and power diagrams),
   Carsten Gottschlich [aut] (simplex and shortlist),
   Florian Heinemann [aut] (transport_track),
+  Bernhard Schmitzer [aut] (shielding),
   Timo Wilm [ctb] (wpp)
 Repository: CRAN
-Date/Publication: 2017-03-09 15:54:21
+Date/Publication: 2017-09-29 22:05:38 UTC
