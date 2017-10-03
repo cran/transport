@@ -1,12 +1,5 @@
 #include"Interfaces-SparseSimplex.h"
 
-// instantantiate solver class templates
-
-template class TSparseSimplexSolver<TCouplingHandlerSemiDense>;
-template class TSparseSimplexSolver<TCouplingHandlerSparse>;
-
-template class TMultiScaleSetupSparseSimplex<TMultiScaleSetupW2Grid>;
-
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 // TSolverInterfaceSparseSimplex Methods
@@ -388,4 +381,12 @@ int TMultiScaleSetupSparseSimplex<TReferenceSetup>::SetupFactorySolverInterface(
 	FactorySolverInterface = new TFactorySolverInterfaceSparseSimplex(FactoryShieldGenerator,keepBasis,refineBasis,HPX,HPY,muXH,muYH);
 	return 0;
 }
+
+
+// instantantiate solver class templates
+
+template class TSparseSimplexSolver<TCouplingHandlerSemiDense>;
+template class TSparseSimplexSolver<TCouplingHandlerSparse>;
+
+template class TMultiScaleSetupSparseSimplex<TMultiScaleSetupW2Grid>;
 

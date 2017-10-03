@@ -1,6 +1,6 @@
 Package: transport
-Version: 0.9-3
-Date: 2017-09-29
+Version: 0.9-4
+Date: 2017-10-03
 Title: Optimal Transport in Various Forms
 Authors@R: c(person("Dominic", "Schuhmacher", email = "dominic.schuhmacher@mathematik.uni-goettingen.de", role = c("aut","cre")),
              person("Björn", "Bähre", role = "aut", comment = "aha and power diagrams"),
@@ -20,7 +20,7 @@ License: GPL (>= 2)
 URL: http://www.dominic.schuhmacher.name
 RoxygenNote: 6.0.1
 NeedsCompilation: yes
-Packaged: 2017-09-29 14:05:27 UTC; schumi
+Packaged: 2017-10-03 04:28:58 UTC; schumi
 Author: Dominic Schuhmacher [aut, cre],
   Björn Bähre [aut] (aha and power diagrams),
   Carsten Gottschlich [aut] (simplex and shortlist),
@@ -28,4 +28,4 @@ Author: Dominic Schuhmacher [aut, cre],
   Bernhard Schmitzer [aut] (shielding),
   Timo Wilm [ctb] (wpp)
 Repository: CRAN
-Date/Publication: 2017-09-29 22:05:38 UTC
+Date/Publication: 2017-10-03 20:00:10 UTC

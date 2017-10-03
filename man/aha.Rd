@@ -91,7 +91,7 @@ If \code{wasser} is \code{TRUE}, a data frame with columns \code{wasser.dist} an
 res <- aha(random32a$mass, random32b$mass)
 plot(random32a, random32b, res, lwd=0.75)
 
-aha(random64a$mass, random64b$mass, nscales=3, scmult=5, wasser.spt=3000, approx=TRUE)
+aha(random64a$mass, random64b$mass, nscales=3, scmult=5, wasser.spt=512, approx=TRUE)
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

@@ -1,13 +1,5 @@
 #include"Interfaces-CPLEX.h"
 
-// instantantiate solver class templates
-
-template class TCPLEXNetSolver<TCouplingHandlerSemiDense>;
-template class TCPLEXNetSolver<TCouplingHandlerSparse>;
-
-
-template class TMultiScaleSetupCPLEX<TMultiScaleSetupW2Grid>;
-
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 // TSolverInterfaceCPLEX Methods
@@ -246,4 +238,14 @@ int TMultiScaleSetupCPLEX<TReferenceSetup>::SetupFactorySolverInterface() {
 	FactorySolverInterface = new TFactorySolverInterfaceCPLEX;
 	return 0;
 }
+
+
+
+// instantantiate solver class templates
+
+template class TCPLEXNetSolver<TCouplingHandlerSemiDense>;
+template class TCPLEXNetSolver<TCouplingHandlerSparse>;
+
+
+template class TMultiScaleSetupCPLEX<TMultiScaleSetupW2Grid>;
 

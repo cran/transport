@@ -1,6 +1,6 @@
-041cbc3a3927769d1aed88f962de2224 *DESCRIPTION
+e1ce7bc45df0c5986d176e3508952140 *DESCRIPTION
 e33fcd09edd615b2bc0d4583fbd8cf92 *NAMESPACE
-50df0875a2a75a5a991725eb30254117 *NEWS
+8e56f7b6fd6bf7f893c829b0151b82e5 *NEWS
 785decab692fe7174d708b221e155c89 *R/RcppExports.R
 6dcbf2cd14cd4da881e69e381c03805b *R/aha.R
 d8cf3fe1f9168f66c2d71909be526560 *R/fundament.R
@@ -13,7 +13,7 @@ d8cf3fe1f9168f66c2d71909be526560 *R/fundament.R
 c5a3891801c545cfbbc63470dd2be753 *data/random64.rda
 f56be8413c8b99ac0321425840ccf13c *inst/CITATION
 9da8f0822c6d5779a0e5fab96a7b4592 *inst/INSTALL
-fc3c475decb0a30127d725491b747f9b *man/aha.Rd
+029e9714bbd5e3c35cab0d8d4a4555a7 *man/aha.Rd
 62aff34e263e0f9754fc3ee4d5c50ab7 *man/all.equal.Rd
 55ffbf3e6dd21f7a379d6de95444d36d *man/compatible.Rd
 740c1f7ffaaad356b0fdf11611a37915 *man/methods.Rd
@@ -28,7 +28,7 @@ a0cae29aad315736c5d8b79039519b27 *man/random.Rd
 e342bd1a6cbfaa2e96d93cf8cfeeeedc *man/shielding.Rd
 a9eeaf180c0e3873a2eaf1e97cf73261 *man/starting_solutions.Rd
 e3835c4c7d6cdd76f90dda57ed099f1c *man/transport-internal.Rd
-4f1b8f3884ee2ece6e871a82377a1814 *man/transport-package.Rd
+f275a941e35cbef8c0a5684c87ffcf10 *man/transport-package.Rd
 7f29a2a5003cc6e8cf9aa6fda6e43e24 *man/transport.Rd
 a970f2161056924a031038f6769e0bde *man/transport_track.Rd
 23369ce80cf243374479976d71230a34 *man/trcontrol.Rd
@@ -75,9 +75,9 @@ c5b8c4d5edc7026ef423346dc947c5f8 *src/ShortCutSolver/MultiScaleSolver.h
 589a8d4d28c415c43d7f90725cd6cda7 *src/ShortCutSolver/TShieldGenerator.h
 12ebb997a6f978e287e838c02ef99324 *src/ShortCutSolver/TShortCutSolver.cpp
 2910d61d7640d86ebfe1eace8b2f02d0 *src/ShortCutSolver/TShortCutSolver.h
-e25a19c6965c80e4a487f9b51f50a888 *src/ShortCutSolver_CPLEX/Interfaces-CPLEX.cpp
+f5509a733d09b6aa5c5efea215117edd *src/ShortCutSolver_CPLEX/Interfaces-CPLEX.cpp
 a3dee01216181209545dc5435d5151ab *src/ShortCutSolver_CPLEX/Interfaces-CPLEX.h
-ca3f07886dca3a33f400c2c854b9fc8a *src/ShortCutSolver_SparseSimplex/Interfaces-SparseSimplex.cpp
+4ec5acdbeb469209dfc08d1cce2a9591 *src/ShortCutSolver_SparseSimplex/Interfaces-SparseSimplex.cpp
 23f9a157118fc222eed1e376f933aa9d *src/ShortCutSolver_SparseSimplex/Interfaces-SparseSimplex.h
 8bbdb667577c4c9e83bf94ade2176784 *src/aha.c
 714b29e13a1dd893a34378b8af9c37ee *src/auction.c

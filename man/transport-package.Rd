@@ -12,8 +12,8 @@ Solve optimal transport problems. Compute Wasserstein distances (a.k.a. Kantorov
 \tabular{ll}{
 Package: \tab transport\cr
 Type: \tab Package\cr
-Version: \tab 0.9-3\cr
-Date: \tab 2017-09-29\cr
+Version: \tab 0.9-4\cr
+Date: \tab 2017-10-03\cr
 License: \tab GPL (>=2) \cr
 LazyData: \tab yes\cr
 }
