@@ -12,7 +12,7 @@
 }
 \usage{
   \method{plot}{pgrid}(x, y = NULL, tplan = NULL, mass = c("colour", "thickness"),
-    length = 0.1, acol, lwd, rot = FALSE, overlay = FALSE, static.mass =TRUE, ...)
+    length = 0.1, acol, bcol=4, lwd, rot = FALSE, overlay = FALSE, static.mass =TRUE, ...)
   \method{plot}{pp}(x, y = NULL, tplan = NULL, cols = c(4, 2), cex = 0.8,
     acol = grey(0.3), lwd = 1, overlay = TRUE, ...)
   \method{plot}{wpp}(x, y = NULL, tplan = NULL, pmass=TRUE, tmass=TRUE, cols = c(4, 2),
@@ -47,6 +47,10 @@
     the colour of the arrows/lines of the transference plan. Ignored for \code{pgrid}
     objects if \code{mass = "colour"} and for \code{wpp} objects if \code{tmass}
     is \code{TRUE}.  
+  }   
+  \item{bcol}{
+    the colour of the cell boundaries for a semidiscrete transport plan. Ignored
+    in all other instances.  
   }    
   \item{cols}{
   	for \code{pp} objects:

@@ -5,6 +5,43 @@
 
 using namespace Rcpp;
 
+// create_diagram
+NumericMatrix create_diagram(NumericMatrix sites);
+RcppExport SEXP _transport_create_diagram(SEXP sitesSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type sites(sitesSEXP);
+    rcpp_result_gen = Rcpp::wrap(create_diagram(sites));
+    return rcpp_result_gen;
+END_RCPP
+}
+// cgal_present
+SEXP cgal_present();
+RcppExport SEXP _transport_cgal_present() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(cgal_present());
+    return rcpp_result_gen;
+END_RCPP
+}
+// semidiscrete_p1
+List semidiscrete_p1(NumericMatrix source_mat, NumericMatrix target_mat, bool verbose, bool target_in_genpos, double regularization_strength, NumericMatrix transportplan);
+RcppExport SEXP _transport_semidiscrete_p1(SEXP source_matSEXP, SEXP target_matSEXP, SEXP verboseSEXP, SEXP target_in_genposSEXP, SEXP regularization_strengthSEXP, SEXP transportplanSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type source_mat(source_matSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type target_mat(target_matSEXP);
+    Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
+    Rcpp::traits::input_parameter< bool >::type target_in_genpos(target_in_genposSEXP);
+    Rcpp::traits::input_parameter< double >::type regularization_strength(regularization_strengthSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type transportplan(transportplanSEXP);
+    rcpp_result_gen = Rcpp::wrap(semidiscrete_p1(source_mat, target_mat, verbose, target_in_genpos, regularization_strength, transportplan));
+    return rcpp_result_gen;
+END_RCPP
+}
 // cplex_present
 SEXP cplex_present();
 RcppExport SEXP _transport_cplex_present() {

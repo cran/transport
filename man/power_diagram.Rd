@@ -11,7 +11,7 @@
 }
 \usage{
 power_diagram(xi, eta, w, rect = NA)
-\method{plot}{power_diagram}(x, weights=FALSE, add=FALSE, col=4, lwd=1, ...)
+\method{plot}{power_diagram}(x, weights=FALSE, add=FALSE, col=4, lwd=1.5, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{

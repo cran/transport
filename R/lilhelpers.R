@@ -74,12 +74,12 @@ pgrid <- function(mass, boundary, gridtriple, generator, structure) {
 # diffpic only does something for two pgrid objects without transportation plan
 # rot=FALSE uses the usual R image-convention
 # rot=TRUE plots mass-matrices the same way as they are displayed in numeric output and adapts the tplan-arrows accordingly
-plot.pgrid <- function(x,y=NULL,tplan=NULL,mass=c("colour","thickness"),length=0.1,acol,lwd,rot=FALSE,overlay=FALSE,static.mass=TRUE,...) {
+plot.pgrid <- function(x,y=NULL,tplan=NULL,mass=c("colour","thickness"),length=0.1,acol,bcol=4,lwd,rot=FALSE,overlay=FALSE,static.mass=TRUE,...) {
   stopifnot(class(x) == "pgrid")
   if (class(y) == "wpp") {
   	if (missing(acol)) { acol <- "#996699" }
   	if (missing(lwd)) { lwd <- 1.5 }
-  	return(plot_pgrid_wpp(x,y,tplan,pmass=TRUE,cex=0.8,length=length,acol=acol,lwd=lwd,rot=TRUE,...))
+  	return(plot_pgrid_wpp(x,y,tplan,pmass=TRUE,cex=0.8,length=length,acol=acol,col=bcol,lwd=lwd,rot=TRUE,...))
   }
   a <- x
   if (a$dimension != 2) stop("plot.pgrid is currently only implemented for 2-d grids")
@@ -481,10 +481,11 @@ summary.wpp <- function(object, ...) {
 # 
 # plot semidiscrete transport maps
 # 
-plot_pgrid_wpp <- function(x,y,tplan,pmass=TRUE,cex=0.8,length=0.1,acol="#996699",lwd=1.5,rot=TRUE,...) {
+plot_pgrid_wpp <- function(x,y,tplan,pmass=TRUE,cex=0.8,length=0.1,acol="#996699",col=4,lwd=1.5,rot=TRUE,...) {
   # korrekterweise müsste bei rot=FALSE wpp gedreht werden
   stopifnot(class(x) == "pgrid" && class(y) == "wpp")
-  stopifnot(class(tplan) == "power_diagram")
+  stopifnot(class(tplan) %in% c("apollonius_diagram", "power_diagram"))
+  
   tplansites <- as.matrix(tplan$sites[,1:2])
   if (!isTRUE(all.equal(y$coordinates[order(y$coordinates[,1]),],tplansites[order(tplansites[,1]),],check.attributes = FALSE))) {
   	stop("y and target sites of transport tesselation do not match")
@@ -497,42 +498,52 @@ plot_pgrid_wpp <- function(x,y,tplan,pmass=TRUE,cex=0.8,length=0.1,acol="#996699
   # N <- b$N
   # if (b$dimension != 2) stop("plotting of transport from pgrid to wpp is currently only supported in 2-d")
   image2(xi, eta, a$mass, rot=rot, col=grey(0:200/200), asp=1, xlab="", ylab="")
-  plot(tplan, weights=FALSE, add=TRUE, col=4, lwd=lwd)
-
-  if (pmass) {
-  	  massmean <- mean(y$mass)
-  	  cexfac <- sqrt(y$mass/massmean)
-  	  toosmall <- (cexfac < 0.25)
-  	  toolarge <- (cexfac > 5)
-  	  justright <- !(toosmall | toolarge)	
-  	  cexfac <- cexfac[justright]  
-  	  # drop im folgenden wichtig, sonst werden bei nur einer Zeile Punkte (c_11, 1) und (c_12, 2) geplottet 
-  	  points(y$coordinates[toolarge,,drop=FALSE], col="#CC0000", pch=16, cex=5*cex) 
-  	  points(y$coordinates[toolarge,,drop=FALSE], col=grey(1), pch=10, cex=5*cex, lwd=2)
-  	  # black contours vor better visibility if points overlapp:
-  	  # points(x$coordinates[toolarge,], col=1, pch=1, cex=0.92*5*cex)
-  	  points(y$coordinates[justright,,drop=FALSE], col="#CC0000", pch=16, cex=cexfac*cex)
-  	  # points(x$coordinates[justright,], col=1, pch=1, cex=0.92*cexfac*cex)
-  	  points(y$coordinates[toosmall,,drop=FALSE], col="#CC0000", pch="+", cex=0.4*cex)  	  
+  
+  if (class(tplan) == "apollonius_diagram") {
+    plot_apollonius(y$coordinates, tplan$weights, show_points = TRUE,
+                    show_weights = FALSE, add_to_weights = 0, add = TRUE, col=col, lwd=lwd, ...)
+  } else {  
+    plot(tplan, weights=FALSE, add=TRUE, col=col, lwd=lwd, ...)
   }
   
-  cells <- tplan$cells[!sapply(tplan$cells,function(cc){all(is.na(cc))})]  # remove na cells
-  # centroid formula from https://en.wikipedia.org/wiki/Centroid#Centroid_of_polygon
-  # area <- 0.5 * sum(x[-n]*y[-1]-x[-1]*y[-n])
-  # 1-d: centroidx <- sum((x[-n]+x[-1])*(x[-n]*y[-1]-x[-1]*y[-n]))/(6*area)
-  # 1-d: centroidy <- sum((y[-n]+y[-1])*(x[-n]*y[-1]-x[-1]*y[-n]))/(6*area)
-  centroid <- function(xx,yy) {
-  	xx <- c(xx,xx[1])
-  	yy <- c(yy,yy[1])
-  	n <- length(xx)
-  	area <- 0.5 * sum(xx[-n]*yy[-1]-xx[-1]*yy[-n])
-  	cx <- sum((xx[-n]+xx[-1])*(xx[-n]*yy[-1]-xx[-1]*yy[-n]))/(6*area)
-  	cy <- sum((yy[-n]+yy[-1])*(xx[-n]*yy[-1]-xx[-1]*yy[-n]))/(6*area)
-  	return(c(cx,cy))
+  if (pmass) {
+  	massmean <- mean(y$mass)
+  	cexfac <- sqrt(y$mass/massmean)
+  	toosmall <- (cexfac < 0.25)
+  	toolarge <- (cexfac > 5)
+  	justright <- !(toosmall | toolarge)	
+  	cexfac <- cexfac[justright]  
+  	# drop im folgenden wichtig, sonst werden bei nur einer Zeile Punkte (c_11, 1) und (c_12, 2) geplottet 
+  	points(y$coordinates[toolarge,,drop=FALSE], col="#CC0000", pch=16, cex=5*cex) 
+  	points(y$coordinates[toolarge,,drop=FALSE], col=grey(1), pch=10, cex=5*cex, lwd=2)
+  	# black contours vor better visibility if points overlapp:
+  	# points(x$coordinates[toolarge,], col=1, pch=1, cex=0.92*5*cex)
+  	points(y$coordinates[justright,,drop=FALSE], col="#CC0000", pch=16, cex=cexfac*cex)
+  	# points(x$coordinates[justright,], col=1, pch=1, cex=0.92*cexfac*cex)
+  	points(y$coordinates[toosmall,,drop=FALSE], col="#CC0000", pch="+", cex=0.4*cex)  	  
   }
-  centroids <- sapply(cells,function(cc) {centroid(cc[,1],cc[,2])})  # compute centroids (gives 2 x {no. of cells} matrix)
-  arrows(centroids[1,],centroids[2,],tplan$sites[,1],tplan$sites[,2],lwd=lwd*1,col=acol,angle=20,length=length)
-  invisible()
+  
+  # Draw the arrows (not needed for apollonius diagram):
+  if(class(tplan) == "power_diagram") {
+    cells <- tplan$cells[!sapply(tplan$cells,function(cc){all(is.na(cc))})]  # remove na cells
+    # centroid formula from https://en.wikipedia.org/wiki/Centroid#Centroid_of_polygon
+    # area <- 0.5 * sum(x[-n]*y[-1]-x[-1]*y[-n])
+    # 1-d: centroidx <- sum((x[-n]+x[-1])*(x[-n]*y[-1]-x[-1]*y[-n]))/(6*area)
+    # 1-d: centroidy <- sum((y[-n]+y[-1])*(x[-n]*y[-1]-x[-1]*y[-n]))/(6*area)
+    centroid <- function(xx,yy) {
+  	  xx <- c(xx,xx[1])
+  	  yy <- c(yy,yy[1])
+  	  n <- length(xx)
+  	  area <- 0.5 * sum(xx[-n]*yy[-1]-xx[-1]*yy[-n])
+  	  cx <- sum((xx[-n]+xx[-1])*(xx[-n]*yy[-1]-xx[-1]*yy[-n]))/(6*area)
+  	  cy <- sum((yy[-n]+yy[-1])*(xx[-n]*yy[-1]-xx[-1]*yy[-n]))/(6*area)
+  	  return(c(cx,cy))
+    }
+    centroids <- sapply(cells,function(cc) {centroid(cc[,1],cc[,2])})  # compute centroids (gives 2 x {no. of cells} matrix)
+    arrows(centroids[1,],centroids[2,],tplan$sites[,1],tplan$sites[,2],lwd=lwd*1,col=acol,angle=20,length=length)
+  } 
+  
+  return(invisible())
 }
 
 

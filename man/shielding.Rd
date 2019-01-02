@@ -5,7 +5,8 @@
 \title{Compute Optimal Transport (Cost/Plan) Using the Multiscale Shielding Method}
 \usage{
 shielding(a, b, nscales = 2, startscale = 1, flood = 0,
-  measureScale = 1e-06, verbose = FALSE, basisKeep = 1, basisRefine = 1)
+  measureScale = 1e-06, verbose = FALSE, basisKeep = 1,
+  basisRefine = 1)
 }
 \arguments{
 \item{a, b}{arrays with \eqn{d} coordinates representing source and target measure, respectively.
@@ -52,7 +53,7 @@ See the file src/Makevars in the source package for instructions.
 
 \examples{
 \dontrun{
-shielding(random64a$mass,random64b$mass,nscales=5,measureScale=1) }
+shielding(random64a$mass,random64b$mass,nscales=6,measureScale=1) }
 
 }
 \references{

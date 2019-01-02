@@ -39,7 +39,7 @@ transport_error(a, b, tplan)
     logical. Instead of an optimal transference plan, should the parameters for the optimal power diagram be returned? 
 }
   \item{wasser}{
-    logical. Instead of an optimal transference plan, should the \eqn{L_2}{L2}-Wasserstein-distance between \code{a} and \code{b} be returned directly?
+    logical. Instead of an optimal transference plan, should only the \eqn{L_2}{L2}-Wasserstein-distance between \code{a} and \code{b} be returned?
 }
   \item{wasser.spt}{
   	the number of support points used to approximate the discrete measure \code{b}. Defaults to \code{NA} meaning the full set of support
@@ -64,7 +64,7 @@ transport_error(a, b, tplan)
 \value{
 If \code{powerdiag} and \code{wasser} are both \code{FALSE}, a data frame with columns \code{from}, \code{to} and \code{mass}, which specify from which knot to which other knot what amount of mass is sent in the optimal transference plan. Knots are given as indices in terms of the usual column major enumeration of the matrices \code{a} and \code{b}. There are \code{\link[=plot.pgrid]{plot}} methods for the classes \code{\link{pgrid}} and \code{\link{pp}}, which can plot this solution.
 
-If \code{powerdiag} is TRUE and \code{wasser} is \code{FALSE}, a list with components \code{xi}, \code{eta}, \code{w} and \code{rect}, which specify the parameters for the optimal power diagram in the same format as needed for the function \code{\link{power_diagram}}. Note that rect is always \code{c(0,m,0,n)}.
+If \code{powerdiag} is TRUE and \code{wasser} is \code{FALSE}, a list with components \code{xi}, \code{eta}, \code{w} and \code{rect}, which specify the parameters for the optimal power diagram in the same format as needed for the function \code{\link{power_diagram}}. Note that rect is always \code{c(0,m,0,n)}. Since version 0.10-0 the list has a further component \code{wasser.dist} containing the Wasserstein distance.
 
 If \code{wasser} is \code{TRUE}, a data frame with columns \code{wasser.dist} and \code{error.bound} of length one, where \code{error.bound} gives a bound on the absolute error in the Wasserstein distance due to approximating the measure \code{b} by a measure on a smaller number of support points.
 }

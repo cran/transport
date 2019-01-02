@@ -2,18 +2,10 @@
 #include <Rinternals.h>
 #include <stdlib.h> // for NULL
 #include <R_ext/Rdynload.h>
+// consider including RcppExports.h here (after renaming)
+// somehow the current solution with two files is a bit awkward
+// and hard to maintain
 
-/*
-  The following symbols/expressions for .NAME have been omitted
-
-    _transport_SolveHierarchicalTransport
-
-  Most likely possible values need to be added below.
-*/
-
-/* FIXME: 
-   Check these declarations against the C/Fortran source code.
-*/
 
 /* .C calls */
 extern void aha_compute_transport(void *, void *, void *, void *, void *, void *);
@@ -33,8 +25,12 @@ extern void revsimplex(void *, void *, void *, void *, void *, void *, void *, v
 extern void shortsimplex(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
 
 /* .Call calls */
-extern SEXP _transport_SolveHierarchicalTransport(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP _transport_create_diagram(SEXP);
+extern SEXP _transport_cgal_present();
+extern SEXP _transport_semidiscrete_p1(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP _transport_cplex_present();
+extern SEXP _transport_SolveHierarchicalTransport(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+
 
 static const R_CMethodDef CEntries[] = {
     {"aha_compute_transport", (DL_FUNC) &aha_compute_transport,  6},
@@ -56,8 +52,11 @@ static const R_CMethodDef CEntries[] = {
 };
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_transport_SolveHierarchicalTransport", (DL_FUNC) &_transport_SolveHierarchicalTransport, 13},
+    {"_transport_create_diagram", (DL_FUNC) &_transport_create_diagram, 1},
+    {"_transport_cgal_present", (DL_FUNC) &_transport_cgal_present, 0},
+    {"_transport_semidiscrete_p1", (DL_FUNC) &_transport_semidiscrete_p1, 6},
     {"_transport_cplex_present", (DL_FUNC) &_transport_cplex_present, 0},
+    {"_transport_SolveHierarchicalTransport", (DL_FUNC) &_transport_SolveHierarchicalTransport, 13},
     {NULL, NULL, 0}
 };
 

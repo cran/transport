@@ -4,9 +4,9 @@
 # Import from standard packages (except for base)
 #
 importFrom("grDevices", "grey", "heat.colors", "png", "dev.off")
-importFrom("graphics", "arrows", "image", "matplot", "par", "plot",
-             "points", "segments")
-importFrom("stats", "aggregate", "dist", "optim", "runif")
+importFrom("graphics", "arrows", "image", "lines", "matplot", "par", "plot",
+             "points", "polygon", "segments")
+importFrom("stats", "aggregate", "dist", "na.omit", "optim", "runif")
 
 # Import from other packages
 #
@@ -50,6 +50,7 @@ compatible,
 compatible.pgrid,
 compatible.pp,
 compatible.wpp,
+#create_diagram,
 #compute_power_diagram,
 #costp2,
 #decompose_c,
@@ -62,6 +63,7 @@ dedegenerate,
 #image3,
 northwestcorner,
 pgrid,
+plot_apollonius,
 #plot_pgrid_wpp,
 plot.pgrid,
 plot.power_diagram,
@@ -76,10 +78,13 @@ pp,
 #refinesol,
 #refinesol2,
 #res2matrix,
+ret_message,
 #revsimplex,
 russell,
 #scalestart,
 semidiscrete,
+#semidiscrete_p1,
+semidiscrete1,
 shielding,
 #shortsimplex,
 #SolveHierarchicalTransport,

@@ -1,4 +1,24 @@
 wasserstein <- function(a, b, p=1, tplan=NULL, prob=TRUE, ...) {
+  # first we get the semidiscrete case out of the way
+  if (class(a) == "pgrid" && class(b) == "wpp") {
+    if (is.null(tplan)) {
+      tplan <- transport(a,b,p=p,...)
+    }
+    if (!prob) {
+      warning("Setting 'prob=TRUE' for semidiscrete optimal transport")
+    }
+    if (is.null(tplan$wasserstein_dist)) {
+      stop("Wasserstein distance not available")
+    }
+    if (class(tplan) == "apollonius_diagram" && p!=1) {
+      warning("tplan was computed with p=1. Supplied p is ignored")
+    }
+    if (class(tplan) == "power_diagram" && p!=2) {
+      warning("tplan was computed with p=2. Supplied p is ignored")
+    }
+    return(tplan$wasserstein_dist)
+  }                          	
+
   stopifnot(compatible(a,b))
   if (a$dimension < 2) stop("dimension >= 2 required")
   
@@ -974,7 +994,7 @@ transport.wpp <- function(a, b, p = 1, method = c("revsimplex", "shortsimplex", 
 }
 
 
-semidiscrete <- function(a, b, p = 2, method = c("aha"), control = list(), ...) {
+semidiscrete <- function(a, b, p=2, method = c("aha"), control = list(), ...) {
   stopifnot(class(a) == "pgrid" && class(b) == "wpp")
   stopifnot(a$dimension == b$dimension)
   stopifnot(isTRUE(all.equal(a$totcontmass,b$totmass)))
@@ -986,12 +1006,11 @@ semidiscrete <- function(a, b, p = 2, method = c("aha"), control = list(), ...) 
   m <- a$n[2]  # x
   Ngrid <- a$N
   
-  if (missing(p)) {
-  	warning("Semi-discrete optimal transport... Assuming p=2...")
-  	p <- 2
+  if (missing(p) || !(p %in% c(1,2))) {
+  	stop("For semidiscrete optimal transport p = 1 or 2 is required.")
   }
-  if (p != 2 || a$dimension > 2) {
-  	stop("Semi-discrete optimal transport is currently only implemented in two dimensions and for p=2.")
+  if (a$dimension > 2) {
+  	stop("Semi-discrete optimal transport is currently only implemented in two dimensions.")
   }
   if (!isTRUE(all.equal(a$gridtriple[1,3],a$gridtriple[2,3]))) {
   	stop("Semi-discrete optimal transport is currently only implemented for square pixels in pgrid.")
@@ -1019,23 +1038,39 @@ semidiscrete <- function(a, b, p = 2, method = c("aha"), control = list(), ...) 
   if (min(x) < a$boundary[1] || max(x) > a$boundary[2] || min(y) < a$boundary[3] || max(y) > a$boundary[4]) {
   	warning("Not all points of wpp lie inside the boundary of pgrid.")
   }
-  
-  # rigging the scale of b (aha interpretes a$mass on [0,m] x [0,n]) and
-  # orientation of a (it seems there is a problem in aha interpreting the orientation
-  # this is worked around in the original aha.c code, line 417, when interpreting the result
-  # as transport between pixel grids, but not when returning the weights)
-  magfac <- m/(a$boundary[2]-a$boundary[1])
-  stopifnot(isTRUE(all.equal(magfac,n/(a$boundary[4]-a$boundary[3]))))  # just checking
-  # rotcoclock <- function(m) t(m)[ncol(m):1,]
-  # it seems the rotclock is not needed after all
-  # Note that aha normalizes both arguments to probability measure
-  # The fact that a$mass is interpreted on pixels of side lenght one may lead to a decrease (or increase) of mass
-  # but is corrected within aha
-  res <- aha(a$mass, data.frame(x=magfac*x,y=magfac*y,mass=b$mass), nscales=nscales, scmult=scmult,
-    factr=control$para$factr, maxit=control$para$maxit, powerdiag=TRUE, wasser=FALSE, wasser.spt=NA)
-  # unrig: factors 1/magfac resp 1/magfac^2 (just changes scale from visual point of view pd stays the same)
-  pd <- power_diagram(res$xi/magfac,res$eta/magfac,res$w/magfac^2,res$rect/magfac)
-  return(pd)  # also contains the weight vector
+
+  if (p == 1) {
+    if (!isTRUE(all.equal(a$gridtriple[1,3],a$gridtriple[2,3]))) {
+      stop("Currently the computation of semidiscrete optimal transpor for p=1 requires
+      square pixels.")
+    }
+    res <- semidiscrete1(a$mass, cbind(b$coordinates,b$mass), xrange=a$boundary[1:2], yrange=a$boundary[3:4],
+                  verbose=FALSE, reg=0)
+    res$sites <- b$coordinates
+    res <- res[c(4,1,2,3)]
+    class(res) <- "apollonius_diagram"
+    return(res)
+  } else if (p == 2) {
+    # rigging the scale of b (aha interpretes a$mass on [0,m] x [0,n]) and
+    # orientation of a (it seems there is a problem in aha interpreting the orientation
+    # this is worked around in the original aha.c code, line 417, when interpreting the result
+    # as transport between pixel grids, but not when returning the weights)
+    magfac <- m/(a$boundary[2]-a$boundary[1])
+    stopifnot(isTRUE(all.equal(magfac,n/(a$boundary[4]-a$boundary[3]))))  # just checking
+    # rotcoclock <- function(m) t(m)[ncol(m):1,]
+    # it seems the rotclock is not needed after all
+    # Note that aha normalizes both arguments to probability measure
+    # The fact that a$mass is interpreted on pixels of side lenght one may lead to a decrease (or increase) of mass
+    # but is corrected within aha
+    res <- aha(a$mass, data.frame(x=magfac*x,y=magfac*y,mass=b$mass), nscales=nscales, scmult=scmult,
+               factr=control$para$factr, maxit=control$para$maxit, powerdiag=TRUE, wasser=FALSE, wasser.spt=NA)
+    # unrig: factors 1/magfac resp 1/magfac^2 (just changes scale from visual point of view pd stays the same)
+    pd <- power_diagram(res$xi/magfac,res$eta/magfac,res$w/magfac^2,res$rect/magfac)
+    pd$wasserstein_dist <- res$wasser.dist/magfac
+    return(pd)  # also contains the weight vector
+  } else {
+    stop("p must be 1 or 2.")
+  }
 }
 
 

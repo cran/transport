@@ -107,7 +107,7 @@ aha <- function(a,b,nscales=1,scmult=2,factr=1e+05,maxit=10000,powerdiag=FALSE,
         w <- multiscale(wasser.spt,v$x,v$y,v$m,1)
         #plot(power_diagram(v$x,v$y,w,c(0,0,m,n)))
 
-        res <- .C("aha_wasserstein",as.integer(wasser.spt),as.double(v$x),as.double(v$y),as.double(w),
+        temp <- .C("aha_wasserstein",as.integer(wasser.spt),as.double(v$x),as.double(v$y),as.double(w),
                   as.double(pixel_density), res=double(1),PACKAGE="transport")
 
         # error bound
@@ -115,7 +115,7 @@ aha <- function(a,b,nscales=1,scmult=2,factr=1e+05,maxit=10000,powerdiag=FALSE,
 
         .C("aha_free",PACKAGE="transport")
 
-        return(data.frame(wasser.dist=res$res,error.bound=error))
+        return(data.frame(wasser.dist=temp$res,error.bound=error))
     } else {
         w <- multiscale(length(x),x,y,target_mass,1)
         
@@ -123,6 +123,9 @@ aha <- function(a,b,nscales=1,scmult=2,factr=1e+05,maxit=10000,powerdiag=FALSE,
         if (powerdiag) {
         	  # plot(power_diagram(x,y,w,rect=rect))
         	  pd <- list(xi=x,eta=y,w=w,rect=c(0,m,0,n))
+        	  temp <- .C("aha_wasserstein",as.integer(length(x)),as.double(x),as.double(y),as.double(w),
+        	                               as.double(pixel_density), res=double(1),PACKAGE="transport")
+        	  pd$wasser.dist <- temp$res
         	  return(pd)
         } else {
           tmemsize <- .C("aha_compute_transport", as.integer(length(x)), as.double(x), as.double(y),
@@ -206,7 +209,7 @@ power_diagram <- function (xi,eta,w,rect=NA) {
     return(pd)
 }
 
-plot.power_diagram <- function(x, weights=FALSE, add=FALSE, col=4, lwd=1, ...) {
+plot.power_diagram <- function(x, weights=FALSE, add=FALSE, col=4, lwd=1.5, ...) {
     stopifnot(class(x) == "power_diagram")
     pd <- x
     segmentize <- function(pg) {

@@ -55,7 +55,7 @@ transport(a, b, ...)
   The following is a brief description of each key word used. Much more details can be found in the cited references 
   and in a forthcoming package vignette.
 
-  \code{aha}: The Aurenhammer--Hoffmann--Aronov (1998) method with the multiscale approach presented in Mérigot (2011).
+  \code{aha}: The Aurenhammer--Hoffmann--Aronov (1998) method with the multiscale approach presented in Mérigot (2011). The original theory was limited to \eqn{p=2}. We refer by \code{aha} also to the extension of the same idea for \eqn{p=1} as presented in Hartmann and Schuhmacher (2017) and for more general \eqn{p} (currently not implemented).
 
   \code{auction}: The auction algorithm by Bertsekas (1988) with epsilon-scaling, see Bertsekas (1992).
 
@@ -77,7 +77,7 @@ transport(a, b, ...)
   
   \tabular{lllll}{
   	                 \tab default \tab pgrid \tab  pp  \tab  wpp   \cr
-  	aha (p=2!)       \tab   -     \tab   +   \tab   -   \tab   @   \cr
+  	aha (p=1 or 2!)  \tab   -     \tab   +   \tab   -   \tab   @   \cr
     auction          \tab   -     \tab   -   \tab   +   \tab   -   \cr
     auctionbf        \tab   -     \tab   -   \tab   +   \tab   -   \cr
     primaldual       \tab   *     \tab   *   \tab   *   \tab   +   \cr  
@@ -140,6 +140,8 @@ D. P. Bertsekas (1992). Auction algorithms for network flow problems: a tutorial
 
 C. Gottschlich and D. Schuhmacher (2014). The shortlist method for fast computation of the earth mover's distance and finding optimal solutions to transportation problems. PLOS ONE 9(10), e110214. \href{http://dx.doi.org/10.1371/journal.pone.0110214}{doi:10.1371/journal.pone.0110214}
 
+V. Hartmann and D. Schuhmacher (2017). Semi-discrete optimal transport --- the case p=1. Preprint \href{https://arxiv.org/abs/1706.07650}{arXiv:1706.07650}
+
 D.G. Luenberger (2003). Linear and nonlinear programming, 2nd ed. Kluwer.
 
 D.G. Luenberger and Y. Ye (2008). Linear and nonlinear programming, 3rd ed. Springer.
@@ -150,11 +152,14 @@ B. Schmitzer (2016). A sparse multiscale algorithm for dense optimal transport. 
 }
 \author{
   Dominic Schuhmacher \email{dschuhm1@uni-goettingen.de} \cr  
-  Björn Bähre \email{bjobae@gmail.com} \cr (code for \code{\link{aha}}-method) \cr  
+  Björn Bähre \email{bjobae@gmail.com} \cr (code for \code{\link{aha}}-method for \code{p=2}) \cr  
   Carsten Gottschlich \email{gottschlich@math.uni-goettingen.de} \cr (original java code for \code{shortlist}- and \code{revsimplex}-methods) \cr
+  Valentin Hartmann \email{valentin.hartmann@epfl.ch} \cr (code for \code{\link[=semidiscrete1]{aha}}-method for \code{p=1}) \cr
   Bernhard Schmitzer \email{schmitzer@uni-muenster.de} \cr (code for \code{\link{shielding}}-method)
 }
 \section{Use of CPLEX}{The combination of the shielding-method with the CPLEX numerical solver outperforms the other algorithms by an order of magnitude for large problems (only applicable for \code{p=2} and objects of class \code{"pgrid"}). If a local installation of CPLEX is available, the transport package can be linked against it during installation. See the file src/Makevars in the source package for instructions.
+}
+\section{Use of CGAL}{The combination of the aha-method with \code{p=1} requires the use of CGAL (the Computational Geometry Algorithms Library) for dealing with Apollonius diagrams. If you require this functionality, install it from https://www.cgal.org/download.html and adapt the file src/Makevars of this package according to the instructions given in that file. Then re-install 'transport' from source as usual.
 }
 
 %% ~Make other sections like Warning with \section{Warning }{....} ~
@@ -222,7 +227,8 @@ plot(x,y,res)
 
 
 #
-# example for semidiscrete transport between class 'pgrid' and class 'wpp'
+# example for semidiscrete transport between class
+# 'pgrid' and class 'wpp' (p=2)
 #
 set.seed(33)
 n <- 100
@@ -231,6 +237,21 @@ massb <- massb/sum(massb)*1e5
 b <- wpp(matrix(runif(2*n),n,2),massb)
 res <- transport(random32a,b,p=2)
 plot(random32a,b,res)
+
+
+#
+# example for semidiscrete transport between class
+# 'pgrid' and class 'wpp' (p=1)
+#
+if (transport:::cgal_present()) {
+  set.seed(33)
+  n <- 30
+  massb <- rexp(n)
+  massb <- massb/sum(massb)*1e5
+  b <- wpp(matrix(runif(2*n),n,2),massb)
+  res <- transport(random32a,b,p=1)
+  plot(random32a,b,res)
+}
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

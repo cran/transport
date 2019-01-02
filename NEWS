@@ -1,5 +1,58 @@
 ----------------------------------------------------------------
 
+	CHANGES IN transport VERSION 0.10-0  (2018-12-24)
+
+OVERVIEW
+
+    o  Semidiscrete optimal transport can now also be
+       computed for p=1 (in addition to p=2) if CGAL is
+       available. Adapt then src/Makevars and install this
+       package from source. This functionality is based on
+       stand-alone C++ code by Valentin Hartmann
+       
+    o  Easier extraction of the Wasserstein distance
+       from semidiscrete optimal transport results
+
+NEW FUNCTIONS
+    
+    o  semidiscrete1
+    The workhorse function for computing semidiscrete
+    optimal transport for p=1. This is called by the
+    function transport (if first input object has class
+    pgrid, second input object has class wpp and p=1) and
+    by the function semidiscrete (if p=1).
+    Calling semidiscrete1 directly offers finer control
+    of the algorithm.
+
+    o  plot_apollonius
+    The workhorse function for plotting the semidiscrete
+    optimal transport plan for p=1. This is called by the
+    function plot.pgrid (if the second input object has
+    class wpp and p=1).
+    Calling plot_apollonius directly allows to plot
+    arbitrary Apollonius diagrams (a.k.a. weighted Voronoi
+    tesselations) based on a two-column matrix of centers
+    and a vector of weights. It allows offers finer
+    control over plotting.
+
+
+SIGNIFICANT CHANGES
+
+    o  Functions transport and plot.pgrid can now compute
+       and plot semidiscrete optimal transport plans also
+       for p=1 (in addition to p=2) using an object of class
+       pgrid and an object of class wpp. The result of the
+       plot is an Apollonius diagram (a.k.a. weighted
+       Voronoi tesselations) consisting of hyperbola
+       segments.
+
+    o  The object returned by semidiscrete now always contains
+       a component giving the Wasserstein distance between the
+       input objects. The function wasserstein simply extracts
+       this component.
+
+----------------------------------------------------------------
+
 	CHANGES IN transport VERSION 0.9-4  (2017-10-03)
 
 OVERVIEW
