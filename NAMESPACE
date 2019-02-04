@@ -6,7 +6,9 @@
 importFrom("grDevices", "grey", "heat.colors", "png", "dev.off")
 importFrom("graphics", "arrows", "image", "lines", "matplot", "par", "plot",
              "points", "polygon", "segments")
-importFrom("stats", "aggregate", "dist", "na.omit", "optim", "runif")
+importFrom("methods", "is")
+importFrom("stats", "aggregate", "dist", "na.omit", "optim", "rmultinom", "runif")
+
 
 # Import from other packages
 #
@@ -88,6 +90,7 @@ semidiscrete1,
 shielding,
 #shortsimplex,
 #SolveHierarchicalTransport,
+subwasserstein,
 #summary.pgrid,
 #summary.pp,
 #summary.wpp,

@@ -9,13 +9,13 @@
   order \code{p} between the objects.
 }
 \usage{
-wasserstein(a, b, p=1, tplan=NULL, prob=TRUE, ...)
+wasserstein(a, b, p=1, tplan=NULL, costm=NULL, prob=TRUE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{a, b}{
     two objects that describe mass distributions in \eqn{R^d}. Either both of class \code{\link{pgrid}} or \code{\link{pp}}
-    or \code{\link{wpp}}. Their dimension \eqn{d} must be at least 2; see function \code{\link{wasserstein1d}} for \eqn{d=1}.
+    or \code{\link{wpp}} or \code{numeric}. For the first three the dimension \eqn{d} of the structures must be at least 2; see function \code{\link{wasserstein1d}} for \eqn{d=1}.
 }
   \item{p}{
     the power \eqn{\geq 1}{>=1} to which the Euclidean distance between points is taken in order to
@@ -24,6 +24,9 @@ wasserstein(a, b, p=1, tplan=NULL, prob=TRUE, ...)
   \item{tplan}{
     an optional transference plan in the format returned by the function \code{\link{transport}}. If \code{NULL} an optimal
     transference plan based on \code{a}, \code{b} and \code{p} is computed by a call to \code{\link{transport}}.
+}
+  \item{costm}{
+    the matrix of costs between the support points of the measures. Ignored unless \code{a} and \code{b} are numeric vectors.
 }
   \item{prob}{
   	logical. Should the objects \code{a}, \code{b} be interpreted as probability measures, i.e. their total mass be normalized to 1?

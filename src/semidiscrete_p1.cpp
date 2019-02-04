@@ -194,8 +194,7 @@ List semidiscrete_p1(NumericMatrix source_mat, NumericMatrix target_mat,
   
   lbfgs_return = computeWeightVector(refinement, targetReduction, source_mat, target_mat,
                       weights_vec, verbose, pwasserstein_dist, transportplan, 1.0, regularization_strength);
-    // 1 is for the normalizingFactor. Note: the double in the last
-    // argument is what tells the function that we have genpos
+    // 1.0 is for the normalizingFactor. 
   List res = List::create(weights_vec, wasserstein_dist, lbfgs_return);
   return(res);
 }

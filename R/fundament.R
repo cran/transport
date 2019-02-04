@@ -1,4 +1,5 @@
-wasserstein <- function(a, b, p=1, tplan=NULL, prob=TRUE, ...) {
+wasserstein <- function(a, b, p=1, tplan=NULL, costm=NULL, prob=TRUE, ...) {
+  # costm is ignored unless a,b are numerics
   # first we get the semidiscrete case out of the way
   if (class(a) == "pgrid" && class(b) == "wpp") {
     if (is.null(tplan)) {
@@ -19,11 +20,24 @@ wasserstein <- function(a, b, p=1, tplan=NULL, prob=TRUE, ...) {
     return(tplan$wasserstein_dist)
   }                          	
 
-  stopifnot(compatible(a,b))
-  if (a$dimension < 2) stop("dimension >= 2 required")
-  
+  default <- FALSE
+  if (is.numeric(a) && is.numeric(b)) {
+    default <- TRUE
+    stopifnot(all.equal(dim(costm), c(length(a),length(b))))
+    if (!isTRUE(all.equal(sum(a),sum(b)))) {
+      stop("Sums of a and b differ substantially. sum(a)-sum(b) = ", sum(a)-sum(b), ".")
+    }
+  } else {
+    stopifnot(compatible(a,b))
+    if (a$dimension < 2) stop("dimension >= 2 required")
+  }
+    
   if (is.null(tplan)) {
-  	tplan <- transport(a,b,p=p,...)
+    if (default) {
+      tplan <- transport(a,b,costm^p,...)
+    } else {
+  	  tplan <- transport(a,b,p=p,...)
+    }
   }
   
   K <- dim(tplan)[1]
@@ -45,25 +59,34 @@ wasserstein <- function(a, b, p=1, tplan=NULL, prob=TRUE, ...) {
     }
   }
   
-  if (class(a) == "pgrid" && class(b) == "pgrid") {
-    gg <- expand.grid(a$generator)
-    orig <- gg[tplan$from,]
-    dest <- gg[tplan$to,]
-  } else if (class(a) == "pp" && class(b) == "pp") {
-  	orig <- a$coordinates[tplan$from,]
-    dest <- b$coordinates[tplan$to,]
-  } else if (class(a) == "wpp" && class(b) == "wpp") {
-  	orig <- a$coordinates[tplan$from,]
-    dest <- b$coordinates[tplan$to,]    
+  # get distance matrix that is relevant for transport plan
+  if (default) {
+    dd <- costm[cbind(tplan$from, tplan$to)]
   } else {
-  	stop("a and b must be both of the same class among 'pgrid', 'pp', 'wpp'")
+    
+    if (class(a) == "pgrid" && class(b) == "pgrid") {
+      gg <- expand.grid(a$generator)
+      orig <- gg[tplan$from,]
+      dest <- gg[tplan$to,]
+    } else if (class(a) == "pp" && class(b) == "pp") {
+    	orig <- a$coordinates[tplan$from,]
+      dest <- b$coordinates[tplan$to,]
+    } else if (class(a) == "wpp" && class(b) == "wpp") {
+    	orig <- a$coordinates[tplan$from,]
+      dest <- b$coordinates[tplan$to,]    
+    } else {
+    	stop("a and b must be both of the same class among 'pgrid', 'pp', 'wpp'")
+    }
+    
+    dd <- apply(orig-dest,1,wpsum,pp=2)
   }
-  
-  dd <- apply(orig-dest,1,wpsum,pp=2)
+
   res <- wpsum(dd, tplan$mass, p)
 
   if (prob) {
-  	if (class(a) == "pgrid") {
+    if (default) {
+      res <- res/(sum(a)^(1/p))
+    } else if (class(a) == "pgrid" || class(a) == "wpp") {
       res <- res/(a$totmass^(1/p))
       # note: a$totmass might be larger than sum(tplan$mass)    	
       # due to static mass

@@ -1,5 +1,33 @@
 ----------------------------------------------------------------
 
+	CHANGES IN transport VERSION 0.11-0  (2019-02-03)
+
+OVERVIEW
+
+    o  Several improvements regarding exact and approximate
+       computations of Wasserstein distances, including a
+       bug fix.       
+
+NEW FUNCTIONS
+    
+    o  subwasserstein
+    Allow for approximate computation of Wasserstein distances
+    via subsampling. Code by Jörn Schrieber
+
+SIGNIFICANT CHANGES
+
+    o  Function wasserstein can now also compute Wasserstein
+       distances in the vanilla case of two mass vectors with
+       cost matrix.
+
+BUG FIXES
+
+    o  The result was incorrectly normed when applying function
+       wasserstein to objects of class "wpp" with prob=TRUE. Fixed.
+
+
+----------------------------------------------------------------
+
 	CHANGES IN transport VERSION 0.10-0  (2018-12-24)
 
 OVERVIEW
