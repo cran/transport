@@ -5,7 +5,7 @@
 \title{Approximate Computation of Wasserstein Distances via Subsampling.}
 \usage{
 subwasserstein(source, target, S, K = 1, p = 1, costM = NULL,
-  prob = TRUE, method = "revsimplex")
+  prob = TRUE, precompute = FALSE, method = "revsimplex")
 }
 \arguments{
 \item{source}{The source measure has to be either a weight vector or an object
@@ -25,6 +25,8 @@ and target are weight vectors.}
 \item{prob}{logical. Should the objects a, b be interpreted as probability measures, i.e. their
 total mass be normalized to 1?}
 
+\item{precompute}{logical. Should the cost matrix for the large problem be precomputed?}
+
 \item{method}{A string with the name of the method used for optimal transport distance computation.
 Options are "revsimplex", "shortsimplex" and "primaldual". Defaults to "revsimplex".}
 }
@@ -38,10 +40,7 @@ computes the Wasserstein distance between the samples.
 The mean distance out of \code{K} tries is returned.
 }
 \details{
-For the classes \code{"pgrid"}, \code{"wpp"} and \code{"pp"}, currently the  whole distance matrix
-is precomputed. Then for each of the \code{K} samples the function \code{\link{wasserstein}} is
-called using the appropriate submatrix. The computation of the distance matrix makes this function
-slow on large measures. This will be fixed in a later version.
+For larger problems setting \code{precompute} to \code{TRUE} is not recommended.
 }
 \examples{
 \dontrun{

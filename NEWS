@@ -1,5 +1,33 @@
 ----------------------------------------------------------------
 
+	CHANGES IN transport VERSION 0.11-1  (2019-04-17)
+
+OVERVIEW
+
+    o  We thank Samuel Ackerman for contributions.
+
+    o  The functions subwasserstein and transport.pp are
+       faster now. Depending on the example the speed increase
+       can be very substantial.      
+
+SIGNIFICANT CHANGES
+
+    o  Function subwasserstein is much faster now for large objects
+       because distance matrixes are not precomputed anymore. Set
+       the new argument precompute=TRUE if you must reproduce the
+       old behaviour.       
+
+BUG FIXES
+
+    o  Due to the misplacement of a line of code, epsilon-scaling
+       in the auction algorithm was not working properly for the
+       function transport.pp. In some simple pathological examples
+       the algorithm took very long. Reported by Samuel Ackerman.
+       Fixed.
+
+
+----------------------------------------------------------------
+
 	CHANGES IN transport VERSION 0.11-0  (2019-02-03)
 
 OVERVIEW

@@ -13,15 +13,13 @@
 #'        and target are weight vectors.
 #' @param p The order of the Wasserstein metric (i.e. the power of the distances). Defaults to 1.
 #' @param prob logical. Should the objects a, b be interpreted as probability measures, i.e. their
-#'        total mass be normalized to 1?        
+#'        total mass be normalized to 1?  
+#' @param precompute logical. Should the cost matrix for the large problem be precomputed?     
 #' @param method A string with the name of the method used for optimal transport distance computation.
 #'        Options are "revsimplex", "shortsimplex" and "primaldual". Defaults to "revsimplex".
 #'    
 #' @details
-#' For the classes \code{"pgrid"}, \code{"wpp"} and \code{"pp"}, currently the  whole distance matrix
-#' is precomputed. Then for each of the \code{K} samples the function \code{\link{wasserstein}} is
-#' called using the appropriate submatrix. The computation of the distance matrix makes this function
-#' slow on large measures. This will be fixed in a later version.
+#' For larger problems setting \code{precompute} to \code{TRUE} is not recommended.
 #'                
 #' @return The mean of the K values of the Wasserstein distances between
 #'         the subsampled measures.
@@ -41,7 +39,7 @@
 #' 
 #' @export
 
-subwasserstein <- function(source, target, S, K = 1, p = 1, costM = NULL, prob=TRUE, method = "revsimplex") {
+subwasserstein <- function(source, target, S, K = 1, p = 1, costM = NULL, prob=TRUE, precompute = FALSE, method = "revsimplex") {
   
   # Get mass vectors and the cost matrix.
   # This depends on the object class of source and target.
@@ -51,11 +49,13 @@ subwasserstein <- function(source, target, S, K = 1, p = 1, costM = NULL, prob=T
     x <- expand.grid(source$generator)
     y <- expand.grid(target$generator)
     
-    # compute the cost matrix
-    n <- source$N
-    m <- target$N
-    fulldist <- as.matrix(dist(rbind(x,y)))
-    costM <- fulldist[1:n,((n+1):(n+m))]
+    # precompute the cost matrix if desired
+    if (precompute) {
+      n <- source$N
+      m <- target$N
+      fulldist <- as.matrix(dist(rbind(x,y)))
+      costM <- fulldist[1:n,((n+1):(n+m))]
+    }
     
     # fetch weight vectors
     massA <- as.vector(source$mass)
@@ -63,11 +63,16 @@ subwasserstein <- function(source, target, S, K = 1, p = 1, costM = NULL, prob=T
     
   } else if (is(source, "pp") && is(target, "pp")) {
     
-    # compute the cost matrix
-    n <- source$N
-    m <- target$N
-    fulldist <- as.matrix(dist(rbind(source$coordinates,target$coordinates)))
-    costM <- fulldist[1:n,((n+1):(n+m))]
+    x <- source$coordinates
+    y <- target$coordinates
+    
+    # precompute the cost matrix if desired
+    if (precompute) {
+      n <- source$N
+      m <- target$N
+      fulldist <- as.matrix(dist(rbind(x,y)))
+      costM <- fulldist[1:n,((n+1):(n+m))]
+    }
     
     # set weight vectors to ones
     massA <- rep(1,source$N)
@@ -75,11 +80,16 @@ subwasserstein <- function(source, target, S, K = 1, p = 1, costM = NULL, prob=T
     
   } else if (is(source, "wpp") && is(target, "wpp")) {
     
-    # compute the cost matrix
-    n <- source$N
-    m <- target$N
-    fulldist <- as.matrix(dist(rbind(source$coordinates,target$coordinates)))
-    costM <- fulldist[1:n,((n+1):(n+m))]
+    x <- source$coordinates
+    y <- target$coordinates
+    
+    # precompute the cost matrix if desired
+    if (precompute) {
+      n <- source$N
+      m <- target$N
+      fulldist <- as.matrix(dist(rbind(x,y)))
+      costM <- fulldist[1:n,((n+1):(n+m))]
+    }
     
     # fetch weight vectors
     massA <- source$mass
@@ -97,7 +107,9 @@ subwasserstein <- function(source, target, S, K = 1, p = 1, costM = NULL, prob=T
   
   # Compute the total mass for later scaling and stop if measures have different total masses.
   totalMass <- sum(massA)
-  stopifnot(totalMass == sum(massB))
+  if (!isTRUE(all.equal(totalMass, sum(massB)))) {
+    stop("Total masses of measure 'source' and measure 'target' differ substantially")
+  }
   
   res <- rep(0,K)
   # Subsample and compute the optimal transport K times.
@@ -107,10 +119,29 @@ subwasserstein <- function(source, target, S, K = 1, p = 1, costM = NULL, prob=T
     sourcesub <- rmultinom(1, size = S, prob = massA)
     targetsub <- rmultinom(1, size = S, prob = massB)
     
-    # compute Wasserstein distance by the appropriate method;
-    # actually this is typically a case for the auction algorithm -> TO DO
-    res[k] <- wasserstein(sourcesub[sourcesub != 0], targetsub[targetsub != 0], p=p, tplan=NULL,
-                          costm = costM[sourcesub != 0, targetsub != 0], prob=prob, method = method)
+    if (precompute) {
+      
+      # compute Wasserstein distance by the appropriate method;
+      # actually this is typically a case for the auction algorithm -> TO DO
+      res[k] <- wasserstein(sourcesub[sourcesub != 0], targetsub[targetsub != 0], p=p, tplan=NULL,
+                            costm = costM[sourcesub != 0, targetsub != 0], prob=prob, method = method)
+    } else {
+      
+      # compute cost matrix between sampled elements
+      if (is(source, "numeric") && is(target, "numeric")) {
+        costMsub <- costM[sourcesub != 0, targetsub != 0]
+      } else {  
+        nsub <- length(sourcesub[sourcesub != 0])
+        msub <- length(targetsub[targetsub != 0])
+        fulldistsub <- as.matrix(dist(rbind(x[sourcesub != 0,],y[targetsub != 0,])))
+        costMsub <- fulldistsub[1:nsub,((nsub+1):(nsub+msub))] 
+      }
+      
+      # compute Wasserstein distance by the appropriate method;
+      # actually this is typically a case for the auction algorithm -> TO DO
+      res[k] <- wasserstein(sourcesub[sourcesub != 0], targetsub[targetsub != 0], p=p, tplan=NULL,
+                            costm = costMsub, prob=prob, method = method)      
+    }
   }
   # return the mean of the results, scaled by the appropriate factor
   if (!prob) {

@@ -1,14 +1,14 @@
-39b0a08f382d0e0d98a67fc2f06e18eb *DESCRIPTION
+4521fe0d4ef30ed380ad9bf64a68a98e *DESCRIPTION
 b741e341932cdaa137bd214796861aae *NAMESPACE
-1072c4c981f7c75c454bd2fe94bf5c78 *NEWS
+2fb25fb3716c49c62996c9ca669956c8 *NEWS
 7c6423b4cf17e4633159d9301201b806 *R/RcppExports.R
 5e93ae5f1eda266c70424daf41ca85f9 *R/aha.R
-8d36223ca74b649f20580f62e82d0a39 *R/fundament.R
+b80b0fd4e3c81f827d2cf632a3892fc9 *R/fundament.R
 6fec90b4e00e49ff0f32eee3e33d400a *R/lilhelpers.R
 9af4f89cbecae9c36563fdc7cc80db8e *R/plot_apollonius.R
 4fac6838c60f6c96e27c4974ac52ee3d *R/semidiscrete1.R
 16da157c7019ca245db387015149f1b1 *R/shielding.R
-5a41e3506666d0d30de6b7137ab9b1b0 *R/subsampling.R
+bd3e2ed2560cfa69ada61daca9d1942f *R/subsampling.R
 5477be708abe3575fc93e1758ab777c9 *R/transport1d.R
 45b7a58f2cb70330e844262378caeed7 *R/transporttrack.R
 3f3642ac0b895d6b3168953097cba67f *data/random128.rda
@@ -33,7 +33,7 @@ bcee09f96eaaefd9bfa72505db6bcd02 *man/semidiscrete.Rd
 829670d7e653643f7ad5288c5719be2c *man/semidiscrete1.Rd
 04db1e5e867d158a29040b2b1819c31e *man/shielding.Rd
 a9eeaf180c0e3873a2eaf1e97cf73261 *man/starting_solutions.Rd
-fb7f9660971cf6c68748e66c971f7e64 *man/subwasserstein.Rd
+09384234c640ae29a8a8fd63ef272d73 *man/subwasserstein.Rd
 1344c5e54aae2efb966587fe8f0404a8 *man/transport-internal.Rd
 f275a941e35cbef8c0a5684c87ffcf10 *man/transport-package.Rd
 0e41c3ca25d103f9ded3a81c209bc93c *man/transport.Rd

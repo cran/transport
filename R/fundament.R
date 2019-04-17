@@ -751,6 +751,7 @@ transport.pp <- function(a, b, p = 1, method = c("auction", "auctionbf", "shorts
     # Beachte: wenn wir Distanz zurueckgeben wollen, muessen wir natuerlich mit urspruenglichem dd^p rechnen
 
   if (method == "auction" || method == "auctionbf") {  
+    maxdd <- max(dd)
     dupper <- maxdd/10
     lasteps <- control$para$lasteps
     epsvec <- lasteps
