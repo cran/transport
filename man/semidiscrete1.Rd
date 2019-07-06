@@ -87,6 +87,5 @@ V. Hartmann and D. Schuhmacher (2017).
 Valentin Hartmann \email{valentin.hartmann@epfl.ch} (stand-alone C++ code)\cr
         Dominic Schuhmacher \email{schuhmacher@math.uni-goettingen.de} (R-port)
 }
-\keyword{optimal}
-\keyword{semidiscrete,}
-\keyword{transport}
+\keyword{optimal transport}
+\keyword{semidiscrete}

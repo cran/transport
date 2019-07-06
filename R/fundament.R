@@ -66,14 +66,14 @@ wasserstein <- function(a, b, p=1, tplan=NULL, costm=NULL, prob=TRUE, ...) {
     
     if (class(a) == "pgrid" && class(b) == "pgrid") {
       gg <- expand.grid(a$generator)
-      orig <- gg[tplan$from,]
-      dest <- gg[tplan$to,]
+      orig <- gg[tplan$from,,drop=FALSE]
+      dest <- gg[tplan$to,,drop=FALSE]
     } else if (class(a) == "pp" && class(b) == "pp") {
-    	orig <- a$coordinates[tplan$from,]
-      dest <- b$coordinates[tplan$to,]
+    	orig <- a$coordinates[tplan$from,,drop=FALSE]
+      dest <- b$coordinates[tplan$to,,drop=FALSE]
     } else if (class(a) == "wpp" && class(b) == "wpp") {
-    	orig <- a$coordinates[tplan$from,]
-      dest <- b$coordinates[tplan$to,]    
+    	orig <- a$coordinates[tplan$from,,drop=FALSE]
+      dest <- b$coordinates[tplan$to,,drop=FALSE]    
     } else {
     	stop("a and b must be both of the same class among 'pgrid', 'pp', 'wpp'")
     }
@@ -880,8 +880,56 @@ transport.wpp <- function(a, b, p = 1, method = c("revsimplex", "shortsimplex", 
 
   x <- a$coordinates
   y <- b$coordinates
+
+  amass <- a$mass
+  bmass <- b$mass
+  asum <- a$totmass
+  bsum <- b$totmass
   
-  dd <- as.matrix(dist(rbind(x,y)))[1:m,(m+1):(m+n)]
+  if (asum == 0 || bsum == 0) {
+    res <- data.frame(from = integer(0), to = integer(0), mass = double(0))
+    return(res)
+  }
+    
+  if (!isTRUE(all.equal(asum,bsum))) {
+    warning("total mass in a and b differs. Normalizing a and b to probability measures.")
+    amass <- amass/asum
+    bmass <- bmass/bsum
+    asum <- bsum <- 1
+  }
+  is.natural <-
+    function(x, tol = .Machine$double.eps^0.5)  all((abs(x - round(x)) < tol) & x > 0.5)
+  # aus der Hilfe zu is.integer, checks for a vector whether all entries are approximately natural numbers
+
+  fudgeN <- fudgesum <- 1 
+  if (!is.natural(amass) || !is.natural(bmass) || asum != bsum) {
+    fudgeN <- 1e9
+    fudgesum <- asum
+    amass <- round(amass/asum * fudgeN)  
+    bmass <- round(bmass/bsum * fudgeN)  
+    amass <- fudge(amass,fudgeN)
+    bmass <- fudge(bmass,fudgeN)
+  } 
+  
+  # having many zeroes in one of the patterns (especially b it seems?). Will lead to high
+  # probability of hitting a cycle where the improvement in the transport simplex will be 0 then.
+  # So the following step will not only make for faster computation, but is also necessary
+  # to avoid freezes due to infinite loops (we check for infinite loops in the revsimplex code now though)
+  # changed on 12/06/2019 to do this check only in the very end
+  wha <- amass > 0
+  whb <- bmass > 0
+  apos <- amass[wha]
+  bpos <- bmass[whb]
+  m <- length(apos)
+  n <- length(bpos)
+  # The following catches the case that after the reduction procedure nothing is left. Since we checked
+  # for zero measures and have normalized the masses this can only happen if m or n are huge
+  # (to huge to compute something anyway)
+  if (m==0 || n==0) {
+    stop("Non-zero measures, but no mass left after pointwise rounding.")   	
+  }
+  
+  dd <- as.matrix(dist(rbind(x[wha,],y[whb,])))[1:m,(m+1):(m+n)]
   dd <- dd^p
   maxdd <- max(dd)
   # catches a very special case:
@@ -890,37 +938,6 @@ transport.wpp <- function(a, b, p = 1, method = c("revsimplex", "shortsimplex", 
   	return(res)
   }
     
-  # The following catches the case that after the reduction procedure nothing is left, i.e. the two measures were equal
-  if (m==0) {
-    res <- data.frame(from = integer(0), to = integer(0), mass = double(0))
-    return(res)    	
-  }
-  apos <- a$mass
-  bpos <- b$mass
-  asum <- a$totmass
-  bsum <- b$totmass
-  if (!isTRUE(all.equal(asum,bsum))) {
-    warning("total mass in a and b differs. Normalizing a and b to probability measures.")
-    apos <- apos/asum
-    bpos <- bpos/bsum
-    asum <- bsum <- 1
-  }
-  is.natural <-
-  function(x, tol = .Machine$double.eps^0.5)  all((abs(x - round(x)) < tol) & x > 0.5)
-  # aus der Hilfe zu is.integer, checks for a vector whether all entries are approximately natural numbers
-  stopifnot(all(a$mass>0,b$mass>0))    # just to be absolutely sure
-                                       # could only be the case if somebody messed with what (s)he constructed by wpp
-
-  fudgeN <- fudgesum <- 1 
-  if (!is.natural(apos) || !is.natural(bpos) || asum != bsum) {
-    fudgeN <- 1e9
-    fudgesum <- asum
-  	apos <- round(apos/asum * fudgeN)  
-  	bpos <- round(bpos/bsum * fudgeN)  
-  	apos <- fudge(apos,fudgeN)
-  	bpos <- fudge(bpos,fudgeN)
-  } 
-
   if (method == "primaldual") {
   	precision=9
     dd <- dd/maxdd
@@ -939,8 +956,8 @@ transport.wpp <- function(a, b, p = 1, method = c("revsimplex", "shortsimplex", 
     nbasis <- sum(temp$basis)
     res <- data.frame(from = rep(0,nbasis), to = rep(0,nbasis), mass = rep(0,nbasis))
     ind <- which(matrix(as.logical(temp$basis),m,n), arr.ind=TRUE) 
-    res$from <- ind[,1]
-    res$to <- ind[,2]
+    res$from <- which(wha)[ind[,1]]
+    res$to <- which(whb)[ind[,2]]
     res$mass <- temp$assignment[(ind[,2]-1)*m + ind[,1]]
     res$mass <- res$mass * fudgesum / fudgeN
     return(res)
@@ -972,8 +989,8 @@ transport.wpp <- function(a, b, p = 1, method = c("revsimplex", "shortsimplex", 
     nbasis <- sum(temp$basis)
     res <- data.frame(from = rep(0,nbasis), to = rep(0,nbasis), mass = rep(0,nbasis))
     ind <- which(matrix(as.logical(temp$basis),m,n), arr.ind=TRUE) 
-    res$from <- ind[,1]
-    res$to <- ind[,2]
+    res$from <- which(wha)[ind[,1]]
+    res$to <- which(whb)[ind[,2]]
     res$mass <- temp$assignment[(ind[,2]-1)*m + ind[,1]]
     res$mass <- res$mass * fudgesum / fudgeN
     return(res)    
@@ -1009,8 +1026,8 @@ transport.wpp <- function(a, b, p = 1, method = c("revsimplex", "shortsimplex", 
     nbasis <- sum(temp$basis)
     res <- data.frame(from = rep(0,nbasis), to = rep(0,nbasis), mass = rep(0,nbasis))
     ind <- which(matrix(as.logical(temp$basis),m,n), arr.ind=TRUE) 
-    res$from <- ind[,1]
-    res$to <- ind[,2]
+    res$from <- which(wha)[ind[,1]]
+    res$to <- which(whb)[ind[,2]]
     res$mass <- temp$assignment[(ind[,2]-1)*m + ind[,1]]
     res$mass <- res$mass * fudgesum / fudgeN
     return(res)

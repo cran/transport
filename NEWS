@@ -1,5 +1,18 @@
 ----------------------------------------------------------------
 
+	CHANGES IN transport VERSION 0.11-2  (2019-06-12)
+
+OVERVIEW
+
+    o  We thank Luc Lehericy for contributions.
+
+    o  A bug in the function transport.wpp was fixed which
+       for strongly unbalanced weights created sometimes
+       an infinite loop.
+ 
+
+----------------------------------------------------------------
+
 	CHANGES IN transport VERSION 0.11-1  (2019-04-17)
 
 OVERVIEW

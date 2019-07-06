@@ -65,10 +65,6 @@ Menelaos Karavelas and Mariette Yvinec. 2D Apollonius Graphs
 Valentin Hartmann \email{valentin.hartmann@epfl.ch} (most of the code)\cr
         Dominic Schuhmacher \email{schuhmacher@math.uni-goettingen.de} (R-port)
 }
-\keyword{Apollonius}
-\keyword{Voronoi}
-\keyword{apollonius}
-\keyword{diagram,}
-\keyword{graph,}
-\keyword{tesselation}
-\keyword{weighted}
+\keyword{Apollonius graph}
+\keyword{Apollonius diagram}
+\keyword{weighted Voronoi tesselation}
