@@ -13,7 +13,8 @@
 \usage{
   transport_track(source, target, tplan, K = 50, scmult = 1, smooth = FALSE,
      H = matrix(c(1,0,0,1),2,2), create.file = c("none","gif_im"), 
-     file.name = "Rtransport.gif", delay.time = 20, cut = FALSE)
+     file.name = "Rtransport.gif", delay.time = 20, cut = FALSE,
+     col=grey((0:1000)/1000),width=800,height=800)
 }
 \arguments{
   \item{source, target}{
@@ -48,6 +49,16 @@
   \item{cut}{
   	logical. Whether the boundary pixels are cut off. Currently the only way to deal with the edge effect (see Details).
   }
+  \item{col}{
+    the vector of RGB colours which is used to generate the gif, if create.file is not "none". See the 
+    documentation of image for more details.
+  }
+  \item{width}{
+    interger specifying the width of the images used to generate the output gif, if create.file is not "none".
+  }
+  \item{height}{
+    interger specifying the width of the images used to generate the output gif, if create.file is not "none".
+  }
 }
 \details{
   The intermediate frames are produced by the interpolation formula \eqn{[(1-t)\mathrm{pr}_1 + t\mathrm{pr}_2]_{\#} \pi}{[(1-t)*pr_1 + t*pr_2]_# \pi}, 
@@ -73,7 +84,7 @@
 %  [Displacement interpolation?].
 %}
 \author{
-  Florian Heinemann \email{florian.heinemann@stud.uni-goettingen.de} \cr
+  Florian Heinemann \email{florian.heinemann@uni-goettingen.de} \cr
   (slightly modified by Dominic Schuhmacher \email{dschuhm1@uni-goettingen.de})
 }
 %\note{

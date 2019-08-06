@@ -43,8 +43,6 @@
 #' points <- matrix(runif(20), 10, 2)
 #' plot_apollonius(points, w, add_to_weights = -0.1)}
 #'
-#' @keywords Apollonius graph, apollonius diagram, weighted Voronoi tesselation
-#'
 #' @export
 # The assumption is that the points live on [0,S]x[0,T]
 # And are not concentrated on a minuscule part of it for precision reasons

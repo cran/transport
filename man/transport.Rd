@@ -15,14 +15,16 @@
 }
 \usage{
 transport(a, b, ...)
-\method{transport}{default}(a, b, costm, method = c("shortsimplex", "revsimplex", "primaldual"),
-  control = list(), ...)
-\method{transport}{pgrid}(a, b, p = NULL, method = c("auto", "revsimplex", "shortsimplex",
-  "shielding", "aha", "primaldual"), control = list(), ...)
-\method{transport}{pp}(a, b, p = 1, method = c("auction", "auctionbf", "shortsimplex",
-  "revsimplex", "primaldual"), control = list(), ...)
-\method{transport}{wpp}(a, b, p = 1, method = c("revsimplex", "shortsimplex", "primaldual"),
-  control = list(), ...) 
+\method{transport}{default}(a, b, costm, method = c("networkflow", "shortsimplex", "revsimplex",
+"primaldual"), fullreturn=FALSE, control = list(), threads=1, ...)
+\method{transport}{pgrid}(a, b, p = NULL, method = c("auto", "networkflow", "revsimplex", "shortsimplex",
+  "shielding", "aha", "primaldual"), fullreturn=FALSE,
+  control = list(), threads=1,...)
+\method{transport}{pp}(a, b, p = 1, method = c("auction", "auctionbf", "networkflow", "shortsimplex",
+  "revsimplex", "primaldual"),fullreturn=FALSE, 
+  control = list(),threads=1, ...)
+\method{transport}{wpp}(a, b, p = 1, method = c("networkflow", "revsimplex", "shortsimplex",
+"primaldual"), fullreturn=FALSE ,control = list(),threads=1, ...) 
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -42,10 +44,15 @@ transport(a, b, ...)
   \item{method}{
     the name of the algorithm to use. See details below.
 }
+  \item{fullreturn}{
+    A boolean specifying whether the output of the function should also include the dual solution, the optimal transport cost between a and b and the transport plan in matrix form should be returned as well.
+}
   \item{control}{
   	a named list of parameters for the chosen method or the result of a call to \code{\link{trcontrol}}. Any parameters
   	that are not set by the control argument will get reasonable (sometimes problem specific) defaults.
   }
+  \item{threads}{ An Integer specifying the number of threads used in parallel computing. Currently only
+availible for the method "networkflow".}
   \item{...}{
   	currently without effect.
   }
@@ -60,6 +67,8 @@ transport(a, b, ...)
   \code{auction}: The auction algorithm by Bertsekas (1988) with epsilon-scaling, see Bertsekas (1992).
 
   \code{auctionbf}: A refined auction algorithm that combines forward and revers auction, see Bertsekas (1992).
+  
+  \code{networkflow}: The fast implementation of the network simplex algorithm by Nicolas Bonneel based on the LEMON Library (see citations below).
   
   \code{primaldual}: The primal-dual algorithm as described in Luenberger (2003, Section 5.9).
 
@@ -80,6 +89,7 @@ transport(a, b, ...)
   	aha (p=1 or 2!)  \tab   -     \tab   +   \tab   -   \tab   @   \cr
     auction          \tab   -     \tab   -   \tab   +   \tab   -   \cr
     auctionbf        \tab   -     \tab   -   \tab   +   \tab   -   \cr
+    networkflow      \tab   +     \tab   +   \tab   +   \tab   +   \cr  
     primaldual       \tab   *     \tab   *   \tab   *   \tab   +   \cr  
     revsimplex       \tab   +     \tab   +   \tab   *   \tab   +   \cr      
     shielding (p=2!) \tab   -     \tab   +   \tab   -   \tab   -   \cr
@@ -96,6 +106,7 @@ transport(a, b, ...)
     \code{aha} (\eqn{p=2}!)        \tab   -     \tab   +   \tab   \code{factr}, \code{maxit}  \cr  	                        
   	\code{auction}                 \tab   -     \tab   -   \tab   \code{lasteps}, \code{epsfac}   \cr
   	\code{auctionbf}               \tab   -     \tab   -   \tab   \code{lasteps}, \code{epsfac}   \cr
+  	\code{networkflow}             \tab   -     \tab   -   \tab      \cr
   	\code{primaldual}              \tab   -     \tab   -   \tab      \cr
   	\code{revsimplex}              \tab   +     \tab   +   \tab      \cr  
   	\code{shielding} (\eqn{p=2}!)  \tab   -     \tab   +   \tab      \cr  
@@ -138,6 +149,13 @@ D. P. Bertsekas (1988). The auction algorithm: a distributed relaxation method f
 
 D. P. Bertsekas (1992). Auction algorithms for network flow problems: a tutorial introduction. Computational Optimization and Applications 1, 7--66. 
 
+N. Bonneel (2018). Fast Network Simplex for Optimal Transport. Github repository, \href{https://github.com/nbonneel/network_simplex}{nbonneel/network_simplex}.
+
+N. Bonneel, M. van de Panne, S. Paris and W. Heidrich (2011). Displacement interpolation using Lagrangian mass transport. ACM Transactions on Graphics (SIGGRAPH ASIA 2011) 30(6).
+
+Egervary Research Group on Combinatorial Optimization, EGRES (2014). LEMON Graph Library v1.3.1.
+\href{https://lemon.cs.elte.hu/trac/lemon}{lemon.cs.elte.hu/trac/lemon}.
+
 C. Gottschlich and D. Schuhmacher (2014). The shortlist method for fast computation of the earth mover's distance and finding optimal solutions to transportation problems. PLOS ONE 9(10), e110214. \href{http://dx.doi.org/10.1371/journal.pone.0110214}{doi:10.1371/journal.pone.0110214}
 
 V. Hartmann and D. Schuhmacher (2017). Semi-discrete optimal transport --- the case p=1. Preprint \href{https://arxiv.org/abs/1706.07650}{arXiv:1706.07650}
@@ -151,11 +169,19 @@ Q. Mérigot (2011). A multiscale approach to optimal transport. Computer Graphic
 B. Schmitzer (2016). A sparse multiscale algorithm for dense optimal transport. J. Math. Imaging Vision 56(2), 238--259. \href{https://arxiv.org/abs/1510.05466}{https://arxiv.org/abs/1510.05466}
 }
 \author{
-  Dominic Schuhmacher \email{dschuhm1@uni-goettingen.de} \cr  
-  Björn Bähre \email{bjobae@gmail.com} \cr (code for \code{\link{aha}}-method for \code{p=2}) \cr  
-  Carsten Gottschlich \email{gottschlich@math.uni-goettingen.de} \cr (original java code for \code{shortlist}- and \code{revsimplex}-methods) \cr
-  Valentin Hartmann \email{valentin.hartmann@epfl.ch} \cr (code for \code{\link[=semidiscrete1]{aha}}-method for \code{p=1}) \cr
-  Bernhard Schmitzer \email{schmitzer@uni-muenster.de} \cr (code for \code{\link{shielding}}-method)
+  Dominic Schuhmacher \email{schuhmacher@math.uni-goettingen.de}
+  
+  Björn Bähre \email{bjobae@gmail.com} (code for \code{\link{aha}}-method for \code{p=2})
+  
+  Nicolas Bonneel \email{nicolas.bonneel@liris.cnrs.fr} \cr (adaption of LEMON code for fast \code{networkflow} method)
+  
+  Carsten Gottschlich \email{gottschlich@math.uni-goettingen.de} \cr (original java code for \code{shortlist} and \code{revsimplex} methods)
+  
+  Valentin Hartmann \email{valentin.hartmann@epfl.ch} (code for \code{\link[=semidiscrete1]{aha}} method for \code{p=1})
+  
+  Florian Heinemann \email{florian.heinemann@uni-goettingen.de} \cr (integration of \code{networkflow} method)
+  
+  Bernhard Schmitzer \email{schmitzer@uni-muenster.de} (code for \code{\link{shielding}}-method)
 }
 \section{Use of CPLEX}{The combination of the shielding-method with the CPLEX numerical solver outperforms the other algorithms by an order of magnitude for large problems (only applicable for \code{p=2} and objects of class \code{"pgrid"}). If a local installation of CPLEX is available, the transport package can be linked against it during installation. See the file src/Makevars in the source package for instructions.
 }
@@ -255,5 +281,13 @@ if (transport:::cgal_present()) {
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
+\keyword{aha}
+\keyword{auction}
+\keyword{auctionbf}
+\keyword{networkflow}
+\keyword{primaldual}
+\keyword{revsimplex}
+\keyword{shielding}
+\keyword{shortsimplex}
 \keyword{main function}
 %\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line

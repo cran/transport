@@ -16,7 +16,7 @@ importFrom("stats", "aggregate", "dist", "na.omit", "optim", "rmultinom", "runif
 # importFrom("animation", "ani.options", "im.convert")
 # (apparently not needed for suggested packages)
 importFrom(Rcpp, evalCpp)
-
+importFrom(data.table,rbindlist)
 
 # Entry points into compiled code
 useDynLib(transport, .registration = TRUE)
@@ -48,10 +48,12 @@ all.equal.pp,
 all.equal.wpp,
 #auction,
 #auctionbf,
+#cgal_present,
 compatible,
 compatible.pgrid,
 compatible.pp,
 compatible.wpp,
+#cplex_present,
 #create_diagram,
 #compute_power_diagram,
 #costp2,
@@ -64,6 +66,7 @@ dedegenerate,
 #image2,
 #image3,
 northwestcorner,
+#openmp_present,
 pgrid,
 plot_apollonius,
 #plot_pgrid_wpp,

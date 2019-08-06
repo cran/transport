@@ -1,3 +1,32 @@
+
+----------------------------------------------------------------
+
+	CHANGES IN transport VERSION 0.12-0  (2019-08-05)
+
+OVERVIEW
+
+    o  We thank Nicolas Bonneel for contributions.
+
+    o  The main workhorse function transport has a new method
+       "networkflow". This is currently the recommended method for
+       solving the discrete optimal transport problems directly
+       via a simplex algorithm (it is fastest unless special
+       structure is known, e.g. p=2).
+       The method is available for objects of classes pp, wpp,
+       pgrid. The code is based on the modified version of
+       the Lemon Library provided by Nicolas Bonneel.
+       https://github.com/nbonneel/network_simplex
+       
+    o  A new configure script checks for openmp support at install time.
+       If supported the installed version allows the user to run a
+       multithreaded version of the "networkflow" method via a new
+       argument "threads" in the appropriate transport functions.
+       
+    o  Fixes a bug in the transport.track function which could cause
+       an error when trying to generate a gif using this function.
+       Also adds some minor customization options to this function.
+ 
+
 ----------------------------------------------------------------
 
 	CHANGES IN transport VERSION 0.11-2  (2019-06-12)

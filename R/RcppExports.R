@@ -5,16 +5,28 @@ create_diagram <- function(sites) {
     .Call(`_transport_create_diagram`, sites)
 }
 
+gen_cost <- function(AR, BR, threads) {
+    .Call(`_transport_gen_cost`, AR, BR, threads)
+}
+
+networkflow <- function(a, b, C, threads) {
+    .Call(`_transport_networkflow`, a, b, C, threads)
+}
+
+openmp_present <- function() {
+    .Call(`_transport_openmp_present`)
+}
+
+cplex_present <- function() {
+    .Call(`_transport_cplex_present`)
+}
+
 cgal_present <- function() {
     .Call(`_transport_cgal_present`)
 }
 
 semidiscrete_p1 <- function(source_mat, target_mat, verbose = FALSE, target_in_genpos = TRUE, regularization_strength = 0.0, transportplan = matrix(1,1)) {
     .Call(`_transport_semidiscrete_p1`, source_mat, target_mat, verbose, target_in_genpos, regularization_strength, transportplan)
-}
-
-cplex_present <- function() {
-    .Call(`_transport_cplex_present`)
 }
 
 SolveHierarchicalTransport <- function(x, y, xydepth, xydimensions, compdepth, measureScaleVecPre, keepBasisVecPre, refineBasisVecPre, layerCoarsestVecPre, verboseVecPre, assignment, udummy, vdummy) {

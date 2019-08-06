@@ -68,7 +68,6 @@
 #' plot_apollonius(nu[,1:2], res$weights, show_weights = FALSE, add = TRUE)
 #' points(nu[,1], nu[,2], pch=16, cex=sqrt(nu[,3])/2, col=2)}
 #'
-#' @keywords semidiscrete, optimal transport
 #'
 #' @export
 semidiscrete1 <- function(source, target, xrange=c(0,1), yrange=c(0,1), verbose=FALSE, reg=0) {

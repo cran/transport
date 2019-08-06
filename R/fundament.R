@@ -104,7 +104,7 @@ transport <- function(a, b, ...) {
   UseMethod("transport")
 }
 
-trcontrol <- function(method = c("revsimplex", "shortsimplex", "primaldual", "aha", "shielding", "auction", "auctionbf"),
+trcontrol <- function(method = c("networkflow", "revsimplex", "shortsimplex", "primaldual", "aha", "shielding", "auction", "auctionbf"),
   para=list(), start = c("auto", "modrowmin", "nwcorner", "russell"), nscales = 1, scmult = 2, returncoarse = FALSE,
   a=NULL, b=NULL, M=NULL, N=NULL) {
 # a,b,M,N serve for computing parameters or start solutions automatically
@@ -278,7 +278,7 @@ trcontrol <- function(method = c("revsimplex", "shortsimplex", "primaldual", "ah
 
 
 
-transport.pgrid <- function(a, b, p = NULL, method = c("auto", "revsimplex", "shortsimplex", "shielding", "aha", "primaldual"), control = list(), ...) {
+transport.pgrid <- function(a, b, p = NULL, method = c("auto", "networkflow", "revsimplex", "shortsimplex", "shielding", "aha", "primaldual"),fullreturn=FALSE, control = list(), threads=1, ...) {
   # returncoarse: gibt im Falle von nscales >= 2 an, ob groebere Probleme und deren Loesungen auch ausgegeben werden sollen;
   # Anderenfalls wird nur die feinste Loesung (ohne Problem) zurueckgegeben
 
@@ -314,6 +314,10 @@ transport.pgrid <- function(a, b, p = NULL, method = c("auto", "revsimplex", "sh
   }
       
   method <- match.arg(method)
+  
+  if (threads > 1 && method != "networkflow") {
+    warning("multithreading request ignored. Currently only supported for method 'networkflow',")
+  }
       
   if (is.null(p)) {
     p <- ifelse(method %in% c("aha","shielding"),2,1)
@@ -333,7 +337,7 @@ transport.pgrid <- function(a, b, p = NULL, method = c("auto", "revsimplex", "sh
   	if (p == 2 && a$N > 200)  
   	  method <- "shielding"
   	else 
-  	  method <- "revsimplex"
+  	  method <- "networkflow"
   }
 
   if (class(control) != "trc") {
@@ -354,7 +358,29 @@ transport.pgrid <- function(a, b, p = NULL, method = c("auto", "revsimplex", "sh
   is.naturalzero <-
     function(x, tol = .Machine$double.eps^0.5)  all((abs(x - round(x)) < tol) & x > -0.5)
   # same including 0
-    
+  #######Interface for the Bonneel/Lemon Networksimplex
+  if (method=="networkflow"){
+    if (threads > 1 && !as.logical(openmp_present())) {
+      warning("multithreading request ignored. Package was not installed with openMP support")
+    }
+    x<-grid_positions(ngrid[1],ngrid[1])
+    C<-gen_cost(x,x,threads)^(p/2)
+    #disabled for now
+    # if ((dim(C)[1]%%2==1) && (length(dim(C)[2])%%2==1)){
+    #   result<-networkflow_odd(matrix(a$mass),matrix(b$mass),C,threads)
+    # }
+    # else{
+    #   result<-networkflow(matrix(a$mass),matrix(b$mass),C,threads)
+    # }
+    result<-networkflow(matrix(a$mass),matrix(b$mass),C,threads)
+    result$frame<-result$frame[result$frame[,3]>0,]
+    df<-data.frame(from=result$frame[,1],to=result$frame[,2],mass=result$frame[,3])
+    if (fullreturn==TRUE){
+            out<-list(default=df,primal=result$plan,dual=result$potential,cost=(result$dist))
+      return(out)
+    }
+    return(df)
+  }
   if (method == "shielding") {
     unfudgeratio <- 1
     aa <- a$mass
@@ -703,8 +729,8 @@ transport.pgrid <- function(a, b, p = NULL, method = c("auto", "revsimplex", "sh
 
 # (der Vollstaendigkeit halber solllte spaeter auch der Fall m != n wieder dazu kommen)
 # vorlaeufig ohne Beobachtungsfenster
-transport.pp <- function(a, b, p = 1, method = c("auction", "auctionbf", "shortsimplex", "revsimplex", "primaldual"),
-                           control = list(), ...) {
+transport.pp <- function(a, b, p = 1, method = c("auction", "auctionbf", "networkflow", "shortsimplex", "revsimplex", "primaldual"),
+                           fullreturn=FALSE,control = list(),threads=1, ...) {
   # Check inputs
   # ====================================================================== 
   if (class(a) != "pp")  a <- pp(a)
@@ -714,6 +740,10 @@ transport.pp <- function(a, b, p = 1, method = c("auction", "auctionbf", "shorts
   N <- a$N
     
   method <- match.arg(method)
+  
+  if (threads > 1 && method != "networkflow") {
+    warning("multithreading request ignored. Currently only supported for method 'networkflow',")
+  }
 
   if (class(control) != "trc") {
   	control$method <- method
@@ -740,6 +770,29 @@ transport.pp <- function(a, b, p = 1, method = c("auction", "auctionbf", "shorts
   	return(res)
   }
     
+  #######Interface for the Bonneel/Lemon Networksimplex
+  if (method=="networkflow"){
+    if (threads > 1 && !as.logical(openmp_present())) {
+      warning("multithreading request ignored. Package was not installed with openMP support")
+    }
+    C<-gen_cost(x,y,threads)^(p/2)
+    #disabled for now
+    # if ((dim(C)[1]%%2==1) && (length(dim(C)[2])%%2==1)){
+    #   result<-networkflow_odd(matrix(1,a$N,1),matrix(1,b$N,1),C,threads)
+    # }
+    # else{
+    #   result<-networkflow(matrix(1,a$N,1),matrix(1,b$N,1),C,threads)
+    # }
+    result<-networkflow(matrix(1,a$N,1),matrix(1,b$N,1),C,threads)
+    result$frame<-result$frame[result$frame[,3]>0,]
+    df<-data.frame(from=result$frame[,1],to=result$frame[,2],mass=result$frame[,3])
+    if (fullreturn==TRUE){
+            out<-list(default=df,primal=result$plan,dual=result$potential,cost=(result$dist))
+      return(out)
+    }
+    return(df)
+  }
+  
   if (method != "shortsimplex" && method != "revsimplex") {
     precision=9
     dd <- dd/maxdd
@@ -851,8 +904,8 @@ transport.pp <- function(a, b, p = 1, method = c("auction", "auctionbf", "shorts
 
 
 # new transport.wpp
-transport.wpp <- function(a, b, p = 1, method = c("revsimplex", "shortsimplex", "primaldual"),
-                           control = list(), ...) {
+transport.wpp <- function(a, b, p = 1, method = c("networkflow","revsimplex", "shortsimplex", "primaldual"),
+                          fullreturn=FALSE,control = list(), threads=1,...) {
   # Check inputs
   # ======================================================================
   if (class(a) == "pgrid" && class(b) == "wpp") {
@@ -866,6 +919,10 @@ transport.wpp <- function(a, b, p = 1, method = c("revsimplex", "shortsimplex", 
   m <- a$N
   n <- b$N
   method <- match.arg(method)
+  
+  if (threads > 1 && method != "networkflow") {
+    warning("multithreading request ignored. Currently only supported for method 'networkflow',")
+  }
 
   if (class(control) != "trc") {
   	control$method <- method
@@ -897,6 +954,31 @@ transport.wpp <- function(a, b, p = 1, method = c("revsimplex", "shortsimplex", 
     bmass <- bmass/bsum
     asum <- bsum <- 1
   }
+  
+  #######Interface for the Bonneel/Lemon Networksimplex
+  if (method=="networkflow"){
+    if (threads > 1 && !as.logical(openmp_present())) {
+      warning("multithreading request ignored. Package was not installed with openMP support")
+    }
+    C<-gen_cost(x,y,threads)^(p/2)
+    #disabled for now
+    # if ((dim(C)[1]%%2==1) && (length(dim(C)[2])%%2==1)){
+    #   result<-networkflow_odd(matrix(amass),matrix(bmass),C,threads)
+    # }
+    # else{
+    #   result<-networkflow(matrix(amass),matrix(bmass),C,threads)
+    # }
+    result<-networkflow(matrix(amass),matrix(bmass),C,threads)
+    result$frame<-result$frame[result$frame[,3]>0,]
+    df<-data.frame(from=result$frame[,1],to=result$frame[,2],mass=result$frame[,3])
+    if (fullreturn==TRUE){
+      out<-list(default=df,primal=result$plan,dual=result$potential,cost=(result$dist))
+      return(out)
+    }
+    return(df)
+  }
+  
+  
   is.natural <-
     function(x, tol = .Machine$double.eps^0.5)  all((abs(x - round(x)) < tol) & x > 0.5)
   # aus der Hilfe zu is.integer, checks for a vector whether all entries are approximately natural numbers
@@ -1123,13 +1205,18 @@ semidiscrete <- function(a, b, p=2, method = c("aha"), control = list(), ...) {
 # # primal-dual gibt in der Regel keine Basisloesung zurueck (>= m+n-1 assignments, evtl. weniger bei Degeneriertheit)
 # # rev-simplex ergibt Basisloesung, immer (= m+n-1 assignments), bei Degeneriertheit ist es theoretisch in
 # # extrem seltenen Spezialfaellen moeglich, dass Endlosschleife entsteht (siehe Luenberger), sonst auch m+n-1 assignments 
-transport.default <- function(a, b, costm, method=c("shortsimplex", "revsimplex", "primaldual"),
-                             control = list(), ...) {
+transport.default <- function(a, b, costm, method=c("networkflow", "shortsimplex", "revsimplex", "primaldual"),
+                              fullreturn=FALSE,control = list(), threads=1, ...) {
   # maxmass=1e6, precision=9, 	
   # wir sollten mit unseren Berechnungen .Machine$integer.max nicht ueberschreiten, gemaess R-Hilfe ist dies 
   # *auf jedem System* 2147483647 (4 Bytes)
   # evtl. kann man bis maxmass=1e9 gehen
   method <- match.arg(method)
+  
+  if (threads > 1 && method != "networkflow") {
+    warning("multithreading request ignored. Currently only supported for method 'networkflow',")
+  }
+  
   M <- length(a)
   N <- length(b)
   costm <- as.matrix(costm)
@@ -1183,6 +1270,26 @@ transport.default <- function(a, b, costm, method=c("shortsimplex", "revsimplex"
     apos <- apos/asum
     bpos <- bpos/bsum
   	asum <- bsum <- 1
+  }
+  ######Interface for the Bonneel/Lemon NetworkSimplex
+  if (method=="networkflow"){
+    if (threads > 1 && !as.logical(openmp_present())) {
+      warning("multithreading request ignored. Package was not installed with openMP support")
+    }
+    # if ((dim(costm)[1]%%2==1) && (length(dim(costm)[2])%%2==1)){
+    #   result<-networkflow(matrix(apos),matrix(bpos),costm,threads)
+    # }
+    # else{
+    #   result<-networkflow(matrix(apos),matrix(bpos),costm,threads)
+    # }
+    result<-networkflow(matrix(apos),matrix(bpos),costm,threads)
+    result$frame<-result$frame[result$frame[,3]>0,]
+    df<-data.frame(from=result$frame[,1],to=result$frame[,2],mass=result$frame[,3])
+    if (fullreturn==TRUE){
+      out<-list(default=df,primal=result$plan,dual=result$potential,cost=(result$dist))
+      return(out)
+    }
+    return(df)
   }
   fudgeN <- fudgesum <- 1 
   is.natural <- function(x, tol = .Machine$double.eps^0.5)  all((abs(x - round(x)) < tol) & x > 0.5)

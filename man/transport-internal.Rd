@@ -25,7 +25,8 @@ findblocks(tbasis)
 fudge(temp, N = 1e+09)
 % transforms vectors with natural entries to vectors with natural entries of the fixed total mass N 
 % by randomly adding removing units of mass at entries that have positive mass
-gif.generate(M.save, M.source, M.target, K, file.name, delay.time, new.l, gif_type)
+gif.generate(M.save, M.source, M.target, K, file.name, delay.time, new.l, 
+gif_type,out.col= grey(0:1000/1000),width=800,height=800)
 % von transport_track aufgerufen
 image2(x, y, z, rot = FALSE, ...)
 image3(z, x=1:dim(z)[1], y=1:dim(z)[2], rot=TRUE, ...)

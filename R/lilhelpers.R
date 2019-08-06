@@ -611,4 +611,13 @@ fudge <- function(temp,N=1e9) {
   }
   return(temp)
 }
- 
+
+# Generate Positions of a uniform 2-d grid on [0,1]^2
+grid_positions<-function(n,m){
+  G1<-expand.grid(n:1,1:m)
+  G2<-cbind(G1[,2],G1[,1])
+  G2<-G2-0.5
+  G2[,1]<-G2[,1]/m
+  G2[,2]<-G2[,2]/n
+  return(G2)
+}

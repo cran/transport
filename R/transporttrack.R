@@ -1,15 +1,12 @@
-#benötigt werden eigentlich nur kde und binning aus ks und im.convert
-#und ani.options aus animation.
-#library(transport)
-#library(ks)
-#library(animation)
-gif.generate<-function(M.save,M.source,M.target,K,file.name,delay.time,new.l,gif_type){
+gif.generate<-function (M.save, M.source, M.target, K, file.name, delay.time, 
+                        new.l, gif_type,out.col= grey(0:1000/1000),width=800,height=800) 
+{
   if (!requireNamespace("animation", quietly = TRUE)) {
     stop("Package 'animation' required. Please install it.")
   }
   dirname <- "temp"
   dirno <- 1
-  gif.length<-K
+  gif.length <- K
   while (!dir.create(dirname, showWarnings = FALSE)) {
     dirname <- paste("temp", dirno, sep = "")
     dirno <- dirno + 1
@@ -36,10 +33,10 @@ gif.generate<-function(M.save,M.source,M.target,K,file.name,delay.time,new.l,gif
       }
     }
     name.number <- paste(zero.string, count, sep = "")
-    name <- paste(dirname, "/output", name.number, ".png",
+    name <- paste(dirname, "/output", name.number, ".png", 
                   sep = "")
-    png(filename = name, width = 800, height = 800)
-    image(M.source, col = grey(0:1000/1000), axes = FALSE,
+    png(filename = name, width = width, height = height)
+    image(M.source, col = out.col, axes = FALSE, 
           zlim = c(min(M.save), max(M.save)))
     dev.off()
     count <- count + 1
@@ -54,10 +51,10 @@ gif.generate<-function(M.save,M.source,M.target,K,file.name,delay.time,new.l,gif
       }
     }
     name.number <- paste(zero.string, count, sep = "")
-    name <- paste(dirname, "/output", name.number, ".png",
+    name <- paste(dirname, "/output", name.number, ".png", 
                   sep = "")
-    png(filename = name, width = 800, height = 800)
-    image(M.save[, , i], col = grey(0:1000/1000), axes = FALSE,
+    png(filename = name, width = width, height = height)
+    image(M.save[, , i], col = out.col, axes = FALSE, 
           zlim = c(min(M.save), max(M.save)))
     dev.off()
     count <- count + 1
@@ -72,31 +69,34 @@ gif.generate<-function(M.save,M.source,M.target,K,file.name,delay.time,new.l,gif
       }
     }
     name.number <- paste(zero.string, count, sep = "")
-    name <- paste(dirname, "/output", name.number, ".png",
+    name <- paste(dirname, "/output", name.number, ".png", 
                   sep = "")
-    png(filename = name, width = 800, height = 800)
-    image(M.target, col = grey(0:1000/1000), axes = FALSE,
+    png(filename = name, width = width, height = height)
+    image(M.target, col = out.col, axes = FALSE, 
           zlim = c(min(M.save), max(M.save)))
     dev.off()
     count <- count + 1
   }
   oopt = animation::ani.options(interval = delay.time/100)
-  if (gif_type=="gif_im"){
-    animation::im.convert(files=paste(dirname,"/*.png",sep=""),output=file.name)
+  animation::ani.options(oopt)
+  files_tmp<-list.files(path=dirname,pattern = "*.png")
+  for (k in 1:length(files_tmp)){
+    files_tmp[k]<-paste(dirname,"/",files_tmp[k],sep="")
+  }
+  if (gif_type == "gif_im") {
+    animation::im.convert(files = files_tmp, output = file.name)
   }
   animation::ani.options(oopt)
   unlink(dirname, recursive = TRUE)
   return(invisible())
 }
-
 transport_track<-function (source, target, tplan, K = 50, scmult = 1, smooth = FALSE,
                            H = matrix(c(1,0,0,1),2,2), create.file = c("none",
-                           "gif_im"), file.name = "Rtransport.gif", delay.time = 20, cut = FALSE){
+                           "gif_im"), file.name = "Rtransport.gif", delay.time = 20,cut = FALSE, col=grey((0:1000)/1000),width=800,height=800){
   if (!requireNamespace("ks", quietly = TRUE)) {
     stop("Package 'ks' required. Please install it.")
   }
   create.file <- match.arg(create.file)
-#  file.name <- paste(file.name, ".gif", sep = "")
   M.source.n <- source$mass
   M.target.n <- target$mass
   l <- sqrt(length(M.source.n))
@@ -253,7 +253,7 @@ transport_track<-function (source, target, tplan, K = 50, scmult = 1, smooth = F
   	if (!requireNamespace("animation", quietly = TRUE)) {
       stop("Package 'animation' required for creation of animated gif. Please install it or use option create.file='none'")
     }
-    gif.generate(M.save,M.source,M.target,K,file.name,delay.time,new.l,create.file)
+    gif.generate(M.save,M.source,M.target,K,file.name,delay.time,new.l,create.file,out.col=col,width=width,height=height)
     return(invisible(M.save))
   } else {
     return(M.save)

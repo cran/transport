@@ -39,7 +39,7 @@
 #' 
 #' @export
 
-subwasserstein <- function(source, target, S, K = 1, p = 1, costM = NULL, prob=TRUE, precompute = FALSE, method = "revsimplex") {
+subwasserstein <- function(source, target, S, K = 1, p = 1, costM = NULL, prob=TRUE, precompute = FALSE, method = "networkflow") {
   
   # Get mass vectors and the cost matrix.
   # This depends on the object class of source and target.

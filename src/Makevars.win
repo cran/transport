@@ -16,7 +16,10 @@ OBJECTS.general = RcppExports.o	auctionbf.o shielding.o aha.o primaldual.o \
                   ShortCutSolver/MultiScaleSolver.o \
                   ShortCutSolver/TShieldGenerator.o \
                   ShortCutSolver/TShortCutSolver.o \
-		  semidiscrete_p1.o create_diagram.o
+		  semidiscrete_p1.o create_diagram.o \
+		  networksimplex.o \
+		  gen_cost.o \
+		  remember_linkage.o
 
 
 # CGAL (the Computational Geometry Algorithms Library) is used to solve semidiscrete optimal transport problems
@@ -68,8 +71,8 @@ OBJECTS.standard = OT_SparseSimplex/sparsebasicfeasible.o \
 		   OT_SparseSimplex/TSparseSimplexSolver.o \
 		   ShortCutSolver_SparseSimplex/Interfaces-SparseSimplex.o
 OBJECTS = $(OBJECTS.general) $(OBJECTS.standard) $(OBJECTS.additional)
-PKG_CPPFLAGS = $(PKG_CPPFLAGS_CGAL) -I.
-PKG_LIBS = -lm -lstdc++ $(PKG_LIBS_CGAL)
+PKG_CPPFLAGS =  $(PKG_CPPFLAGS_CGAL) -I.  -fopenmp 
+PKG_LIBS =  -lm -lstdc++ $(PKG_LIBS_CGAL) -fopenmp
 # ======================
 # end of No CPLEX
 # ======================
@@ -80,3 +83,4 @@ all: $(SHLIB)
 clean: @rm -f $(OBJECTS)
 # This cleans the subfolders in src (files directly in source auto-clean)
 # all is needed *if* you have clean (or any such instruction).
+

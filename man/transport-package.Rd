@@ -12,8 +12,8 @@ Solve optimal transport problems. Compute Wasserstein distances (a.k.a. Kantorov
 \tabular{ll}{
 Package: \tab transport\cr
 Type: \tab Package\cr
-Version: \tab 0.9-4\cr
-Date: \tab 2017-10-03\cr
+Version: \tab 0.12-0\cr
+Date: \tab 2019-08-05\cr
 License: \tab GPL (>=2) \cr
 LazyData: \tab yes\cr
 }
@@ -24,11 +24,21 @@ Most functions in this package are designed for data in two and higher dimension
 
 }
 \author{
-  Dominic Schuhmacher \email{dschuhm1@uni-goettingen.de} \cr  
-  Björn Bähre \email{bjobae@gmail.com} (code for \code{\link{aha}}-method) \cr  
-  Carsten Gottschlich \email{gottschlich@math.uni-goettingen.de} \cr __(original java code for \code{shortlist}- and \code{revsimplex}-methods) \cr
-  Florian Heinemann \email{florian.heinemann@stud.uni-goettingen.de} (\code{\link{transport_track}}-function) \cr
-  Bernhard Schmitzer \email{schmitzer@uni-muenster.de} (\code{\link{shielding}}-method)
+  Dominic Schuhmacher \email{schuhmacher@math.uni-goettingen.de}
+  
+  Björn Bähre \email{bjobae@gmail.com} (code for \code{\link{aha}}-method)
+  
+  Nicolas Bonneel \email{nicolas.bonneel@liris.cnrs.fr} \cr (adaptation of LEMON code for fast \code{\link[=transport]{networkflow}} method)
+  
+  Carsten Gottschlich \email{gottschlich@math.uni-goettingen.de} \cr (original java code for \code{\link[=transport]{shortlist}} and \code{\link[=transport]{revsimplex}} methods)
+  
+  Valentin Hartmann \email{valentin.hartmann@epfl.ch} (code for \code{\link[=semidiscrete1]{aha}} method for \code{p=1})
+  
+  Florian Heinemann \email{florian.heinemann@uni-goettingen.de} \cr (integration of \code{\link[=transport]{networkflow}} method)
+  
+  Bernhard Schmitzer \email{schmitzer@uni-muenster.de} (\code{\link{shielding}} method)
+  
+  Jörn Schrieber \email{joern.schrieber-1@mathematik.uni-goettingen.de} (\code{\link[=subwasserstein]{subsampling}} method)
 
 Maintainer: Dominic Schuhmacher \email{dominic.schuhmacher@mathematik.uni-goettingen.de}
 }
