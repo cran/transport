@@ -38,24 +38,25 @@ OBJECTS.general = RcppExports.o	auctionbf.o shielding.o aha.o primaldual.o \
 # ======================
 # CPLEX
 # ======================
-# Comment in the following three lines and set PKG_CPPFLAGS and PKG_LIBS according to the examples below
+# Comment in the following four lines and set PKG_CPPFLAGS and PKG_LIBS according to the examples below
 # OBJECTS.cplex = OT_CPLEX/TCPLEXNetSolver.o \
-#	        ShortCutSolver_CPLEX/Interfaces-CPLEX.o
+#                 ShortCutSolver_CPLEX/Interfaces-CPLEX.o
 # OBJECTS = $(OBJECTS.general) $(OBJECTS.cplex) $(OBJECTS.additional)
+# PKG_CXXFLAGS = $(SHLIB_OPENMP_CXXFLAGS)
 #
 # The following depends on your CPLEX include and library paths 
 #
 # --- Linux ---
-#PKG_CPPFLAGS = $(PKG_CPPFLAGS_CGAL) -DIL_STD -DILOSTRICTPOD -DWITH_CPLEX -I/media/daten/lib/cplex12.6.1/cplex/include -I.
-#PKG_LIBS = -L/media/daten/lib/cplex12.6.1/cplex/lib/x86-64_linux/static_pic/ -lcplex -lm -lstdc++ $(PKG_LIBS_CGAL)
+# PKG_CPPFLAGS = $(PKG_CPPFLAGS_CGAL) -DIL_STD -DILOSTRICTPOD -DWITH_CPLEX -I/media/daten/lib/cplex12.6.1/cplex/include -I.
+# PKG_LIBS = -L/media/daten/lib/cplex12.6.1/cplex/lib/x86-64_linux/static_pic/ -lcplex -lm -lstdc++ $(PKG_LIBS_CGAL) $(SHLIB_OPENMP_CXXFLAGS)
 #
-# --- Mac OS X 10.12. ---
-# PKG_CPPFLAGS = $(PKG_CPPFLAGS_CGAL) -DIL_STD -DILOSTRICTPOD -DWITH_CPLEX -I$(HOME)/Applications/IBM/ILOG/CPLEX_Studio127/cplex/include -I.
-# PKG_LIBS = -L$(HOME)/Applications/IBM/ILOG/CPLEX_Studio127/cplex/lib/x86-64_osx/static_pic/ -lcplex -lm -lstdc++ $(PKG_LIBS_CGAL)
+# --- Mac OS X 10.14. ---
+# PKG_CPPFLAGS = $(PKG_CPPFLAGS_CGAL) -DIL_STD -DILOSTRICTPOD -DWITH_CPLEX -I$(HOME)/Applications/IBM/ILOG/CPLEX_Studio1271/cplex/include -I.
+# PKG_LIBS = -L$(HOME)/Applications/IBM/ILOG/CPLEX_Studio1271/cplex/lib/x86-64_osx/static_pic/ -lcplex -lm -lstdc++ $(PKG_LIBS_CGAL) $(SHLIB_OPENMP_CXXFLAGS)
 #
 # --- Windows (64 bit) ---
-#PKG_CPPFLAGS= $(PKG_CPPFLAGS_CGAL) -D_LP64 -DWITH_CPLEX -I"C:/PROGRA~1/IBM/ILOG/CPLEX_Studio1271/cplex/include" -I.
-#PKG_LIBS = -L"C:/PROGRA~1/IBM/ILOG/CPLEX_Studio1271/cplex/bin/x64_win64" -lcplex1271 -lm $(PKG_LIBS_CGAL)
+# PKG_CPPFLAGS= $(PKG_CPPFLAGS_CGAL) -D_LP64 -DWITH_CPLEX -I"C:/PROGRA~1/IBM/ILOG/CPLEX_Studio1271/cplex/include" -I.
+# PKG_LIBS = -L"C:/PROGRA~1/IBM/ILOG/CPLEX_Studio1271/cplex/bin/x64_win64" -lcplex1271 -lm $(PKG_LIBS_CGAL) $(SHLIB_OPENMP_CXXFLAGS)
 # ======================
 # end of CPLEX
 # ======================
@@ -65,14 +66,15 @@ OBJECTS.general = RcppExports.o	auctionbf.o shielding.o aha.o primaldual.o \
 # ======================
 # No CPLEX
 # ======================
-# Comment in the following seven lines
+# Comment in the following seven lines 
 OBJECTS.standard = OT_SparseSimplex/sparsebasicfeasible.o \
 		   OT_SparseSimplex/sparsesimplex.o \
 		   OT_SparseSimplex/TSparseSimplexSolver.o \
 		   ShortCutSolver_SparseSimplex/Interfaces-SparseSimplex.o
 OBJECTS = $(OBJECTS.general) $(OBJECTS.standard) $(OBJECTS.additional)
-PKG_CPPFLAGS =  $(PKG_CPPFLAGS_CGAL) -I.  -fopenmp 
-PKG_LIBS =  -lm -lstdc++ $(PKG_LIBS_CGAL) -fopenmp
+PKG_CPPFLAGS = $(PKG_CPPFLAGS_CGAL) -I.
+PKG_CXXFLAGS = $(SHLIB_OPENMP_CXXFLAGS)
+PKG_LIBS =  -lm $(PKG_LIBS_CGAL)  $(SHLIB_OPENMP_CXXFLAGS)
 # ======================
 # end of No CPLEX
 # ======================

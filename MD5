@@ -1,10 +1,10 @@
-73c7fd5cf512b0258b718ee689579db0 *DESCRIPTION
+c4a2599e25ce8271cace179d8199444c *DESCRIPTION
 fe0c86979c07c38754f6fc7691a4277c *NAMESPACE
-27efb59cbcfc9d93e3bceb948d7b1d55 *NEWS
+a6c679769aa39db25dc469e85210d995 *NEWS
 92ddb57c42d140bfc7a89e9a74f644e6 *R/RcppExports.R
 5e93ae5f1eda266c70424daf41ca85f9 *R/aha.R
 3516f92f829835db4dbf4364eecf1424 *R/fix_odd.R
-2eaca26b75fbe693e4af4284bb821b78 *R/fundament.R
+c29c9e789fcea8aabfc79479a90e4ec2 *R/fundament.R
 caf762f9e36a9fabae9128f0608bc932 *R/lilhelpers.R
 143e1ce28cb910054b55807ed32da97e *R/plot_apollonius.R
 ca6cf6b871f9c8240aa6866258c6b0a4 *R/semidiscrete1.R
@@ -12,9 +12,6 @@ ca6cf6b871f9c8240aa6866258c6b0a4 *R/semidiscrete1.R
 05e7559b6bce2c475bd6b60b3502a7b3 *R/subsampling.R
 5477be708abe3575fc93e1758ab777c9 *R/transport1d.R
 7bc478b5a51bdd15d7da16abc6559481 *R/transporttrack.R
-c95a588f96510d6437fb6cfb57e20042 *cleanup
-40933dbe87403235e71074d13b0b6c6e *configure
-44611b494fe91b2783abc84a51a15bf1 *configure.ac
 3f3642ac0b895d6b3168953097cba67f *data/random128.rda
 017bfb59c90aae9c70d44004453de6e5 *data/random32.rda
 c5a3891801c545cfbbc63470dd2be753 *data/random64.rda
@@ -39,7 +36,7 @@ bcee09f96eaaefd9bfa72505db6bcd02 *man/semidiscrete.Rd
 a9eeaf180c0e3873a2eaf1e97cf73261 *man/starting_solutions.Rd
 57008fe3138459c4a7b6b79664224fad *man/subwasserstein.Rd
 a66b5cf166ed0791725ecc8bc22d23b7 *man/transport-internal.Rd
-c4ab01ec5a6255e9bce4d72f2a0919ae *man/transport-package.Rd
+3327e5072c8a62ea097c6d6b7aba2487 *man/transport-package.Rd
 f996d1645f6cf2e498c10c7ddbd94c6f *man/transport.Rd
 e09a800ccc4e5696fecbb1e3a02060b0 *man/transport_track.Rd
 05eaa913476471b73eab4f16a7d02667 *man/trcontrol.Rd
@@ -68,8 +65,7 @@ a312bd24011a0fe3b2f4f681e557bc82 *src/Common/TVarListHandler.cpp
 abd5d3ba5d289f6dab9aed7c709c4637 *src/Common/Verbose.h
 f58eab425c8547c35bc4f24e9177b8e3 *src/Common/tools.cpp
 cc85d8ab3d829acb70fa3129adac1709 *src/Common/tools.h
-7c158e97822c5aeba9098ed19b82d179 *src/Makevars.in
-565708c58110ebc36df1bbb1273ac9df *src/Makevars.win
+cc138ddda717895a36b05c859b6ce805 *src/Makevars
 dfb4f76f8c47cfd22a18af8d193e5ebc *src/OT_CPLEX/TCPLEXNetSolver.cpp
 02ecc1168ed4d3b920619194793a95c4 *src/OT_CPLEX/TCPLEXNetSolver.h
 b8d78f87ce508ce963b0f32c2f98f524 *src/OT_SparseSimplex/TSparseSimplexSolver.cpp

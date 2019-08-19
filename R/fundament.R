@@ -314,10 +314,6 @@ transport.pgrid <- function(a, b, p = NULL, method = c("auto", "networkflow", "r
   }
       
   method <- match.arg(method)
-  
-  if (threads > 1 && method != "networkflow") {
-    warning("multithreading request ignored. Currently only supported for method 'networkflow',")
-  }
       
   if (is.null(p)) {
     p <- ifelse(method %in% c("aha","shielding"),2,1)
@@ -338,6 +334,10 @@ transport.pgrid <- function(a, b, p = NULL, method = c("auto", "networkflow", "r
   	  method <- "shielding"
   	else 
   	  method <- "networkflow"
+  }
+  
+  if (threads > 1 && method != "networkflow") {
+    warning("multithreading request ignored. Currently only supported for method 'networkflow',")
   }
 
   if (class(control) != "trc") {
@@ -761,8 +761,7 @@ transport.pp <- function(a, b, p = 1, method = c("auction", "auctionbf", "networ
   x <- a$coordinates
   y <- b$coordinates
   
-  dd <- as.matrix(dist(rbind(x,y)))[1:N,(N+1):(2*N)]
-  dd <- dd^p
+  dd <- gen_cost(x,y,1)^(p/2)
   maxdd <- max(dd)
   # catches a very special case:
   if (maxdd == 0) {
@@ -775,7 +774,7 @@ transport.pp <- function(a, b, p = 1, method = c("auction", "auctionbf", "networ
     if (threads > 1 && !as.logical(openmp_present())) {
       warning("multithreading request ignored. Package was not installed with openMP support")
     }
-    C<-gen_cost(x,y,threads)^(p/2)
+    C<-dd
     #disabled for now
     # if ((dim(C)[1]%%2==1) && (length(dim(C)[2])%%2==1)){
     #   result<-networkflow_odd(matrix(1,a$N,1),matrix(1,b$N,1),C,threads)
@@ -1011,8 +1010,7 @@ transport.wpp <- function(a, b, p = 1, method = c("networkflow","revsimplex", "s
     stop("Non-zero measures, but no mass left after pointwise rounding.")   	
   }
   
-  dd <- as.matrix(dist(rbind(x[wha,],y[whb,])))[1:m,(m+1):(m+n)]
-  dd <- dd^p
+  dd <- gen_cost(x[wha,],y[whb,],1)^(p/2)
   maxdd <- max(dd)
   # catches a very special case:
   if (maxdd == 0) {

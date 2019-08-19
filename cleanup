@@ -1,8 +1,0 @@
-#!/bin/sh
-rm -f config.* 
-rm -f src/Makevars
-rm -f src/Common/*.o
-rm -f src/OT_SparseSimplex/*.o
-rm -f src/semidiscrete_p1/*.o
-rm -f src/ShortCutSolver/*.o
-rm -f src/ShortCutSolver_SparseSimplex/*.o

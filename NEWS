@@ -1,3 +1,17 @@
+----------------------------------------------------------------
+
+	CHANGES IN transport VERSION 0.12-1  (2019-08-07)
+
+OVERVIEW
+
+    o  Fixes a compilation error under Solaris.
+
+    o  Returns to using a Makevars file instead of the
+       configure script for the same openmp functionality
+       as in the previous version.
+
+    o  We thank Brian Ripley for pertinent hints on both. 
+
 
 ----------------------------------------------------------------
 
