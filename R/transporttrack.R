@@ -1,4 +1,4 @@
-gif.generate<-function (M.save, M.source, M.target, K, file.name, delay.time, 
+gif.generate<-function (M.save, M.source, M.target, K, file.name, fps, 
                         new.l, gif_type,out.col= grey(0:1000/1000),width=800,height=800) 
 {
   if (!requireNamespace("animation", quietly = TRUE)) {
@@ -77,8 +77,8 @@ gif.generate<-function (M.save, M.source, M.target, K, file.name, delay.time,
     dev.off()
     count <- count + 1
   }
-  oopt = animation::ani.options(interval = delay.time/100)
-  animation::ani.options(oopt)
+  oopt = animation::ani.options(interval = 1/fps,ani.width=width,ani.height=height)
+  #animation::ani.options(oopt)
   files_tmp<-list.files(path=dirname,pattern = "*.png")
   for (k in 1:length(files_tmp)){
     files_tmp[k]<-paste(dirname,"/",files_tmp[k],sep="")
@@ -86,13 +86,13 @@ gif.generate<-function (M.save, M.source, M.target, K, file.name, delay.time,
   if (gif_type == "gif_im") {
     animation::im.convert(files = files_tmp, output = file.name)
   }
-  animation::ani.options(oopt)
+  #animation::ani.options(oopt)
   unlink(dirname, recursive = TRUE)
   return(invisible())
 }
 transport_track<-function (source, target, tplan, K = 50, scmult = 1, smooth = FALSE,
                            H = matrix(c(1,0,0,1),2,2), create.file = c("none",
-                           "gif_im"), file.name = "Rtransport.gif", delay.time = 20,cut = FALSE, col=grey((0:1000)/1000),width=800,height=800){
+                           "gif_im"), file.name = "Rtransport.gif", fps = 20,cut = FALSE, col=grey((0:1000)/1000),width=800,height=800){
   if (!requireNamespace("ks", quietly = TRUE)) {
     stop("Package 'ks' required. Please install it.")
   }
@@ -253,7 +253,7 @@ transport_track<-function (source, target, tplan, K = 50, scmult = 1, smooth = F
   	if (!requireNamespace("animation", quietly = TRUE)) {
       stop("Package 'animation' required for creation of animated gif. Please install it or use option create.file='none'")
     }
-    gif.generate(M.save,M.source,M.target,K,file.name,delay.time,new.l,create.file,out.col=col,width=width,height=height)
+    gif.generate(M.save,M.source,M.target,K,file.name,fps,new.l,create.file,out.col=col,width=width,height=height)
     return(invisible(M.save))
   } else {
     return(M.save)

@@ -13,7 +13,7 @@
 \usage{
   transport_track(source, target, tplan, K = 50, scmult = 1, smooth = FALSE,
      H = matrix(c(1,0,0,1),2,2), create.file = c("none","gif_im"), 
-     file.name = "Rtransport.gif", delay.time = 20, cut = FALSE,
+     file.name = "Rtransport.gif", fps = 20, cut = FALSE,
      col=grey((0:1000)/1000),width=800,height=800)
 }
 \arguments{
@@ -43,8 +43,8 @@
   \item{file.name}{
     the path for the output file. Ignored if \code{create.file} is \code{"none"}.
   }
-  \item{delay.time}{
-  	the delay time introduced in ticks. One tick is usually 1/100 of a second, but may depend on individual options set in ImageMagick.
+  \item{fps}{
+  	the number of frames per second in the generated gif. The default is 20 frames per second.
   }
   \item{cut}{
   	logical. Whether the boundary pixels are cut off. Currently the only way to deal with the edge effect (see Details).

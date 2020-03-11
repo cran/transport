@@ -1,6 +1,6 @@
 Package: transport
-Version: 0.12-1
-Date: 2019-08-07
+Version: 0.12-2
+Date: 2020-03-11
 Title: Computation of Optimal Transport Plans and Wasserstein Distances
 Authors@R: c(person("Dominic", "Schuhmacher", email = "dominic.schuhmacher@mathematik.uni-goettingen.de", role = c("aut","cre")),
              person("Björn", "Bähre", role = "aut", comment = "aha and power diagrams"),
@@ -24,7 +24,7 @@ License: GPL (>= 2)
 URL: http://www.dominic.schuhmacher.name
 RoxygenNote: 6.1.1
 NeedsCompilation: yes
-Packaged: 2019-08-07 14:30:13 UTC; schumi
+Packaged: 2020-03-11 17:28:45 UTC; schumi
 Author: Dominic Schuhmacher [aut, cre],
   Björn Bähre [aut] (aha and power diagrams),
   Nicolas Bonneel [aut] (networkflow),
@@ -35,4 +35,4 @@ Author: Dominic Schuhmacher [aut, cre],
   Jörn Schrieber [aut] (subsampling),
   Timo Wilm [ctb] (wpp)
 Repository: CRAN
-Date/Publication: 2019-08-19 16:50:03 UTC
+Date/Publication: 2020-03-11 18:30:02 UTC

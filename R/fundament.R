@@ -1280,7 +1280,7 @@ transport.default <- function(a, b, costm, method=c("networkflow", "shortsimplex
     # else{
     #   result<-networkflow(matrix(apos),matrix(bpos),costm,threads)
     # }
-    result<-networkflow(matrix(apos),matrix(bpos),costm,threads)
+    result<-networkflow(matrix(apos),matrix(bpos),dd,threads)
     result$frame<-result$frame[result$frame[,3]>0,]
     df<-data.frame(from=result$frame[,1],to=result$frame[,2],mass=result$frame[,3])
     if (fullreturn==TRUE){

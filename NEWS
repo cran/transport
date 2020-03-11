@@ -1,5 +1,21 @@
 ----------------------------------------------------------------
 
+	CHANGES IN transport VERSION 0.12-2  (2020-03-11)
+
+OVERVIEW
+
+    o  We thank Christoph Weitkamp for contributions.
+
+    o  Fixes a serious bug in the main transport function.
+       For method = "networkflow" and mass vectors a, b
+       containing zeroes, the results were typically wrong before.
+
+    o  Function transport_track now uses argument fps (frames
+       per second) instead of delay.time for generation of
+       animated gifs. This argument is used consistently. 
+
+----------------------------------------------------------------
+
 	CHANGES IN transport VERSION 0.12-1  (2019-08-07)
 
 OVERVIEW
