@@ -75,8 +75,8 @@ pgrid <- function(mass, boundary, gridtriple, generator, structure) {
 # rot=FALSE uses the usual R image-convention
 # rot=TRUE plots mass-matrices the same way as they are displayed in numeric output and adapts the tplan-arrows accordingly
 plot.pgrid <- function(x,y=NULL,tplan=NULL,mass=c("colour","thickness"),length=0.1,acol,bcol=4,lwd,rot=FALSE,overlay=FALSE,static.mass=TRUE,...) {
-  stopifnot(class(x) == "pgrid")
-  if (class(y) == "wpp") {
+  stopifnot(is(x, "pgrid"))
+  if (is(y, "wpp")) {
   	if (missing(acol)) { acol <- "#996699" }
   	if (missing(lwd)) { lwd <- 1.5 }
   	return(plot_pgrid_wpp(x,y,tplan,pmass=TRUE,cex=0.8,length=length,acol=acol,col=bcol,lwd=lwd,rot=TRUE,...))
@@ -89,7 +89,7 @@ plot.pgrid <- function(x,y=NULL,tplan=NULL,mass=c("colour","thickness"),length=0
   	image2(xi, eta, a$mass, rot=rot, col=grey(0:200/200), asp=1, xlab="", ylab="")
   	invisible()
   } else {
-  	stopifnot(class(y) == "pgrid")
+  	stopifnot(is(y, "pgrid"))
     b <- y
     if (b$dimension != 2) stop("plot.pgrid is currently only implemented for 2-d grids")
     if (!(a$structure %in% c("square", "rectangular")) || !(b$structure %in% c("square", "rectangular")))
@@ -176,7 +176,7 @@ image3 <- function(z,x=1:dim(z)[1],y=1:dim(z)[2],rot=TRUE,...) {
 
 
 print.pgrid <- function(x, ...) {
-  stopifnot(class(x) == "pgrid")
+  stopifnot(is(x, "pgrid"))
   if (x$dimension == 2) {
   	cat("Regularly spaced ",x$n[1],"x",x$n[2]," pixel grid on [",
   	  x$boundary[1],",",x$boundary[2],"] x [",x$boundary[3],",",x$boundary[4],"].\n",sep="")
@@ -235,7 +235,7 @@ pp <- function(coordinates) {
 # plot method
 #
 plot.pp <- function(x,y=NULL,tplan=NULL,cols=c(4,2),cex=0.8,acol=grey(0.3),lwd=1,overlay=TRUE,...) {
-  stopifnot(class(x) == "pp" && class(x) == "pp")  
+  stopifnot(is(x, "pp") && is(x, "pp"))  
   if (x$dimension != 2) stop("plot.pp is currently only implemented for 2-d point patterns")  
   oldpars <- par(xpd=TRUE, xaxs="i", yaxs="i")
   if (missing(y)) {
@@ -273,7 +273,7 @@ plot.pp <- function(x,y=NULL,tplan=NULL,cols=c(4,2),cex=0.8,acol=grey(0.3),lwd=1
 
 
 print.pp <- function(x, ...) {
-  stopifnot(class(x) == "pp")
+  stopifnot(is(x, "pp"))
   cat("Pattern of ",x$N," points in ",x$dimension, " dimensions.\n", sep="")
   cat("Minimal coordinates:", apply(x$coordinates,2,min), "\n")
   cat("Maximal coordinates:", apply(x$coordinates,2,max), "\n")
@@ -316,7 +316,7 @@ wpp <- function(coordinates, mass){
 
 
 plot.wpp <- function(x,y=NULL,tplan=NULL,pmass=TRUE,tmass=TRUE,cols=c(4,2),cex=0.8,aglevel=0.4,acol=grey(0.3),lwd=1,overlay=TRUE,...) {
-  stopifnot(class(x) == "wpp")  
+  stopifnot(is(x, "wpp"))  
   if (x$dimension != 2) stop("plot.wpp is currently only implemented for 2-d point patterns")  
   oldpars <- par(xpd=TRUE, xaxs="i", yaxs="i")
 #  col1 <- heat.colors(128)[1:60]
@@ -344,7 +344,7 @@ plot.wpp <- function(x,y=NULL,tplan=NULL,pmass=TRUE,tmass=TRUE,cols=c(4,2),cex=0
     }
     invisible()
   } else {
-    stopifnot(class(y) == "wpp")
+    stopifnot(is(y, "wpp"))
     if (y$dimension != 2) stop("plot.wpp is currently only implemented for 2-d point patterns")
     
     if (missing(tplan)) {
@@ -462,7 +462,7 @@ plot.wpp <- function(x,y=NULL,tplan=NULL,pmass=TRUE,tmass=TRUE,cols=c(4,2),cex=0
 
 
 print.wpp <- function(x, ...) {
-  stopifnot(class(x) == "wpp")
+  stopifnot(is(x, "wpp"))
   cat("Pattern of ",x$N," points in ",x$dimension, " dimensions with total mass ", x$totmass,".\n", sep="")
   cat("Minimal coordinates:", apply(x$coordinates,2,min), "\n")
   cat("Maximal coordinates:", apply(x$coordinates,2,max), "\n")
@@ -483,7 +483,7 @@ summary.wpp <- function(object, ...) {
 # 
 plot_pgrid_wpp <- function(x,y,tplan,pmass=TRUE,cex=0.8,length=0.1,acol="#996699",col=4,lwd=1.5,rot=TRUE,...) {
   # korrekterweise müsste bei rot=FALSE wpp gedreht werden
-  stopifnot(class(x) == "pgrid" && class(y) == "wpp")
+  stopifnot(is(x, "pgrid") && is(y, "wpp"))
   stopifnot(class(tplan) %in% c("apollonius_diagram", "power_diagram"))
   
   tplansites <- as.matrix(tplan$sites[,1:2])
@@ -499,7 +499,7 @@ plot_pgrid_wpp <- function(x,y,tplan,pmass=TRUE,cex=0.8,length=0.1,acol="#996699
   # if (b$dimension != 2) stop("plotting of transport from pgrid to wpp is currently only supported in 2-d")
   image2(xi, eta, a$mass, rot=rot, col=grey(0:200/200), asp=1, xlab="", ylab="")
   
-  if (class(tplan) == "apollonius_diagram") {
+  if (is(tplan, "apollonius_diagram")) {
     plot_apollonius(y$coordinates, tplan$weights, show_points = TRUE,
                     show_weights = FALSE, add_to_weights = 0, add = TRUE, col=col, lwd=lwd, ...)
   } else {  
@@ -524,7 +524,7 @@ plot_pgrid_wpp <- function(x,y,tplan,pmass=TRUE,cex=0.8,length=0.1,acol="#996699
   }
   
   # Draw the arrows (not needed for apollonius diagram):
-  if(class(tplan) == "power_diagram") {
+  if(is(tplan, "power_diagram")) {
     cells <- tplan$cells[!sapply(tplan$cells,function(cc){all(is.na(cc))})]  # remove na cells
     # centroid formula from https://en.wikipedia.org/wiki/Centroid#Centroid_of_polygon
     # area <- 0.5 * sum(x[-n]*y[-1]-x[-1]*y[-n])
@@ -620,4 +620,17 @@ grid_positions<-function(n,m){
   G2[,1]<-G2[,1]/m
   G2[,2]<-G2[,2]/n
   return(G2)
+}
+
+###functions to provide zeropadding for output of networkflow method for input measures with entries with value 0.
+zero_transform<-function(res,wha,whb,a,b){
+  res$frame[,1]<-which(wha)[res$frame[,1]]
+  res$frame[,2]<-which(whb)[res$frame[,2]]
+  plan<-matrix(0,length(a),length(b))
+  plan[wha,whb]<-res$plan
+  res$plan<-plan
+  pot<-rep(0,length(a)+length(b))
+  pot[c(wha,whb)]<-res$potential
+  res$potential<-pot
+  return(res)
 }

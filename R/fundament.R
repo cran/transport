@@ -1,7 +1,7 @@
 wasserstein <- function(a, b, p=1, tplan=NULL, costm=NULL, prob=TRUE, ...) {
   # costm is ignored unless a,b are numerics
   # first we get the semidiscrete case out of the way
-  if (class(a) == "pgrid" && class(b) == "wpp") {
+  if (is(a, "pgrid") && is(b, "wpp")) {
     if (is.null(tplan)) {
       tplan <- transport(a,b,p=p,...)
     }
@@ -11,10 +11,10 @@ wasserstein <- function(a, b, p=1, tplan=NULL, costm=NULL, prob=TRUE, ...) {
     if (is.null(tplan$wasserstein_dist)) {
       stop("Wasserstein distance not available")
     }
-    if (class(tplan) == "apollonius_diagram" && p!=1) {
+    if (is(tplan, "apollonius_diagram") && p!=1) {
       warning("tplan was computed with p=1. Supplied p is ignored")
     }
-    if (class(tplan) == "power_diagram" && p!=2) {
+    if (is(tplan, "power_diagram") && p!=2) {
       warning("tplan was computed with p=2. Supplied p is ignored")
     }
     return(tplan$wasserstein_dist)
@@ -33,10 +33,14 @@ wasserstein <- function(a, b, p=1, tplan=NULL, costm=NULL, prob=TRUE, ...) {
   }
     
   if (is.null(tplan)) {
+    argus <- list(...)
+    argus$fullreturn <- FALSE # if fullreturn=TRUE was passed in ... ignore it
     if (default) {
-      tplan <- transport(a,b,costm^p,...)
+      allargus <- c(list(a=a, b=b, costm=costm^p), argus)
+      tplan <- do.call(transport, allargus)
     } else {
-  	  tplan <- transport(a,b,p=p,...)
+      allargus <- c(list(a=a, b=b, p=p), argus)
+  	  tplan <- do.call(transport, allargus)
     }
   }
   
@@ -64,14 +68,14 @@ wasserstein <- function(a, b, p=1, tplan=NULL, costm=NULL, prob=TRUE, ...) {
     dd <- costm[cbind(tplan$from, tplan$to)]
   } else {
     
-    if (class(a) == "pgrid" && class(b) == "pgrid") {
+    if (is(a, "pgrid") && is(b, "pgrid")) {
       gg <- expand.grid(a$generator)
       orig <- gg[tplan$from,,drop=FALSE]
       dest <- gg[tplan$to,,drop=FALSE]
-    } else if (class(a) == "pp" && class(b) == "pp") {
+    } else if (is(a, "pp") && is(b, "pp")) {
     	orig <- a$coordinates[tplan$from,,drop=FALSE]
       dest <- b$coordinates[tplan$to,,drop=FALSE]
-    } else if (class(a) == "wpp" && class(b) == "wpp") {
+    } else if (is(a, "wpp") && is(b, "wpp")) {
     	orig <- a$coordinates[tplan$from,,drop=FALSE]
       dest <- b$coordinates[tplan$to,,drop=FALSE]    
     } else {
@@ -86,7 +90,7 @@ wasserstein <- function(a, b, p=1, tplan=NULL, costm=NULL, prob=TRUE, ...) {
   if (prob) {
     if (default) {
       res <- res/(sum(a)^(1/p))
-    } else if (class(a) == "pgrid" || class(a) == "wpp") {
+    } else if (is(a, "pgrid") || is(a, "wpp")) {
       res <- res/(a$totmass^(1/p))
       # note: a$totmass might be larger than sum(tplan$mass)    	
       # due to static mass
@@ -100,7 +104,7 @@ wasserstein <- function(a, b, p=1, tplan=NULL, costm=NULL, prob=TRUE, ...) {
 
 
 transport <- function(a, b, ...) {
-  stopifnot(class(a) == class(b) || (class(a) == "pgrid" && class(b) == "wpp"))	
+  stopifnot(class(a) == class(b) || (is(a, "pgrid") && is(b, "wpp")))	
   UseMethod("transport")
 }
 
@@ -284,13 +288,13 @@ transport.pgrid <- function(a, b, p = NULL, method = c("auto", "networkflow", "r
 
   # Check inputs
   # ======================================================================   
-  if (class(a) == "pgrid" && class(b) == "wpp") {
+  if (is(a, "pgrid") && is(b, "wpp")) {
   	if (!missing(method) && method != "aha" && method != "auto") {
   	  warning('For semi-discrete optimal transport only method "aha" is implemented. Specified method parameter is ignored.')
   	}
   	return(semidiscrete(a=a,b=b,p=p,method="aha",control=control))
   }                          	
-  stopifnot(class(a) == "pgrid" && class(b) == "pgrid")
+  stopifnot(is(a, "pgrid") && is(b, "pgrid"))
   stopifnot(compatible(a,b))
   if (a$dimension < 2) stop("pixel grids of dimension >= 2 required")
 #  if (a$dimension > 2) warning("transport.pgrid for pixel grids of dimension > 2 is still somewhat experimental")
@@ -340,7 +344,7 @@ transport.pgrid <- function(a, b, p = NULL, method = c("auto", "networkflow", "r
     warning("multithreading request ignored. Currently only supported for method 'networkflow',")
   }
 
-  if (class(control) != "trc") {
+  if (!is(control, "trc")) {
   	control$method <- method
   	control$a <- a
   	control$b <- b
@@ -730,11 +734,11 @@ transport.pgrid <- function(a, b, p = NULL, method = c("auto", "networkflow", "r
 # (der Vollstaendigkeit halber solllte spaeter auch der Fall m != n wieder dazu kommen)
 # vorlaeufig ohne Beobachtungsfenster
 transport.pp <- function(a, b, p = 1, method = c("auction", "auctionbf", "networkflow", "shortsimplex", "revsimplex", "primaldual"),
-                           fullreturn=FALSE,control = list(),threads=1, ...) {
+                           fullreturn=FALSE, control = list(),threads=1, ...) {
   # Check inputs
   # ====================================================================== 
-  if (class(a) != "pp")  a <- pp(a)
-  if (class(b) != "pp")  b <- pp(b)                           	
+  if (!is(a, "pp"))  a <- pp(a)
+  if (!is(b, "pp"))  b <- pp(b)                           	
   stopifnot(compatible(a,b))
   if (a$dimension < 2) stop("dimension must be >=2")
   N <- a$N
@@ -745,7 +749,7 @@ transport.pp <- function(a, b, p = 1, method = c("auction", "auctionbf", "networ
     warning("multithreading request ignored. Currently only supported for method 'networkflow',")
   }
 
-  if (class(control) != "trc") {
+  if (!is(control, "trc")) {
   	control$method <- method
   	control$a <- a
   	control$b <- b
@@ -904,14 +908,14 @@ transport.pp <- function(a, b, p = 1, method = c("auction", "auctionbf", "networ
 
 # new transport.wpp
 transport.wpp <- function(a, b, p = 1, method = c("networkflow","revsimplex", "shortsimplex", "primaldual"),
-                          fullreturn=FALSE,control = list(), threads=1,...) {
+                          fullreturn=FALSE, control = list(), threads=1,...) {
   # Check inputs
   # ======================================================================
-  if (class(a) == "pgrid" && class(b) == "wpp") {
+  if (is(a, "pgrid") && is(b, "wpp")) {
   	warning('First argument of class "pgrid". Computing semi-discrete transport...')
   	return(semidiscrete(a=a,b=b,p=p,method=method,control=control))
   }                          	 
-  stopifnot((class(a) == "wpp") && (class(b) == "wpp"))
+  stopifnot(is(a, "wpp") && is(b, "wpp"))
   stopifnot(compatible.wpp(a,b))  # also tests that masses are equal
   
   if (a$dimension < 2) stop("dimension must be >=2")
@@ -923,7 +927,7 @@ transport.wpp <- function(a, b, p = 1, method = c("networkflow","revsimplex", "s
     warning("multithreading request ignored. Currently only supported for method 'networkflow',")
   }
 
-  if (class(control) != "trc") {
+  if (!is(control, "trc")) {
   	control$method <- method
   	control$a <- a
   	control$b <- b
@@ -1116,7 +1120,7 @@ transport.wpp <- function(a, b, p = 1, method = c("networkflow","revsimplex", "s
 
 
 semidiscrete <- function(a, b, p=2, method = c("aha"), control = list(), ...) {
-  stopifnot(class(a) == "pgrid" && class(b) == "wpp")
+  stopifnot(is(a, "pgrid") && is(b, "wpp"))
   stopifnot(a$dimension == b$dimension)
   stopifnot(isTRUE(all.equal(a$totcontmass,b$totmass)))
   if (a$dimension < 2) stop("pixel grids of dimension >= 2 required")
@@ -1144,7 +1148,7 @@ semidiscrete <- function(a, b, p=2, method = c("aha"), control = list(), ...) {
   	method <- "aha"
   }  
 
-  if (class(control) != "trc") {
+  if (!is(control, "trc")) {
   	control$method <- method
   	control$a <- a
   	control$b <- b
@@ -1204,7 +1208,7 @@ semidiscrete <- function(a, b, p=2, method = c("aha"), control = list(), ...) {
 # # rev-simplex ergibt Basisloesung, immer (= m+n-1 assignments), bei Degeneriertheit ist es theoretisch in
 # # extrem seltenen Spezialfaellen moeglich, dass Endlosschleife entsteht (siehe Luenberger), sonst auch m+n-1 assignments 
 transport.default <- function(a, b, costm, method=c("networkflow", "shortsimplex", "revsimplex", "primaldual"),
-                              fullreturn=FALSE,control = list(), threads=1, ...) {
+                              fullreturn=FALSE, control = list(), threads=1, ...) {
   # maxmass=1e6, precision=9, 	
   # wir sollten mit unseren Berechnungen .Machine$integer.max nicht ueberschreiten, gemaess R-Hilfe ist dies 
   # *auf jedem System* 2147483647 (4 Bytes)
@@ -1240,7 +1244,7 @@ transport.default <- function(a, b, costm, method=c("networkflow", "shortsimplex
     # }
   # }
 
-  if (class(control) != "trc") {
+  if (!is(control, "trc")) {
   	control$method <- method
   	control$a <- a
   	control$b <- b
@@ -1253,7 +1257,7 @@ transport.default <- function(a, b, costm, method=c("networkflow", "shortsimplex
   whb <- b > 0
   apos <- a[wha]
   bpos <- b[whb]
-  dd <- costm[wha,whb]
+  dd <- costm[wha,whb,drop=FALSE]
   m <- length(apos)
   n <- length(bpos)
   # catches a very special case:
@@ -1271,6 +1275,15 @@ transport.default <- function(a, b, costm, method=c("networkflow", "shortsimplex
   }
   ######Interface for the Bonneel/Lemon NetworkSimplex
   if (method=="networkflow"){
+    #Prevent an issue, which can only occur if both measures are supported on a single point.
+    if ((m==1)&&(n==1)){
+      df<-data.frame(from=1,to=1,mass=apos[1])
+      if (fullreturn==TRUE){
+        out<-list(default=df,primal=matrix(apos[1]),dual=matrix(c(dd[1],0),2,1),cost=dd[1])
+        return(out)
+      }
+      return(df)
+    }
     if (threads > 1 && !as.logical(openmp_present())) {
       warning("multithreading request ignored. Package was not installed with openMP support")
     }
@@ -1282,6 +1295,9 @@ transport.default <- function(a, b, costm, method=c("networkflow", "shortsimplex
     # }
     result<-networkflow(matrix(apos),matrix(bpos),dd,threads)
     result$frame<-result$frame[result$frame[,3]>0,]
+    if ((length(a)>length(apos)) || (length(b)>length(bpos))){
+      result<-zero_transform(result,wha,whb,a,b)
+    }
     df<-data.frame(from=result$frame[,1],to=result$frame[,2],mass=result$frame[,3])
     if (fullreturn==TRUE){
       out<-list(default=df,primal=result$plan,dual=result$potential,cost=(result$dist))
@@ -1289,6 +1305,7 @@ transport.default <- function(a, b, costm, method=c("networkflow", "shortsimplex
     }
     return(df)
   }
+  
   fudgeN <- fudgesum <- 1 
   is.natural <- function(x, tol = .Machine$double.eps^0.5)  all((abs(x - round(x)) < tol) & x > 0.5)
   if (!is.natural(apos) || !is.natural(bpos)) {

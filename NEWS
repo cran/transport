@@ -1,5 +1,61 @@
 ----------------------------------------------------------------
 
+	CHANGES IN transport VERSION 0.12-4  (2022-08-13)
+
+OVERVIEW
+
+    o  Minor changes in the internal code for easier maintenance.
+
+    o  Minor fixes in NEWS and man files to make the newest
+       package check happy.
+
+----------------------------------------------------------------
+
+	CHANGES IN transport VERSION 0.12-3  (2022-08-10)
+
+OVERVIEW
+
+    o  We thank Jiahua Chen, Michel Groppe and Heather Turner
+       for contributions.
+
+    o  Several bugs in connection with mass/weight vectors not
+       being ordered or containing zeroes have been fixed.
+
+    o  The function wasserstein1d is considerably faster now for 
+       large datasets.
+
+SIGNIFICANT CHANGES
+
+    o  Speed improvement for function wasserstein1d due to a more
+       efficient counting procedure.
+               
+BUG FIXES
+
+    o  Function wasserstein1d. In previous versions the result was
+       typically wrong if locations were not ordered *and* varying
+       weights were specified. Fixed.
+
+    o  Function wasserstein1d. There was an uncaught error if one
+       or several of the (inner) weights were zero. This is fixed
+       and the function works with general non-negative weights
+       (with positive sum) now.
+
+    o  Function transport.default and wasserstein. For the 
+       default networkflow method the from and to indices in the
+       returned transport plan referred to the vectors of positive
+       entries in a and b (rather than the full vectors a and b).
+       In particular this typically led to wrong distance
+       computations in the function wasserstein if entries with
+       mass 0 were present (the Wasserstein distance / cost
+       returned by the function transport with option fullreturn
+       = TRUE was correct). Fixed.
+
+    o  Function transport.default. There was an uncaught error
+       if in one of the vectors only one of the masses was
+       non-zero. Fixed.
+ 
+----------------------------------------------------------------
+
 	CHANGES IN transport VERSION 0.12-2  (2020-03-11)
 
 OVERVIEW
@@ -339,7 +395,7 @@ OTHER USER-VISIBLE CHANGES
 
 BUG FIXES
 
-    Various smaller bug fixes for special input.
+    o  Various smaller bug fixes for special input.
 
 
 ----------------------------------------------------------------

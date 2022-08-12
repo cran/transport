@@ -4,7 +4,7 @@
 # Import from standard packages (except for base)
 #
 importFrom("grDevices", "grey", "heat.colors", "png", "dev.off")
-importFrom("graphics", "arrows", "image", "lines", "matplot", "par", "plot",
+importFrom("graphics", "arrows", "hist", "image", "lines", "matplot", "par", "plot",
              "points", "polygon", "segments")
 importFrom("methods", "is")
 importFrom("stats", "aggregate", "dist", "na.omit", "optim", "rmultinom", "runif")

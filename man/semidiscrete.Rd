@@ -71,7 +71,7 @@ M. Karavelas and M. Yvinec. 2D Apollonius Graphs
 (Delaunay Graphs of Disks). In CGAL User and Reference Manual.
 CGAL Editorial Board, 4.12 edition, 2018
             
-Q. Mérigot (2011). A multiscale approach to optimal transport. Computer Graphics Forum 30(5), 1583--1592. \href{http://dx.doi.org/10.1111/j.1467-8659.2011.02032.x}{doi:10.1111/j.1467-8659.2011.02032.x}
+Q. Mérigot (2011). A multiscale approach to optimal transport. Computer Graphics Forum 30(5), 1583--1592. \doi{10.1111/j.1467-8659.2011.02032.x}
 
 Naoaki Okazaki (2010). libLBFGS: a library of Limited-memory
 Broyden-Fletcher-Goldfarb-Shanno (L-BFGS). Version 1.10

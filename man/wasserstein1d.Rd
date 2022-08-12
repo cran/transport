@@ -20,7 +20,7 @@ wasserstein1d(a, b, p = 1, wa = NULL, wb = NULL)
     a positive number. The order of the Wasserstein distance.
   }
   \item{wa, wb}{
-    optional vectors of weights for \code{a} and \code{b}. 
+    optional vectors of non-negative weights for \code{a} and \code{b}. 
   }
 }
 \details{

@@ -154,17 +154,17 @@ N. Bonneel (2018). Fast Network Simplex for Optimal Transport. Github repository
 N. Bonneel, M. van de Panne, S. Paris and W. Heidrich (2011). Displacement interpolation using Lagrangian mass transport. ACM Transactions on Graphics (SIGGRAPH ASIA 2011) 30(6).
 
 Egervary Research Group on Combinatorial Optimization, EGRES (2014). LEMON Graph Library v1.3.1.
-\href{https://lemon.cs.elte.hu/trac/lemon}{lemon.cs.elte.hu/trac/lemon}.
+\href{http://lemon.cs.elte.hu/trac/lemon}{lemon.cs.elte.hu/trac/lemon}.
 
-C. Gottschlich and D. Schuhmacher (2014). The shortlist method for fast computation of the earth mover's distance and finding optimal solutions to transportation problems. PLOS ONE 9(10), e110214. \href{http://dx.doi.org/10.1371/journal.pone.0110214}{doi:10.1371/journal.pone.0110214}
+C. Gottschlich and D. Schuhmacher (2014). The shortlist method for fast computation of the earth mover's distance and finding optimal solutions to transportation problems. PLOS ONE 9(10), e110214. \doi{10.1371/journal.pone.0110214}
 
-V. Hartmann and D. Schuhmacher (2017). Semi-discrete optimal transport --- the case p=1. Preprint \href{https://arxiv.org/abs/1706.07650}{arXiv:1706.07650}
+V. Hartmann and D. Schuhmacher (2020). Semi-discrete optimal transport: a solution procedure for the unsquared Euclidean distance case, Mathematical Methods of Operations Research 92, 133--163. \doi{10.1007/s00186-020-00703-z}
 
 D.G. Luenberger (2003). Linear and nonlinear programming, 2nd ed. Kluwer.
 
 D.G. Luenberger and Y. Ye (2008). Linear and nonlinear programming, 3rd ed. Springer.
 
-Q. Mérigot (2011). A multiscale approach to optimal transport. Computer Graphics Forum 30(5), 1583--1592. \href{http://dx.doi.org/10.1111/j.1467-8659.2011.02032.x}{doi:10.1111/j.1467-8659.2011.02032.x}
+Q. Mérigot (2011). A multiscale approach to optimal transport. Computer Graphics Forum 30(5), 1583--1592. \doi{10.1111/j.1467-8659.2011.02032.x}
 
 B. Schmitzer (2016). A sparse multiscale algorithm for dense optimal transport. J. Math. Imaging Vision 56(2), 238--259. \href{https://arxiv.org/abs/1510.05466}{https://arxiv.org/abs/1510.05466}
 }

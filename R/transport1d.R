@@ -1,27 +1,47 @@
-wasserstein1d <- function(a, b, p=1, wa=NULL, wb=NULL) {  	
+wasserstein1d <- function(a, b, p=1, wa=NULL, wb=NULL) {
   m <- length(a)
   n <- length(b)
   stopifnot(m > 0 && n > 0)
   if (m == n && is.null(wa) && is.null(wb)) {
-  	return(mean(abs(sort(b)-sort(a))^p)^(1/p))
+    return(mean(abs(sort(b)-sort(a))^p)^(1/p))
   }
-  if (is.null(wa)) {wa <- rep(1,m)}
-  if (is.null(wb)) {wb <- rep(1,n)}
-  stopifnot(length(wa) == m && length(wb) == n)
+  stopifnot(is.null(wa) || length(wa) == m)
+  stopifnot(is.null(wb) || length(wb) == n)
+  if (is.null(wa)) {
+    wa <- rep(1,m)
+  } else { # remove points with zero weight
+    wha <- wa > 0
+    wa <- wa[wha]
+    a <- a[wha]
+    m <- length(a)
+  }
+  if (is.null(wb)) {
+    wb <- rep(1,n)
+  } else { # remove points with zero weight
+    whb <- wb > 0
+    wb <- wb[whb]
+    b <- b[whb]
+    n <- length(b)
+  }
+
+  orda <- order(a)
+  ordb <- order(b)
+  a <- a[orda]
+  b <- b[ordb]
+  wa <- wa[orda]
+  wb <- wb[ordb]
   ua <- (wa/sum(wa))[-m]
   ub <- (wb/sum(wb))[-n]
   cua <- c(cumsum(ua))  
   cub <- c(cumsum(ub))  
-  temp <- cut(cub,breaks=c(-Inf,cua,Inf))
-  arep <- table(temp) + 1  
-  temp <- cut(cua,breaks=c(-Inf,cub,Inf))
-  brep <- table(temp) + 1
+  arep <- hist(cub, breaks = c(-Inf, cua, Inf), plot = FALSE)$counts + 1
+  brep <- hist(cua, breaks = c(-Inf, cub, Inf), plot = FALSE)$counts + 1
   # we sum over rectangles with cuts on the vertical axis each time one of the two ecdfs makes a jump
-  # xrep and yrep tell us how many times each of the x and y data have to be repeated in order to get the points on the horizontal axis
-  # note that sum(xrep)+sum(yrep) = m+n-1 (we do not count the height-zero final rectangle where both ecdfs jump to 1)
+  # arep and brep tell us how many times each of the a and b data have to be repeated in order to get the points on the horizontal axis
+  # note that sum(arep)+sum(brep) = m+n-1 (we do not count the height-zero final rectangle where both ecdfs jump to 1)
 
-  aa <- rep(sort(a), times=arep)
-  bb <- rep(sort(b), times=brep)
+  aa <- rep(a, times=arep)
+  bb <- rep(b, times=brep)
 
   uu <- sort(c(cua,cub))
   uu0 <- c(0,uu)
