@@ -363,11 +363,11 @@ transport.pgrid <- function(a, b, p = NULL, method = c("auto", "networkflow", "r
     function(x, tol = .Machine$double.eps^0.5)  all((abs(x - round(x)) < tol) & x > -0.5)
   # same including 0
   #######Interface for the Bonneel/Lemon Networksimplex
-  if (method=="networkflow"){
+  if (method == "networkflow"){
     if (threads > 1 && !as.logical(openmp_present())) {
       warning("multithreading request ignored. Package was not installed with openMP support")
     }
-    x<-grid_positions(ngrid[1],ngrid[1])
+    x<-as.matrix(expand.grid(a$generator))
     C<-gen_cost(x,x,threads)^(p/2)
     #disabled for now
     # if ((dim(C)[1]%%2==1) && (length(dim(C)[2])%%2==1)){
@@ -406,7 +406,10 @@ transport.pgrid <- function(a, b, p = NULL, method = c("auto", "networkflow", "r
       aa <- fudge(aa,fudgesum)
       bb <- fudge(bb,fudgesum)
     } 
-    res1 <- shielding(aa,bb,nscales=trunc(log2(ngrid)-1+0.1),startscale=3,flood=0,measureScale=1,basisKeep=1,basisRefine=1)
+    nscales=trunc(log2(ngrid)-1+0.1)
+    res1 <- shielding(aa,bb,nscales=trunc(log2(ngrid)-1+0.1),startscale=(min(3,nscales+1)),flood=0,measureScale=1,basisKeep=1,basisRefine=1)
+     # 221012: changed startscale from 3 to min(3,nscales+1); about the +1 see the comment in shielding.R for line 60. 
+     # Now method="shielding" can be used for small problems (although for size 3 and smaller I'm not sure).
      # measureScale is number of layers between root (1x1, not computed) and finest level, refinements
      # are by a factor of 2 and then there is a (potential) jump to the finest level. So for a 64x64 pic
      # 2^0 is root 2^6 is finest level, i.e. the right nscales is 5. Bernhard recommends adding smthg like
@@ -1293,14 +1296,14 @@ transport.default <- function(a, b, costm, method=c("networkflow", "shortsimplex
     # else{
     #   result<-networkflow(matrix(apos),matrix(bpos),costm,threads)
     # }
-    result<-networkflow(matrix(apos),matrix(bpos),dd,threads)
-    result$frame<-result$frame[result$frame[,3]>0,]
+    result <- networkflow(matrix(apos),matrix(bpos),dd,threads)
+    result$frame <- result$frame[result$frame[,3]>0,]
     if ((length(a)>length(apos)) || (length(b)>length(bpos))){
       result<-zero_transform(result,wha,whb,a,b)
     }
-    df<-data.frame(from=result$frame[,1],to=result$frame[,2],mass=result$frame[,3])
+    df <- data.frame(from=result$frame[,1], to=result$frame[,2], mass=result$frame[,3])
     if (fullreturn==TRUE){
-      out<-list(default=df,primal=result$plan,dual=result$potential,cost=(result$dist))
+      out <- list(default=df, primal=result$plan, dual=result$potential, cost=(result$dist))
       return(out)
     }
     return(df)
@@ -1817,7 +1820,7 @@ dedegenerate <- function(basis) {
 # even zeros in aredf,bredf, but this is not (well) tested 
 scalestart <- function(aredf,bredf,genf,n1f,n2f,p=1,scmult=2) { 
 #  stopifnot(all(aredf>0, bredf>0))   # no longer necessary I leave it for the moment
-  stopifnot(all(dim(aredf) == c(n1f,n2f) && dim(bredf) == c(n1f,n2f)))
+  stopifnot(all(dim(aredf) == c(n1f,n2f)) && all(dim(bredf) == c(n1f,n2f)))
   is.natural <- function(x, tol = .Machine$double.eps^0.5)  all((abs(x - round(x)) < tol) & x > 0.5)
   stopifnot(is.natural(scmult) && is.natural(n1f) && is.natural(n2f) && is.natural(n1f/scmult) && is.natural(n2f/scmult))
   n1c <- round(n1f/scmult)

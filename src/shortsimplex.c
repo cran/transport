@@ -166,17 +166,10 @@ void shl_printmat(int m, int n, int *a);
 
 /* ------------ The main function ----------------------------- */
 
-/* rename into revsimplex */
-void shortsimplex(ss, kk, pp, mm, nn, a, b, costm, assignment, basis)
-  /* inputs */
-  int *ss, *kk;
-  double *pp;
-  int *mm, *nn;
-  int *a, *b;
-  double *costm;
-  /* outputs */
-  int *assignment;
-  int *basis;
+void shortsimplex(int *ss, int *kk, double *pp, int *mm, int *nn, int *a, int *b,
+                  double *costm, int *assignment, int *basis)
+  // inputs: *ss, *kk, *pp, *mm, *nn, *a, *b, *costm 
+  // outputs: *assignment, *basis
 {
   int m,n,maxdim;
   State state;

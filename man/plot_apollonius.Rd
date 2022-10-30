@@ -4,9 +4,17 @@
 \alias{plot_apollonius}
 \title{Plot Apollonius Diagram}
 \usage{
-plot_apollonius(points, weights, show_points = TRUE,
-  show_weights = TRUE, add_to_weights = 0, add = FALSE, col = 4,
-  lwd = 1.5, ...)
+plot_apollonius(
+  points,
+  weights,
+  show_points = TRUE,
+  show_weights = TRUE,
+  add_to_weights = 0,
+  add = FALSE,
+  col = 4,
+  lwd = 1.5,
+  ...
+)
 }
 \arguments{
 \item{points}{A two-column matrix containing the 2d points.}

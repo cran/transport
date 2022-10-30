@@ -4,8 +4,17 @@
 \alias{subwasserstein}
 \title{Approximate Computation of Wasserstein Distances via Subsampling.}
 \usage{
-subwasserstein(source, target, S, K = 1, p = 1, costM = NULL,
-  prob = TRUE, precompute = FALSE, method = "networkflow")
+subwasserstein(
+  source,
+  target,
+  S,
+  K = 1,
+  p = 1,
+  costM = NULL,
+  prob = TRUE,
+  precompute = FALSE,
+  method = "networkflow"
+)
 }
 \arguments{
 \item{source}{The source measure has to be either a weight vector or an object
@@ -28,7 +37,7 @@ total mass be normalized to 1?}
 \item{precompute}{logical. Should the cost matrix for the large problem be precomputed?}
 
 \item{method}{A string with the name of the method used for optimal transport distance computation.
-Options are "networkflow", revsimplex", "shortsimplex" and "primaldual".}
+Options are "revsimplex", "shortsimplex" and "primaldual". Defaults to "revsimplex".}
 }
 \value{
 The mean of the K values of the Wasserstein distances between
@@ -56,5 +65,5 @@ M. Sommerfeld, J. Schrieber, Y. Zemel and A. Munk (2018)
 }
 \author{
 Jörn Schrieber \email{joern.schrieber-1@mathematik.uni-goettingen.de}\cr
-        Dominic Schuhmacher \email{schuhmacher@math.uni-goettingen.de}
+        Dominic Schuhmacher \email{dominic.schuhmacher@mathematik.uni-goettingen.de}
 }

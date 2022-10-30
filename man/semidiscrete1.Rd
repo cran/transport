@@ -4,8 +4,14 @@
 \alias{semidiscrete1}
 \title{Compute Semidiscrete Optimal Transport for Euclidean Distance Cost}
 \usage{
-semidiscrete1(source, target, xrange = c(0, 1), yrange = c(0, 1),
-  verbose = FALSE, reg = 0)
+semidiscrete1(
+  source,
+  target,
+  xrange = c(0, 1),
+  yrange = c(0, 1),
+  verbose = FALSE,
+  reg = 0
+)
 }
 \arguments{
 \item{source}{A matrix specifing the source measure.}
@@ -66,6 +72,7 @@ points(nu[,1], nu[,2], pch=16, cex=sqrt(nu[,3])/2, col=2)
 res <- semidiscrete1(random32a$mass, nu)
 plot_apollonius(nu[,1:2], res$weights, show_weights = FALSE, add = TRUE)
 points(nu[,1], nu[,2], pch=16, cex=sqrt(nu[,3])/2, col=2)}
+
 
 }
 \references{

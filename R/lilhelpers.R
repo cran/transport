@@ -74,7 +74,8 @@ pgrid <- function(mass, boundary, gridtriple, generator, structure) {
 # diffpic only does something for two pgrid objects without transportation plan
 # rot=FALSE uses the usual R image-convention
 # rot=TRUE plots mass-matrices the same way as they are displayed in numeric output and adapts the tplan-arrows accordingly
-plot.pgrid <- function(x,y=NULL,tplan=NULL,mass=c("colour","thickness"),length=0.1,acol,bcol=4,lwd,rot=FALSE,overlay=FALSE,static.mass=TRUE,...) {
+plot.pgrid <- function(x, y=NULL, tplan=NULL, mass=c("colour","thickness"), length=0.1, angle=5, acol, bcol=4,
+                       lwd, rot=FALSE, overlay=FALSE, static.mass=TRUE, ...) {
   stopifnot(is(x, "pgrid"))
   if (is(y, "wpp")) {
   	if (missing(acol)) { acol <- "#996699" }
@@ -133,7 +134,7 @@ plot.pgrid <- function(x,y=NULL,tplan=NULL,mass=c("colour","thickness"),length=0
         arrcols <- cc[as.numeric( as.character(cut(stplan[,3], breaks=seq(0,maxmass,length.out=129), labels=1:128)) )]
         wh <- which(stplan$from != stplan$to)
         arrows(xco[stplan$from[wh]],yco[stplan$from[wh]],xco[stplan$to[wh]],yco[stplan$to[wh]],
-           angle=5, length, col=arrcols[wh], lwd=lwd)
+           length, angle, col=arrcols[wh], lwd=lwd)
         if (static.mass == TRUE) {   
           nwh <- (1:dim(stplan)[1])[-wh]
           points(xco[stplan$from[nwh]],yco[stplan$from[nwh]], pch=16, cex=0.5+lwd*0.1, col=arrcols[nwh])
@@ -142,7 +143,7 @@ plot.pgrid <- function(x,y=NULL,tplan=NULL,mass=c("colour","thickness"),length=0
       } else {
       	wh <- which(tplan$from != tplan$to)
         arrows(xco[tplan$from[wh]],yco[tplan$from[wh]],xco[tplan$to[wh]],yco[tplan$to[wh]],
-           angle=5, length, col=acol, lwd=(8*tplan[,3]/maxmass)[wh])
+           length, angle, col=acol, lwd=(8*tplan[,3]/maxmass)[wh])
         if (static.mass == TRUE) {   
           nwh <- (1:dim(tplan)[1])[-wh]
           points(xco[tplan$from[nwh]],yco[tplan$from[nwh]], pch=16, cex=0.5 + (8*tplan[,3]/maxmass)[nwh] * 0.1, col=acol)
@@ -155,7 +156,7 @@ plot.pgrid <- function(x,y=NULL,tplan=NULL,mass=c("colour","thickness"),length=0
 }
 
 
-image2 <- function(x,y,z,rot=FALSE,...) {
+image2 <- function(x, y, z, rot=FALSE,...) {
   rotclock <- function(m) t(m)[,nrow(m):1]	
   if (rot) {
   	image(y,x,rotclock(z),...)
@@ -165,15 +166,45 @@ image2 <- function(x,y,z,rot=FALSE,...) {
 }
 
 
-image3 <- function(z,x=1:dim(z)[1],y=1:dim(z)[2],rot=TRUE,...) {
+#' Plotting Matrices as Images
+#'
+#' A simple wrapper to the image function with a more convenient syntax for plotting 
+#' matrices "the right way round" as pixel images.
+#'
+#' @param z a numeric matrix.
+#' @param x,y (optional) coordinates of the pixels. 
+#' @param rot logical. Whether to plot the matrix "the right way round" so that the pixel
+#' position in the image corresponds to the pixel position in the matrix obtained by \code{print}.
+#' @param asp the aspect ratio parameter of \code{\link[graphics]{image}}.
+#' @param ... further parameters passed to \code{\link[graphics]{image}}.
+#'
+#' @return Nothing (invisible NULL).
+#' @export
+#'
+#' @examples
+#' m <- matrix(1:36,6,6)
+#' image(z=m, col = heat.colors(36))
+#' matimage(m, col = heat.colors(36))
+# essentially image3 but exported
+matimage <- function(z, x=1:dim(z)[1], y=1:dim(z)[2], rot=TRUE, asp=1, ...) {
   rotclock <- function(m) t(m)[,nrow(m):1]	
   if (rot) {
-  	image(y,x,rotclock(z),...)
+    image(y, x, rotclock(z), asp=asp, ...)
+  } else {
+    image(x, y, z, asp=asp, ...)
+  }
+  invisible()
+}
+
+
+image3 <- function(z,x=1:dim(z)[1],y=1:dim(z)[2],rot=TRUE,...) {
+  rotclock <- function(m) t(m)[,nrow(m):1]
+  if (rot) {
+    image(y,x,rotclock(z),...)
   } else {
     image(x,y,z,...)
   }
 }
-
 
 print.pgrid <- function(x, ...) {
   stopifnot(is(x, "pgrid"))
@@ -613,14 +644,14 @@ fudge <- function(temp,N=1e9) {
 }
 
 # Generate Positions of a uniform 2-d grid on [0,1]^2
-grid_positions<-function(n,m){
-  G1<-expand.grid(n:1,1:m)
-  G2<-cbind(G1[,2],G1[,1])
-  G2<-G2-0.5
-  G2[,1]<-G2[,1]/m
-  G2[,2]<-G2[,2]/n
-  return(G2)
-}
+# grid_positions<-function(n,m){
+#   G1<-expand.grid(n:1,1:m)
+#   G2<-cbind(G1[,2],G1[,1])
+#   G2<-G2-0.5
+#   G2[,1]<-G2[,1]/m
+#   G2[,2]<-G2[,2]/n
+#   return(G2)
+# }
 
 ###functions to provide zeropadding for output of networkflow method for input measures with entries with value 0.
 zero_transform<-function(res,wha,whb,a,b){
@@ -634,3 +665,73 @@ zero_transform<-function(res,wha,whb,a,b){
   res$potential<-pot
   return(res)
 }
+
+
+# same for unbalanced objects
+# wha and whb has extra element TRUE if acan and bcan is TRUE, respectively
+# res$frame has transports to/from trashcans already removed
+zero_transform_unbalanced <- function(rawres, wha, whb, n1, n2, p){  # n1 x n2 is dim of the original a and b
+                                                  # length(wha) = n1*n2 + acan, length(whb) = n1*n2 + bcan
+  res <- list(dist=rawres$dist^(1/p))  # recall that dist is rawres is actually unbalanced Wasserstein dist to the p
+  
+  res$plan <- rawres$frame
+  res$plan[,1] <- which(wha)[rawres$frame[,1]]
+  res$plan[,2] <- which(whb)[rawres$frame[,2]]
+  #plan <- matrix(0, length(wha), length(whb))
+  #plan[wha,whb] <- res$plan
+  #res$plan <- plan
+  #pot <- rep(0, length(wha) + length(whb))
+  #pot[c(wha,whb)] <- res$potential
+  #res$potential <- pot
+  
+  N <- n1*n2
+  res$aextra <- matrix(0, n1, n2)
+  res$aextra[wha[1:N]] <- rawres$aextra
+  res$bextra <- matrix(0, n1, n2)
+  res$bextra[whb[1:N]] <- rawres$bextra
+  
+  return(res)
+}
+
+
+# constructs the returned list in the function unbalanced with output=all if after
+# reduction (removal of min if p=1) and removal of zeros one or both of the mass vectors are 0 
+outputallzero <- function(ared, bred, n1, n2, inplace, p, C) {
+  result <- list(dist=-1, plan=data.frame(from=numeric(0), to=numeric(0), mass=numeric(0))) # dist is computed below
+  result$atrans <- matrix(0, n1, n2)
+  result$btrans <- matrix(0, n1, n2)
+  result$aextra <- ared
+  result$bextra <- bred
+  result$inplace <- inplace
+  result$dist <- C*(sum(ared)+sum(bred))^(1/p)   # i.a.w. ( (sum(result$aextra)+sum(result$bextra)) * C^p )^(1/p)
+  return(result)
+}
+
+
+# breaks down the total cost of the transport into transport cost, a-destruction cost, a-disposal cost and b-disposal cost
+costsplitter <- function(allres) {
+  a <- attr(allres, "a")
+  b <- attr(allres, "b")
+  p <- attr(allres, "p")
+  C <- attr(allres, "C")
+  stopifnot(is(a, "pgrid") && is(b, "pgrid"))
+  stopifnot(compatible(a,b))
+  
+  cat("Saved dist is ", allres$dist, "\n")
+  
+  cost <- allres$dist^p
+  adisposal <- sum(allres$aextra) * C^p
+  bdisposal <- sum(allres$bextra) * C^p
+  
+  gg <- as.matrix(expand.grid(a$generator))
+  costm <- gen_cost(gg, gg, threads=1)^(p/2)
+  perunitcost <- costm[as.matrix(allres$plan[,1:2])]
+  transport <- sum(perunitcost * allres$plan$mass)
+  
+  if (!isTRUE(all.equal(adisposal + bdisposal + transport, cost))) {
+    warning("The unbalanced transport information provided does not appear to be consistent.")
+  }
+    
+  return(list(adisposal=adisposal, bdisposal=bdisposal, transport=transport, totcost=cost))
+}
+

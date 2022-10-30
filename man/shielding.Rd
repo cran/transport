@@ -4,9 +4,17 @@
 \alias{shielding}
 \title{Compute Optimal Transport (Cost/Plan) Using the Multiscale Shielding Method}
 \usage{
-shielding(a, b, nscales = 2, startscale = 1, flood = 0,
-  measureScale = 1e-06, verbose = FALSE, basisKeep = 1,
-  basisRefine = 1)
+shielding(
+  a,
+  b,
+  nscales = 2,
+  startscale = 1,
+  flood = 0,
+  measureScale = 1e-06,
+  verbose = FALSE,
+  basisKeep = 1,
+  basisRefine = 1
+)
 }
 \arguments{
 \item{a, b}{arrays with \eqn{d} coordinates representing source and target measure, respectively.

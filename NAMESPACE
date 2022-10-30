@@ -3,9 +3,9 @@
 
 # Import from standard packages (except for base)
 #
-importFrom("grDevices", "grey", "heat.colors", "png", "dev.off")
+importFrom("grDevices", "grey", "hcl.colors", "heat.colors", "png", "dev.off")
 importFrom("graphics", "arrows", "hist", "image", "lines", "matplot", "par", "plot",
-             "points", "polygon", "segments")
+             "points", "polygon", "segments", "title")
 importFrom("methods", "is")
 importFrom("stats", "aggregate", "dist", "na.omit", "optim", "rmultinom", "runif")
 
@@ -65,6 +65,7 @@ dedegenerate,
 #gif.generate,
 #image2,
 #image3,
+matimage,
 northwestcorner,
 #openmp_present,
 pgrid,
@@ -73,6 +74,7 @@ plot_apollonius,
 plot.pgrid,
 plot.power_diagram,
 plot.pp,
+plot.ubtrans,
 plot.wpp,
 power_diagram,
 pp,
@@ -107,6 +109,7 @@ transport.pp,
 transport.wpp,
 trcontrol,
 #triangulate,
+unbalanced,
 wasserstein,
 wasserstein1d,
 wpp)
@@ -115,10 +118,10 @@ wpp)
 
 
 # Registering S3 methods
-# Not sure if this is necessary for my own generic functions
 S3method("plot", "pgrid")
 S3method("plot", "power_diagram")
 S3method("plot", "pp")
+S3method("plot", "ubtrans")
 S3method("plot", "wpp")
 S3method("print", "pgrid")
 S3method("print", "pp")

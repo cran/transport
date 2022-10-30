@@ -8,31 +8,47 @@
 
 
 /* .C calls */
-extern void aha_compute_transport(void *, void *, void *, void *, void *, void *);
-extern void aha_dphi(void *, void *, void *, void *, void *, void *, void *, void *);
-extern void aha_free();
-extern void aha_get_transport(void *, void *, void *, void *);
-extern void aha_init(void *, void *, void *);
-extern void aha_phi(void *, void *, void *, void *, void *, void *, void *, void *);
-extern void aha_wasserstein(void *, void *, void *, void *, void *, void *);
-extern void auction(void *, void *, void *, void *, void *, void *);
-extern void auctionbf(void *, void *, void *, void *, void *, void *, void *);
-extern void compute_power_diagram(void *, void *, void *, void *, void *, void *);
-extern void decompose_c(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
-extern void get_power_diagram(void *, void *, void *);
-extern void primaldual(void *, void *, void *, void *, void *, void *);
-extern void revsimplex(void *, void *, void *, void *, void *, void *, void *, void *);
-extern void shortsimplex(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
+// 221017: I think function package_native_routine_registration_skeleton is still producing a legit result
+// with all the void * arguments, except that it produces e.g. aha_free(), which in C is a
+// function with unspecified arguments (rather than a function with no arguments) and therefore
+// leads to the function without prototype warning (not allowed in C2x)
+extern void aha_compute_transport(int *n, double *x, double *y, double *w, double *source_measure, int *res);
+extern void aha_dphi(int *n, double *x, double *y, double *w, double *source_measure,
+                     double *target_measure, int *exact, double *res);
+extern void aha_free(void);  // or void * in this case as functions here should only take pointers
+                             // on the other hand void is not a variable either but just a "keyword", no?
+extern void aha_get_transport(int *size, double *from, double *to, double *mass);
+extern void aha_init(int *n, int *m, double *rect);
+extern void aha_phi(int *n, double *x, double *y, double *w, double *source_measure, double *target_measure,
+                    int *exact, double *res);
+extern void aha_wasserstein(int *n, double *x, double *y, double *w, double *source_measure, double *res);
+extern void auction(int *desirem, int *nn, int *pers_to_obj, double *price, int *kk, double *eps);
+extern void auctionbf(int *desirem, int *nn, int *pers_to_obj, double *price, double *profit, int *kk, double *eps);
+extern void compute_power_diagram(int *cell_size, int *n, double *x, double *y, double *w, double *rect);
+extern void decompose_c(int *n, double *x, double *y, double *m, int *n0, double *x0, double *y0,
+                             double *m0, int *p, double *eps);
+extern void get_power_diagram(int *size, double *x, double *y);
+extern void primaldual(int *d, int *rmass, int *cmass, int *numr, int *numc, int *flowmatrix);
+extern void revsimplex(int *mm, int *nn, int *a, int *b, double *costm,
+                       int *assignment, int *basis, int *startgiven);
+extern void shortsimplex(int *ss, int *kk, double *pp, int *mm, int *nn, int *a, int *b,
+                         double *costm, int *assignment, int *basis);
 
 /* .Call calls */
+// 221017: this I copied originally from RcppExports.cpp I pressume (surprisingly Rcpp::compileAttributes
+// seems to recognize this and does not generate it again). Since C-functions without prototype
+// are not allowed anymore, and fun() is not regarded as a prototype (means unspecified arguments
+// in C but no arguments in C++), I added void here. According to forums fun(void) should be
+// exactly the same as fun() in C++, so the literal discrepancy with the actual definitions 
+// should not matter (some are in RcppExports, so I cannot / do not want to change it there).
 extern SEXP _transport_create_diagram(SEXP);
-extern SEXP _transport_cgal_present();
+extern SEXP _transport_cgal_present(void);
 extern SEXP _transport_semidiscrete_p1(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
-extern SEXP _transport_cplex_present();
+extern SEXP _transport_cplex_present(void);
 extern SEXP _transport_SolveHierarchicalTransport(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP _transport_networkflow(SEXP, SEXP, SEXP, SEXP);
 extern SEXP _transport_gen_cost(SEXP, SEXP, SEXP);
-extern SEXP _transport_openmp_present();
+extern SEXP _transport_openmp_present(void);
 
 static const R_CMethodDef CEntries[] = {
     {"aha_compute_transport", (DL_FUNC) &aha_compute_transport,  6},

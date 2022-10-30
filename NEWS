@@ -1,5 +1,41 @@
 ----------------------------------------------------------------
 
+	CHANGES IN transport VERSION 0.13-0  (2022-10-30)
+
+OVERVIEW
+
+    o  New function unbalanced for computing unbalanced transport
+       (and unbalanced Wasserstein distance) between pgrids.
+
+    o  New function plot.ubtrans for plotting the result from
+       unbalanced.
+       
+    o  Resolves recent R CMD check warnings due to C function
+       declarations without prototypes.
+
+----------------------------------------------------------------
+
+	CHANGES IN transport VERSION 0.12-5  (2022-10-07)
+
+OVERVIEW
+
+    o  Bug fix: transport.pgrid with method "networkflow" and a
+       non-square grid was typically wrong. Seems to be correct now.
+       
+    o  Bug fix: transport.pgrid with method "shielding" caused an
+       error if the grid had fewer than 200 points in total
+       (e.g. 14x14). Largely fixed (a problem may remain for very
+       small grids (e.g. below 4x4), but this is clearly not an
+       application case for the shielding method anyway).
+       
+    o  Bug fixes: some non-standard parameter combinations caused 
+       errors in the transport function. Fixed.
+       
+    o  pgrid.plot has a new option "angle" to make the heads of
+       the arrows wider for very small transport problems
+
+----------------------------------------------------------------
+
 	CHANGES IN transport VERSION 0.12-4  (2022-08-13)
 
 OVERVIEW

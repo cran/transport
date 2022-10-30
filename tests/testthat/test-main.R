@@ -1,7 +1,4 @@
-context("wpp functionality")
-
-
-test_that("wasserstein for balanced wpp objects", {
+test_that("wasserstein for wpp objects with i.i.d. weights", { 
 
   balanced_random <- function(nrep, method, p) {
     m <- 30
@@ -46,7 +43,7 @@ test_that("wasserstein for balanced wpp objects", {
 
 
 
-test_that("wasserstein for unbalanced wpp objects", {
+test_that("wasserstein for wpp objects with non-i.d. weights", {  # the objects are unbalanced not the wasserstein dist.
   
   skip_if(getRversion() < "3.6.0", "discrete uniform generation was different for R versions prior to 3.6.0")
   
@@ -97,4 +94,109 @@ test_that("wasserstein for unbalanced wpp objects", {
 })
 
 
+test_that("non-square pgrids (one toy example)", { 
+  a <- pgrid(matrix(1:6, 2 ,3))
+  b <- pgrid(matrix(6:1, 2 ,3))
+  expect_equal( wasserstein(a, b, p=1), 0.397814379345 )
+  expect_equal( wasserstein(a, b, p=1, method="revsimplex"), 0.397814379345 )
+})
 
+
+test_that("unbalanced transport (one toy example)", { 
+  a <- pgrid(matrix(1:6, 2 ,3))
+  b <- pgrid(matrix(6:1, 2 ,3))
+  expect_equal( unbalanced(a, b, p=1, output="dist")/a$totmass, 0.397814379345 )
+  expect_equal( unbalanced(a, b, p=1, output="dist"), 8.354101966249 )
+  expect_equal( unbalanced(a, b, p=1, C=1.118034/2, output="dist"), 8.354101966249 )
+  expect_equal( unbalanced(a, b, p=1, C=1.118033/2, output="dist"), 8.354099 )
+  expect_equal( unbalanced(a, b, p=1, C=0.501/2, output="dist"), 4.507 )
+  expect_equal( unbalanced(a, b, p=1, C=0.500/2, output="dist"), 18*0.500/2 )
+  expect_equal( unbalanced(a, b, p=1, C=0.499/2, output="all")$plan, 
+                data.frame(from=numeric(0), to=numeric(0), mass=numeric(0)) ) 
+  
+  expect_equal( unbalanced(a, b, p=2, output="dist"), 2.29128784748 )
+  expect_equal( unbalanced(a, b, p=2, C=1.118034/sqrt(2), output="dist"), 2.29128784748 )
+  expect_equal( unbalanced(a, b, p=2, C=1.118033/sqrt(2), output="dist"), 2.29128736502 )  
+  expect_equal( unbalanced(a, b, p=2, C=0.501/sqrt(2), output="dist"), 1.502333851 )
+  expect_equal( unbalanced(a, b, p=2, C=0.500/sqrt(2), output="dist")^2, 18*(0.500/sqrt(2))^2 ) 
+  expect_equal( unbalanced(a, b, p=2, C=0.499/sqrt(2), output="all")$plan,
+                data.frame(from=numeric(0), to=numeric(0), mass=numeric(0)) )
+  
+})
+
+# a somewhat more serious example
+#set.seed(221010)
+#amat <- pmax(cbind(rbind(matrix(50, 3, 3), matrix(100, 3, 3)), rbind(matrix(80, 3, 3), matrix(30, 3, 3))) + rnorm(36, 0, 30), 0)
+#bmat <- pmax(cbind(rbind(matrix(80, 3, 3), matrix(100, 3, 3)), rbind(matrix(30, 3, 3), matrix(100, 3, 3))) + rnorm(36, 0, 30), 0)
+amat <- matrix(c(0.00000, 11.15837, 47.11794, 110.68439, 74.07142, 96.41374, 69.52885, 34.19806, 113.82058, 126.79252, 96.75680, 129.98471,
+                 0.00000, 62.19007, 22.35849, 87.95412, 72.46086 ,111.66611, 56.46518, 86.01870, 87.39139, 13.56717,  0.00000, 70.25962,
+                43.88404, 87.66647, 77.25338, 59.03549, 63.91189, 89.74809, 67.64778, 77.11587, 52.47348, 63.05337, 43.71204, 21.99423), 6, 6)
+bmat <- matrix(c(148.10652, 77.14895, 79.83697, 121.31452, 120.33347, 82.87338, 55.72391, 56.09614, 117.18499, 97.70056, 87.84207, 107.50296,
+                  72.55216, 93.82185, 89.43807, 132.24490, 62.11505, 33.63378, 50.69261, 30.38996,  0.00000, 106.08027, 62.37144, 95.76406,
+                  62.44187, 74.58977, 42.91589, 152.21315, 72.02600, 89.41609, 44.87053, 64.64356, 10.08390, 108.00301, 88.42050, 131.40796), 6, 6)
+a <- pgrid(amat)
+b <- pgrid(bmat)
+a1 <- pgrid(amat/sum(amat))
+b1 <- pgrid(bmat/sum(bmat))
+
+test_that("transport (more serious example)", { 
+  expect_equal( wasserstein(a1, b1, p=1), 0.0936004132159 )
+  expect_equal( wasserstein(a1, b1, p=1, method="revsimplex"), 0.093600413215893 )
+  oldopt <- options("transport-CPLEX_no_warn" = TRUE)
+  expect_equal( suppressWarnings(wasserstein(a1, b1, p=2, method="shielding")), 0.134995568876 )
+  options(oldopt)
+  expect_equal( wasserstein(a1, b1, p=2, method="networkflow"), 0.134995568876 )
+  expect_equal( wasserstein(a1, b1, p=2, method="revsimplex"), 0.134995568876 )
+})
+
+test_that("unbalanced dist, same total mass (more serious example)", {
+  expect_equal( unbalanced(a1, b1, p=1), 0.0936004132159 )
+  expect_equal( unbalanced(a1, b1, p=2), 0.134995568876 )
+  expect_equal( unbalanced(a1, b1, p=1, C=0.3), 0.0870010219265 )
+  expect_equal( unbalanced(a1, b1, p=1, C=0.1), 0.0536390755165 )
+  expect_equal( unbalanced(a1, b1, p=2, C=0.3), 0.134784546883 )
+  expect_equal( unbalanced(a1, b1, p=2, C=0.1), 0.0764973224334 )
+})
+
+
+test_that("unbalanced dist, same total mass, revsimplex (more serious example)", {
+  skip_on_cran()  # due to smaller precision and random initialization revsimplex 
+                  # fails just marginally (probably tolerance 1e-7 would already fix it)
+  expect_equal( unbalanced(a1, b1, p=1, method="revsimplex"), 0.0936004132159 )
+  expect_equal( unbalanced(a1, b1, p=2, method="revsimplex"), 0.134995568876 )
+  expect_equal( unbalanced(a1, b1, p=1, C=0.3, method="revsimplex"), 0.0870010219265 )
+  expect_equal( unbalanced(a1, b1, p=1, C=0.1, method="revsimplex"), 0.0536390755165 )
+  expect_equal( unbalanced(a1, b1, p=2, C=0.3, method="revsimplex"), 0.134784546883 )
+  expect_equal( unbalanced(a1, b1, p=2, C=0.1, method="revsimplex"), 0.0764973224334 )
+})
+# plans are not necessarily the same, so all entries except the dist might fail here
+# the only thing one can really verify is the dist
+#expect_equal( unbalanced(a1, b1, p=1, C=0.3, method="revsimplex", output="all")[-2],
+#              unbalanced(a1, b1, p=1, C=0.3, output="all")[-2])
+#expect_equal( unbalanced(a1, b1, p=2, C=0.3, method="revsimplex", output="all")[-2],
+#              unbalanced(a1, b1, p=2, C=0.3, output="all")[-2])
+#expect_equal( unbalanced(a, b, p=1, C=0.3, method="revsimplex", output="all")[-2],
+#              unbalanced(a, b, p=1, C=0.3, output="all")[-2])
+#expect_equal( unbalanced(a, b, p=2, C=0.3, method="revsimplex", output="all")[-(2:4)],
+#             unbalanced(a, b, p=2, C=0.3, output="all")[-(2:4)])
+
+
+test_that("unbalanced all, different total mass (more serious example)", {
+  expect_snapshot_value( unbalanced(a, b, p=1, C=0.2, output="all"), style="json2") # other styles don't seem to work
+  expect_snapshot_value( unbalanced(a, b, p=2, C=0.2, output="all"), style="json2") 
+})
+
+test_that("unbalanced all, different total mass, revsimplex (more serious example)", { 
+  # expected values computed with networkflow
+  skip_on_cran()  # due to smaller precision and random initialization revsimplex 
+                  # fails just marginally (probably tolerance 1e-7 would already fix it)
+  expect_equal( unbalanced(a, b, p=1, C=0.08, method="revsimplex"), 119.5380336 )
+  expect_equal( unbalanced(a, b, p=1, C=0.2, method="revsimplex"), 206.2217782157 )
+  expect_equal( unbalanced(a, b, p=1, method="revsimplex"), 507.5840082411 )
+  expect_equal( unbalanced(a, b, p=2, C=0.11, method="revsimplex"), 4.25207332745, tolerance=1e-7 )
+  expect_equal( unbalanced(a, b, p=2, C=0.2, method="revsimplex"), 6.33807382587 )
+  expect_equal( unbalanced(a, b, p=2, method="revsimplex"), 20.88324374742 )
+  
+})  
+
+# profvis(unbalanced(random32a, random32b, p=2, output="all")$cost) # it's all in networkflow

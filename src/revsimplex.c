@@ -147,15 +147,10 @@ void printvec(int n, int *a);
 
 /* ------------ The main function ----------------------------- */
 
-void revsimplex(mm, nn, a, b, costm, assignment, basis, startgiven)
-  /* inputs */
-  int *mm, *nn;
-  int *a, *b;
-  double *costm;
-  int *startgiven;
-  /* outputs */
-  int *assignment;
-  int *basis;
+void revsimplex(int *mm, int *nn, int *a, int *b, double *costm,
+                int *assignment, int *basis, int *startgiven)
+  // inputs: *mm, *nn, *a, *b, *costm, *startgiven
+  // outputs: *assignment, *basis
 {
   int m,n,maxdim;
   State state;

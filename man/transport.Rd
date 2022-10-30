@@ -191,7 +191,9 @@ B. Schmitzer (2016). A sparse multiscale algorithm for dense optimal transport. 
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-  \code{\link[=plot.pgrid]{plot}}, \code{\link{wasserstein}}
+  \code{\link{plot.pgrid}},
+  \code{\link{wasserstein}},
+  \code{\link{unbalanced}}.
 }
 \examples{
 #

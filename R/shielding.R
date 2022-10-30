@@ -56,7 +56,11 @@ shielding <- function(a,b,nscales=2,startscale=1,flood=0,measureScale=1e-6,verbo
     a <- a/sum(a)
     b <- b/sum(b)	
   }
-  stopifnot(startscale < nscales)
+  stopifnot(startscale >= 0)  # otherwise unfriendly termination
+  stopifnot(startscale <= nscales+1)
+  # WAS < +0, changed to <= +1 on 221012 because small examples did not work 
+  # nscales sets up layers from 0 to nscales, it seems startscale is really the layer no on which
+  # the first problem is solved plus 1!! (if this confirms --> change use of startscale and/or doc)
 
   nocplex <- !as.logical(.Call('_transport_cplex_present', PACKAGE = 'transport'))
   if (nocplex && !isTRUE(getOption("transport-CPLEX_no_warn"))) {

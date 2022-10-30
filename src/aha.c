@@ -479,7 +479,7 @@ void aha_init(int *n, int *m, double *rect)
     init_triangulation(&aha_rt);
 }
 
-void aha_free()
+void aha_free(void)
 {
     Free(aha_x);
     Free(aha_y);
