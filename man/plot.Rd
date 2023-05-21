@@ -12,8 +12,8 @@
 }
 \usage{
   \method{plot}{pgrid}(x, y = NULL, tplan = NULL, mass = c("colour", "thickness"),
-    length = 0.1, angle=5, acol, bcol=4, lwd, rot = FALSE, overlay = FALSE,
-    static.mass =TRUE, ...)
+    length = 0.1, angle = 5, acol, bcol = 4, pcol="goldenrod2", lwd, pmass=TRUE,
+    rot = FALSE, overlay = FALSE, static.mass =TRUE, ...)
   \method{plot}{pp}(x, y = NULL, tplan = NULL, cols = c(4, 2), cex = 0.8,
     acol = grey(0.3), lwd = 1, overlay = TRUE, ...)
   \method{plot}{wpp}(x, y = NULL, tplan = NULL, pmass=TRUE, tmass=TRUE, cols = c(4, 2),
@@ -55,6 +55,10 @@
   \item{bcol}{
     the colour of the cell boundaries for a semidiscrete transport plan. Ignored
     in all other instances.  
+  }  
+  \item{pcol}{
+    the colour of the points representing the discrete masses for a semidiscrete
+    transport plan. Ignored in all other instances.  
   }    
   \item{cols}{
   	for \code{pp} objects:

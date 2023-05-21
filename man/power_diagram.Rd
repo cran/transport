@@ -32,7 +32,10 @@ power_diagram(xi, eta, w, rect = NA)
   \item{add}{
     logical. Should the power diagram be plotted on top of current graphics?
 }
-  \item{col,lwd,\ldots}{
+  \item{col}{
+    the color of the cell boundaries.
+}
+  \item{lwd, \ldots}{
     further arguments graphic parameters used by \code{\link{plot.default}}.
 }
 }

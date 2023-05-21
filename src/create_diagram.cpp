@@ -99,7 +99,7 @@ Apo_graph* generateApo_graphCustom(NumericMatrix& sites) {
   // note: speed gain of pass-by-ref is minor here
   // (somehow since sites is Rcpp object wrapping a SEXP, which is a pointer)
   if (sites.ncol() != 3) {
-    stop("Matrix 'sites' should have three columns x, y, weights");
+    Rcpp::stop("Matrix 'sites' should have three columns x, y, weights");
   }
     
   double maxWeight = 0;

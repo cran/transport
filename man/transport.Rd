@@ -21,10 +21,9 @@ transport(a, b, ...)
   "shielding", "aha", "primaldual"), fullreturn=FALSE,
   control = list(), threads=1,...)
 \method{transport}{pp}(a, b, p = 1, method = c("auction", "auctionbf", "networkflow", "shortsimplex",
-  "revsimplex", "primaldual"),fullreturn=FALSE, 
-  control = list(),threads=1, ...)
+  "revsimplex", "primaldual"), fullreturn=FALSE, control = list(), threads=1, ...)
 \method{transport}{wpp}(a, b, p = 1, method = c("networkflow", "revsimplex", "shortsimplex",
-"primaldual"), fullreturn=FALSE ,control = list(),threads=1, ...) 
+  "primaldual"), fullreturn=FALSE, control = list(), threads=1, ...) 
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{

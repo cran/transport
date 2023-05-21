@@ -184,6 +184,9 @@ test_that("unbalanced dist, same total mass, revsimplex (more serious example)",
 test_that("unbalanced all, different total mass (more serious example)", {
   expect_snapshot_value( unbalanced(a, b, p=1, C=0.2, output="all"), style="json2") # other styles don't seem to work
   expect_snapshot_value( unbalanced(a, b, p=2, C=0.2, output="all"), style="json2") 
+  # because for total mass of a > total mass of b and p=1 used to be a problem:
+  expect_snapshot_value( unbalanced(b, a, p=1, C=0.2, output="all"), style="json2") # other styles don't seem to work
+  expect_snapshot_value( unbalanced(b, a, p=2, C=0.2, output="all"), style="json2") 
 })
 
 test_that("unbalanced all, different total mass, revsimplex (more serious example)", { 
@@ -196,7 +199,15 @@ test_that("unbalanced all, different total mass, revsimplex (more serious exampl
   expect_equal( unbalanced(a, b, p=2, C=0.11, method="revsimplex"), 4.25207332745, tolerance=1e-7 )
   expect_equal( unbalanced(a, b, p=2, C=0.2, method="revsimplex"), 6.33807382587 )
   expect_equal( unbalanced(a, b, p=2, method="revsimplex"), 20.88324374742 )
-  
+
+  # because for total mass of a > total mass of b and p=1 it's easy to introduce errors
+  # due to all the tricks we do with zero mass (there used to be a problem with the tplan not the dist)
+  expect_equal( unbalanced(b, a, p=1, C=0.08, method="revsimplex"), 119.5380336 )
+  expect_equal( unbalanced(b, a, p=1, C=0.2, method="revsimplex"), 206.2217782157 )
+  expect_equal( unbalanced(b, a, p=1, method="revsimplex"), 507.5840082411 )
+  expect_equal( unbalanced(b, a, p=2, C=0.11, method="revsimplex"), 4.25207332745, tolerance=1e-7 )
+  expect_equal( unbalanced(b, a, p=2, C=0.2, method="revsimplex"), 6.33807382587 )
+  expect_equal( unbalanced(b, a, p=2, method="revsimplex"), 20.88324374742 )
 })  
 
 # profvis(unbalanced(random32a, random32b, p=2, output="all")$cost) # it's all in networkflow

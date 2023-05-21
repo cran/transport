@@ -321,7 +321,7 @@ ApoGraph* Source::createApoGraph(
     VertexHandle vertexCreated = graph->insert(s);
     // otherwise the vertex is not visible and therefore won't be the nearest
     // neighbor of any point
-    if (vertexCreated != VertexHandle(NULL)) {
+    if (vertexCreated != VertexHandle(nullptr)) {
       (*targetHandles)[vertexCreated->site().point()] = i;
     }
   }

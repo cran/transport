@@ -23,6 +23,9 @@ wasserstein <- function(a, b, p=1, tplan=NULL, costm=NULL, prob=TRUE, ...) {
   default <- FALSE
   if (is.numeric(a) && is.numeric(b)) {
     default <- TRUE
+    if (is.null(costm)) {
+      stop("costm must be specified if a and b are numeric vectors")
+    }
     stopifnot(all.equal(dim(costm), c(length(a),length(b))))
     if (!isTRUE(all.equal(sum(a),sum(b)))) {
       stop("Sums of a and b differ substantially. sum(a)-sum(b) = ", sum(a)-sum(b), ".")
@@ -377,10 +380,10 @@ transport.pgrid <- function(a, b, p = NULL, method = c("auto", "networkflow", "r
     #   result<-networkflow(matrix(a$mass),matrix(b$mass),C,threads)
     # }
     result<-networkflow(matrix(a$mass),matrix(b$mass),C,threads)
-    result$frame<-result$frame[result$frame[,3]>0,]
+    result$frame<-result$frame[result$frame[,3]>0,,drop=FALSE]
     df<-data.frame(from=result$frame[,1],to=result$frame[,2],mass=result$frame[,3])
     if (fullreturn==TRUE){
-            out<-list(default=df,primal=result$plan,dual=result$potential,cost=(result$dist))
+      out<-list(default=df,primal=result$plan,dual=result$potential,cost=(result$dist))
       return(out)
     }
     return(df)
@@ -790,7 +793,7 @@ transport.pp <- function(a, b, p = 1, method = c("auction", "auctionbf", "networ
     #   result<-networkflow(matrix(1,a$N,1),matrix(1,b$N,1),C,threads)
     # }
     result<-networkflow(matrix(1,a$N,1),matrix(1,b$N,1),C,threads)
-    result$frame<-result$frame[result$frame[,3]>0,]
+    result$frame<-result$frame[result$frame[,3]>0,,drop=FALSE]
     df<-data.frame(from=result$frame[,1],to=result$frame[,2],mass=result$frame[,3])
     if (fullreturn==TRUE){
             out<-list(default=df,primal=result$plan,dual=result$potential,cost=(result$dist))
@@ -910,7 +913,7 @@ transport.pp <- function(a, b, p = 1, method = c("auction", "auctionbf", "networ
 
 
 # new transport.wpp
-transport.wpp <- function(a, b, p = 1, method = c("networkflow","revsimplex", "shortsimplex", "primaldual"),
+transport.wpp <- function(a, b, p = 1, method = c("networkflow", "revsimplex", "shortsimplex", "primaldual"),
                           fullreturn=FALSE, control = list(), threads=1,...) {
   # Check inputs
   # ======================================================================
@@ -975,7 +978,7 @@ transport.wpp <- function(a, b, p = 1, method = c("networkflow","revsimplex", "s
     #   result<-networkflow(matrix(amass),matrix(bmass),C,threads)
     # }
     result<-networkflow(matrix(amass),matrix(bmass),C,threads)
-    result$frame<-result$frame[result$frame[,3]>0,]
+    result$frame<-result$frame[result$frame[,3]>0,,drop=FALSE]
     df<-data.frame(from=result$frame[,1],to=result$frame[,2],mass=result$frame[,3])
     if (fullreturn==TRUE){
       out<-list(default=df,primal=result$plan,dual=result$potential,cost=(result$dist))
@@ -1263,7 +1266,7 @@ transport.default <- function(a, b, costm, method=c("networkflow", "shortsimplex
   dd <- costm[wha,whb,drop=FALSE]
   m <- length(apos)
   n <- length(bpos)
-  # catches a very special case:
+  # catches a very special case: (we should really also do the zero padding here)
   if (m == 0) {
   	res <- data.frame(from = integer(0), to = integer(0), mass = double(0))
   	return(res)
@@ -1280,13 +1283,20 @@ transport.default <- function(a, b, costm, method=c("networkflow", "shortsimplex
   if (method=="networkflow"){
     #Prevent an issue, which can only occur if both measures are supported on a single point.
     if ((m==1)&&(n==1)){
-      df<-data.frame(from=1,to=1,mass=apos[1])
+      mass <- apos[1]
+      result <- list(dist=dd[1,1]*mass, plan=matrix(mass,1,1), frame=matrix(c(1,1,mass),1,3),
+                     potential=matrix(c(dd[1,1],0),2,1))
+      if ((length(a)>length(apos)) || (length(b)>length(bpos))){
+        result<-zero_transform(result,wha,whb,a,b)
+      }
+      df <- data.frame(from=result$frame[,1], to=result$frame[,2], mass=result$frame[,3])
       if (fullreturn==TRUE){
-        out<-list(default=df,primal=matrix(apos[1]),dual=matrix(c(dd[1],0),2,1),cost=dd[1])
+        out <- list(default=df, primal=result$plan, dual=result$potential, cost=(result$dist))
         return(out)
       }
       return(df)
     }
+    
     if (threads > 1 && !as.logical(openmp_present())) {
       warning("multithreading request ignored. Package was not installed with openMP support")
     }
@@ -1297,7 +1307,7 @@ transport.default <- function(a, b, costm, method=c("networkflow", "shortsimplex
     #   result<-networkflow(matrix(apos),matrix(bpos),costm,threads)
     # }
     result <- networkflow(matrix(apos),matrix(bpos),dd,threads)
-    result$frame <- result$frame[result$frame[,3]>0,]
+    result$frame <- result$frame[result$frame[,3]>0,,drop=FALSE]
     if ((length(a)>length(apos)) || (length(b)>length(bpos))){
       result<-zero_transform(result,wha,whb,a,b)
     }

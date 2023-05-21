@@ -1,5 +1,57 @@
 ----------------------------------------------------------------
 
+	CHANGES IN transport VERSION 0.14-1  (2023-05-21)
+
+OVERVIEW
+
+    o  We thank Mauro Ferrante and Oskar Nenoff for contributions.
+
+    o  Bug fix: The output of `transport.default` with
+       method="networkflow" was typically wrong if both mass
+       vectors a and b had only one non-zero entry each.
+
+    o  Bug fix: function `unbalanced` with output="all" (and
+       sometimes output="rawres") threw an error if one of a and b
+       had only one non-zero entry.
+
+----------------------------------------------------------------
+
+	CHANGES IN transport VERSION 0.14-0  (2023-04-15)
+
+OVERVIEW
+
+    o  Computation of semidiscrete optimal transport for p=1
+       did not work with newer versions of CGAL due to conflicting
+       C++ standards. This appears to be fixed completely.
+
+    o  The colors of the mass points in plots of semidiscrete
+       optimal transport plans can now be controlled via a parameter
+       pcol.
+
+----------------------------------------------------------------
+
+	CHANGES IN transport VERSION 0.13-2  (2023-01-30)
+
+OVERVIEW
+
+    o  Important bug fix in the recently added function
+       unbalanced. If p=1 and image a has more total mass than
+       image b, then the returned solution was typically wrong
+       if there are pixels with zero mass.
+       In most cases this came with suspicious warning messages
+       and the computed distance was still correct.
+       Fixed.
+
+----------------------------------------------------------------
+
+	CHANGES IN transport VERSION 0.13-1  (2022-10-31)
+
+OVERVIEW
+
+    o  Adds WSGeometry to suggested packages.
+
+----------------------------------------------------------------
+
 	CHANGES IN transport VERSION 0.13-0  (2022-10-30)
 
 OVERVIEW
@@ -9,7 +61,7 @@ OVERVIEW
 
     o  New function plot.ubtrans for plotting the result from
        unbalanced.
-       
+
     o  Resolves recent R CMD check warnings due to C function
        declarations without prototypes.
 
@@ -21,16 +73,16 @@ OVERVIEW
 
     o  Bug fix: transport.pgrid with method "networkflow" and a
        non-square grid was typically wrong. Seems to be correct now.
-       
+
     o  Bug fix: transport.pgrid with method "shielding" caused an
        error if the grid had fewer than 200 points in total
        (e.g. 14x14). Largely fixed (a problem may remain for very
        small grids (e.g. below 4x4), but this is clearly not an
        application case for the shielding method anyway).
-       
-    o  Bug fixes: some non-standard parameter combinations caused 
+
+    o  Bug fixes: some non-standard parameter combinations caused
        errors in the transport function. Fixed.
-       
+
     o  pgrid.plot has a new option "angle" to make the heads of
        the arrows wider for very small transport problems
 
@@ -57,14 +109,14 @@ OVERVIEW
     o  Several bugs in connection with mass/weight vectors not
        being ordered or containing zeroes have been fixed.
 
-    o  The function wasserstein1d is considerably faster now for 
+    o  The function wasserstein1d is considerably faster now for
        large datasets.
 
 SIGNIFICANT CHANGES
 
     o  Speed improvement for function wasserstein1d due to a more
        efficient counting procedure.
-               
+
 BUG FIXES
 
     o  Function wasserstein1d. In previous versions the result was
@@ -76,7 +128,7 @@ BUG FIXES
        and the function works with general non-negative weights
        (with positive sum) now.
 
-    o  Function transport.default and wasserstein. For the 
+    o  Function transport.default and wasserstein. For the
        default networkflow method the from and to indices in the
        returned transport plan referred to the vectors of positive
        entries in a and b (rather than the full vectors a and b).
@@ -89,7 +141,7 @@ BUG FIXES
     o  Function transport.default. There was an uncaught error
        if in one of the vectors only one of the masses was
        non-zero. Fixed.
- 
+
 ----------------------------------------------------------------
 
 	CHANGES IN transport VERSION 0.12-2  (2020-03-11)
@@ -104,7 +156,7 @@ OVERVIEW
 
     o  Function transport_track now uses argument fps (frames
        per second) instead of delay.time for generation of
-       animated gifs. This argument is used consistently. 
+       animated gifs. This argument is used consistently.
 
 ----------------------------------------------------------------
 
@@ -118,7 +170,7 @@ OVERVIEW
        configure script for the same openmp functionality
        as in the previous version.
 
-    o  We thank Brian Ripley for pertinent hints on both. 
+    o  We thank Brian Ripley for pertinent hints on both.
 
 
 ----------------------------------------------------------------
@@ -138,16 +190,16 @@ OVERVIEW
        pgrid. The code is based on the modified version of
        the Lemon Library provided by Nicolas Bonneel.
        https://github.com/nbonneel/network_simplex
-       
+
     o  A new configure script checks for openmp support at install time.
        If supported the installed version allows the user to run a
        multithreaded version of the "networkflow" method via a new
        argument "threads" in the appropriate transport functions.
-       
+
     o  Fixes a bug in the transport.track function which could cause
        an error when trying to generate a gif using this function.
        Also adds some minor customization options to this function.
- 
+
 
 ----------------------------------------------------------------
 
@@ -160,7 +212,7 @@ OVERVIEW
     o  A bug in the function transport.wpp was fixed which
        for strongly unbalanced weights created sometimes
        an infinite loop.
- 
+
 
 ----------------------------------------------------------------
 
@@ -172,14 +224,14 @@ OVERVIEW
 
     o  The functions subwasserstein and transport.pp are
        faster now. Depending on the example the speed increase
-       can be very substantial.      
+       can be very substantial.
 
 SIGNIFICANT CHANGES
 
     o  Function subwasserstein is much faster now for large objects
        because distance matrixes are not precomputed anymore. Set
        the new argument precompute=TRUE if you must reproduce the
-       old behaviour.       
+       old behaviour.
 
 BUG FIXES
 
@@ -198,10 +250,10 @@ OVERVIEW
 
     o  Several improvements regarding exact and approximate
        computations of Wasserstein distances, including a
-       bug fix.       
+       bug fix.
 
 NEW FUNCTIONS
-    
+
     o  subwasserstein
     Allow for approximate computation of Wasserstein distances
     via subsampling. Code by Jörn Schrieber
@@ -229,12 +281,12 @@ OVERVIEW
        available. Adapt then src/Makevars and install this
        package from source. This functionality is based on
        stand-alone C++ code by Valentin Hartmann
-       
+
     o  Easier extraction of the Wasserstein distance
        from semidiscrete optimal transport results
 
 NEW FUNCTIONS
-    
+
     o  semidiscrete1
     The workhorse function for computing semidiscrete
     optimal transport for p=1. This is called by the
@@ -286,7 +338,7 @@ OVERVIEW
 
 OVERVIEW
 
-    o  Minor change to remove a compiler warning    
+    o  Minor change to remove a compiler warning
 
 ----------------------------------------------------------------
 
@@ -295,7 +347,7 @@ OVERVIEW
 OVERVIEW
 
     o  Minor changes in Makevars to enable compilation under Windows and
-       pass CRAN checks     
+       pass CRAN checks
 
 ----------------------------------------------------------------
 
@@ -303,7 +355,7 @@ OVERVIEW
 
 OVERVIEW
 
-    o  Minor bug fixes     
+    o  Minor bug fixes
 
 ----------------------------------------------------------------
 
@@ -313,13 +365,13 @@ OVERVIEW
 
     o  Fixed serious bug, introduced in version 0.7-0,
        by which the algorithm hanged for pgrid-objects if p>1
-       method="revsimplex" (the default) if masses are not integer valued    
+       method="revsimplex" (the default) if masses are not integer valued
 
     o  New method "shielding" for pgrid-objects if p=2 that is considerably
        faster than the existing methods. Option to link package
        against CPLEX makes this combination even much faster and enables
        computation for 128x128 grids within a few seconds.
-       C++ code by Bernhard Schmitzer 
+       C++ code by Bernhard Schmitzer
 
 ----------------------------------------------------------------
 
@@ -354,7 +406,7 @@ OVERVIEW
 
     o  New class weighted point patterns with full functionality
 
-    o  Optimal transport between pgrid and wpp that returns 
+    o  Optimal transport between pgrid and wpp that returns
        transport tesselation
 
     o  Dynamic optimal transport (displacement interpolation)
@@ -369,9 +421,9 @@ NEW CLASSES
     as well as plot, print and summary functions. The
     function 'transport' can deal with this class.
     We thank Timo Wilm for help with creating this class.
-    
+
 NEW FUNCTIONS
-    
+
     o  semidiscrete
     Computes the transport map (in the form of a power
     diagram) for the semidiscrete transport problem
@@ -471,7 +523,7 @@ OVERVIEW
     o  We thank Yann Abraham and Stefan Kain for contributions
 
     o  Several unnecessary outputs are now suppressed by default
-       (timing information, warnings about degenerate bases that 
+       (timing information, warnings about degenerate bases that
        did not affect the result)
 
     o  Several minor bug fixes
@@ -518,7 +570,7 @@ OVERVIEW
     in transport.default and transport.pgrid with
     method="revsimplex", which lead to substantial speed
     improvements (mainly in transport.pgrid)
-       
+
     o  Several minor bugfixes
 
 SIGNIFICANT CHANGES

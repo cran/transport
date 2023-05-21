@@ -32,7 +32,7 @@ image2(x, y, z, rot = FALSE, ...)
 image3(z, x=1:dim(z)[1], y=1:dim(z)[2], rot=TRUE, ...)
 % like image, but if rot=TRUE, matrices are plotted in the same orientation as they are written
 plot_pgrid_wpp(x, y, tplan, pmass=TRUE, cex=0.8, length=0.1, acol="#996699",
-  col = 4, lwd = 1.5, rot = TRUE, ...)
+  bcol = 4, pcol = "goldenrod2", lwd = 1.5, rot = TRUE, ...)
 % internal plot function called by plot.pgrid if second argument is of class wpp
 % allows fine control over more graphics parameters
 refinesol(a1, b1, a2, b2, assig1, basis1, mult = 2)

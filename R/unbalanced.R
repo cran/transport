@@ -167,7 +167,7 @@ unbalanced <- function(a, b, p = 1, C = NULL, method = c("networkflow", "revsimp
         costm <- cbind(costm, C^p)  # we do *not* divide by two! (MSM not HKM)
         bplus <- c(bplus, atotmass-btotmass)  # matrix to vector
         bcan <- TRUE
-        whb <- c(wha, TRUE)  
+        whb <- c(whb, TRUE)  
         ltunnel <- cbind(ltunnel, TRUE)
       } else {
         costm <- rbind(costm, C^p)  # we do *not* divide by two! (MSM not HKM)
@@ -204,6 +204,7 @@ unbalanced <- function(a, b, p = 1, C = NULL, method = c("networkflow", "revsimp
     }
   } else {
     rawres <- unbalanced_revsimplex_core(aplus, bplus, costm, p, C)   # this rawres does not have a component potential
+    # rawres$potential <- to be fixed
   }
   
   if (output == "dist") {
@@ -212,7 +213,7 @@ unbalanced <- function(a, b, p = 1, C = NULL, method = c("networkflow", "revsimp
   
   # emulates the output of transport with networkflow and fullreturn=TRUE (trashcan states added)
   if (output == "rawres") { 
-    rawres$frame <- rawres$frame[rawres$frame[,3]>0,]
+    rawres$frame <- rawres$frame[rawres$frame[,3]>0,,drop=FALSE]
     if (a$N > m || b$N > n) {
       rawres <- zero_transform(rawres, wha, whb, wha, whb) 
          # this is a bit a hack, so we can use the same zero_transform function (wha, whb just
@@ -226,16 +227,16 @@ unbalanced <- function(a, b, p = 1, C = NULL, method = c("networkflow", "revsimp
   # output = "all"
   if (p == 1) {
     temp <- rawres$plan * ltunnel
-    rawres$aextra <- rowSums(temp[1:m,])  # there may or may not be a (m+1)-st row
-    rawres$bextra <- colSums(temp[,1:n])  # there may or may not be a (n+1)-st column
+    rawres$aextra <- rowSums(temp[1:m,,drop=FALSE])  # there may or may not be a (m+1)-st row
+    rawres$bextra <- colSums(temp[,1:n,drop=FALSE])  # there may or may not be a (n+1)-st column
     rawres$plan[ltunnel] <- 0
     ind <- which(rawres$plan > 0, arr.ind=TRUE) 
     rawres$frame <- cbind(ind, rawres$plan[ind])   # trashcan states (if there were any) will not appear here
                                                    # but we leave them in plan and in potential (currently for ever)
     colnames(rawres$frame) <- NULL
   } else { # note: for p >= 2 we may or may not toss if transport is at distance exactly 2*C^p (for p=1 we always toss)
-    rawres$aextra <- rawres$plan[1:m,n+1]
-    rawres$bextra <- rawres$plan[m+1,1:n]
+    rawres$aextra <- rawres$plan[1:m,n+1,drop=FALSE]
+    rawres$bextra <- rawres$plan[m+1,1:n,drop=FALSE]
     select <- (rawres$frame[,3] > 0) & # transports over dist 0 have to stay in for now (rawres$frame[,1] != rawres$frame[,2]) & 
               (rawres$frame[,1] <= m) & (rawres$frame[,2] <= n)  # removes the trashcan states from frame
     rawres$frame <- rawres$frame[select, , drop=FALSE]
