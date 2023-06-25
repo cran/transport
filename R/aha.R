@@ -20,6 +20,7 @@ aha <- function(a,b,nscales=1,scmult=2,factr=1e+05,maxit=10000,powerdiag=FALSE,
         target_mass <- b$mass
         x <- b$x
         y <- b$y
+        npoints <- dim(b)[1]
     } else {
         stopifnot(dim(a)==dim(b))
         target_mass <- as.vector(b)
@@ -29,6 +30,7 @@ aha <- function(a,b,nscales=1,scmult=2,factr=1e+05,maxit=10000,powerdiag=FALSE,
         # now there is no jitter if wpp's are passed
         x <- x + runif(length(x),-1e-5,1e-5)
         y <- y + runif(length(y),-1e-5,1e-5)
+        npoints <- m*n
     }
 
     # permutate target measure points
@@ -54,7 +56,7 @@ aha <- function(a,b,nscales=1,scmult=2,factr=1e+05,maxit=10000,powerdiag=FALSE,
     
     # uses lloyd's algorithm to determine n points (x,y,m) such that
     # sum(m)=sum(m0) and which are close to (x0,y0,m0) w.r.t. wasserstein distance
-    # p will repesent the mapping between the points of (x,y) and (x0,y0), i.e.
+    # p will represent the mapping between the points of (x,y) and (x0,y0), i.e.
     # p[i]=j means (x0[i],y0[i]) is mapped to (x[j],y[j])
     decompose <- function(n,x0,y0,m0) {
         n0 <- length(x0)
@@ -101,7 +103,8 @@ aha <- function(a,b,nscales=1,scmult=2,factr=1e+05,maxit=10000,powerdiag=FALSE,
         }
     }
 
-    .C("aha_init",as.integer(n),as.integer(m),as.double(rect),PACKAGE="transport")
+    .C("aha_init",as.integer(n),as.integer(m),as.double(rect),as.integer(npoints),PACKAGE="transport")
+    on.exit(.C("aha_free",PACKAGE="transport"))
     if (wasser) {
         v <- decompose(wasser.spt,x,y,target_mass)
         w <- multiscale(wasser.spt,v$x,v$y,v$m,1)
@@ -113,7 +116,7 @@ aha <- function(a,b,nscales=1,scmult=2,factr=1e+05,maxit=10000,powerdiag=FALSE,
         # error bound
         error <- sqrt(target_mass%*%((x-v$x[v$p+1])^2+(y-v$y[v$p+1])^2))
 
-        .C("aha_free",PACKAGE="transport")
+        # .C("aha_free",PACKAGE="transport")
 
         return(data.frame(wasser.dist=temp$res,error.bound=error))
     } else {
@@ -132,7 +135,7 @@ aha <- function(a,b,nscales=1,scmult=2,factr=1e+05,maxit=10000,powerdiag=FALSE,
                          as.double(w), as.double(as.vector(a)), res=integer(1),PACKAGE="transport")$res
           res <- .C("aha_get_transport", as.integer(tmemsize), from=double(tmemsize), 
                     to=double(tmemsize), mass=double(tmemsize),PACKAGE="transport")[2:4]
-          .C("aha_free",PACKAGE="transport")
+          # .C("aha_free",PACKAGE="transport")
         
           tp <- data.frame(from=1+res$from,to=perm[1+res$to],mass=res$mass)
           if (!("mass" %in% names(b))) {

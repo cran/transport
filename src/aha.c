@@ -40,6 +40,7 @@ double aha_pert;
 // image size = aha_n*aha_m
 int aha_n;
 int aha_m;
+int aha_npoints;
 double *aha_dphi_val;
 
 // global variables used to raster a cell
@@ -341,6 +342,7 @@ void aha_phi(int *n, double *x, double *y, double *w, double *source_measure, do
     *res = 0;
 
     triangulate(&aha_rt, *n, x, y, w, aha_rect[0], aha_rect[1], aha_rect[2], aha_rect[3], aha_pert);
+    // printf("aha_rt.size = %d\n", aha_rt.size);
 
     for (i=0;i<aha_rt.size;i++) {
         power_cell(&k,aha_x,aha_y,&aha_rt,&aha_rt.sites[i],aha_rect[0],aha_rect[1],aha_rect[2],aha_rect[3]);
@@ -350,7 +352,7 @@ void aha_phi(int *n, double *x, double *y, double *w, double *source_measure, do
             *res += w[i]*target_measure[i] + integral;
 
             cell_integral(&aha_rt.sites[i],source_measure,&integral,0,0,*exact,1);
-            aha_dphi_val[i] = target_measure[i] - integral;
+            aha_dphi_val[i] = target_measure[i] - integral;  // invalid write of size 8 (twice)
         } else {
             *res += w[i]*target_measure[i];
             aha_dphi_val[i] = target_measure[i];
@@ -364,7 +366,7 @@ void aha_dphi(int *n, double *x, double *y, double *w, double *source_measure, d
     int i;
 
     for (i=0;i<aha_rt.size;i++) {
-        res[i] = aha_dphi_val[i];
+        res[i] = aha_dphi_val[i];  // invalid write of size 8 (twice)
     }
 }
 
@@ -450,11 +452,12 @@ void aha_get_transport(int *size, double *from, double *to, double *mass)
     }
 }
 
-void aha_init(int *n, int *m, double *rect)
+void aha_init(int *n, int *m, double *rect, int *npoints)
 {
     int k;
     aha_n = *n;
     aha_m = *m;
+    aha_npoints = *npoints;
     aha_rect[0] = rect[0];
     aha_rect[1] = rect[1];
     aha_rect[2] = rect[2];
@@ -465,7 +468,8 @@ void aha_init(int *n, int *m, double *rect)
     aha_ixmax = Calloc(aha_n*sizeof(int),int);
     aha_edge_pixel = Calloc(aha_n*aha_m*sizeof(int),int);
     aha_area = Calloc(aha_n*aha_m*sizeof(double),double);
-    aha_dphi_val = Calloc(aha_n*aha_m*sizeof(double),double);
+    // aha_dphi_val = Calloc(aha_n*aha_m*sizeof(double),double);  // sometimes not enough
+    aha_dphi_val = Calloc(aha_npoints*sizeof(double),double);
     aha_transport_from = Calloc(AHA_TRANSPORT_MEMORY*sizeof(double),double);
     aha_transport_to = Calloc(AHA_TRANSPORT_MEMORY*sizeof(double),double);
     aha_transport_mass = Calloc(AHA_TRANSPORT_MEMORY*sizeof(double),double);

@@ -211,3 +211,20 @@ test_that("unbalanced all, different total mass, revsimplex (more serious exampl
 })  
 
 # profvis(unbalanced(random32a, random32b, p=2, output="all")$cost) # it's all in networkflow
+
+
+
+#
+test_that("semidiscrete, p=2", { 
+  # introduced after reported segfault
+  a = pgrid(matrix(c(0.7,1.5,0.8,1),2,2))
+  n = 100
+  set.seed(1111)
+  b = wpp(matrix(runif(2*n),nrow=n), mass = rep(1/n,n))
+  res <- semidiscrete(a,b,p=2) 
+  expect_equal( res$wasserstein_dist, 0.112323776 )
+  expect_snapshot_value( unclass(res), style="json2", tolerance=1e-7) # other styles don't seem to work, 
+                 # note that snapshot tests by default are set up to not run on cran
+})  
+
+

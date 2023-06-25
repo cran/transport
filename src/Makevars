@@ -49,9 +49,9 @@ OBJECTS.general = RcppExports.o	auctionbf.o shielding.o aha.o primaldual.o \
 # PKG_CPPFLAGS = $(PKG_CPPFLAGS_CGAL) -DIL_STD -DILOSTRICTPOD -DWITH_CPLEX -I/media/daten/lib/cplex12.6.1/cplex/include -I.
 # PKG_LIBS = -L/media/daten/lib/cplex12.6.1/cplex/lib/x86-64_linux/static_pic/ -lcplex -lm -lstdc++ $(PKG_LIBS_CGAL) $(SHLIB_OPENMP_CXXFLAGS)
 #
-# --- Mac OS X 10.14. ---
-# PKG_CPPFLAGS = $(PKG_CPPFLAGS_CGAL) -DIL_STD -DILOSTRICTPOD -DWITH_CPLEX -I$(HOME)/Applications/IBM/ILOG/CPLEX_Studio1271/cplex/include -I.
-# PKG_LIBS = -L$(HOME)/Applications/IBM/ILOG/CPLEX_Studio1271/cplex/lib/x86-64_osx/static_pic/ -lcplex -lm -lstdc++ $(PKG_LIBS_CGAL) $(SHLIB_OPENMP_CXXFLAGS)
+# --- Mac OS X 13.4 ---
+# PKG_CPPFLAGS = $(PKG_CPPFLAGS_CGAL) -DWITH_CPLEX -I$//Applications/CPLEX_Studio221/cplex/include -I.
+# PKG_LIBS = -L$//Applications/CPLEX_Studio221/cplex/lib/x86-64_osx/static_pic/ -lcplex -lm -lstdc++ $(PKG_LIBS_CGAL) $(SHLIB_OPENMP_CXXFLAGS)
 #
 # --- Windows (64 bit) ---
 # PKG_CPPFLAGS= $(PKG_CPPFLAGS_CGAL) -D_LP64 -DWITH_CPLEX -I"C:/PROGRA~1/IBM/ILOG/CPLEX_Studio1271/cplex/include" -I.
@@ -65,7 +65,7 @@ OBJECTS.general = RcppExports.o	auctionbf.o shielding.o aha.o primaldual.o \
 # ======================
 # No CPLEX
 # ======================
-# Comment in the following seven lines
+# Comment in the following eight lines
 OBJECTS.standard = OT_SparseSimplex/sparsebasicfeasible.o \
 		   OT_SparseSimplex/sparsesimplex.o \
 		   OT_SparseSimplex/TSparseSimplexSolver.o \
@@ -81,6 +81,24 @@ PKG_LIBS =  -lm $(PKG_LIBS_CGAL)  $(SHLIB_OPENMP_CXXFLAGS)
 
 all: $(SHLIB)
 
-clean: @rm -f $(OBJECTS)
-# This cleans the subfolders in src (files directly in source auto-clean)
-# all is needed *if* you have clean (or any such instruction).
+clean:
+	@rm -f $(OBJECTS)
+# This is clean:\n\t@rm -f $(OBJECTS)
+# both the newline and the tab are necessary!! (see makefile syntax):
+# - the thing on the same line as the target is the prerequisites, commands go on the following line
+# - spaces instead of tab in front of commands throws an error
+# - the @ in front of a command in a makefile says: do not print
+# 
+# It seems that cleaning is done as part of the following actions (always with this command here that includes
+# the subfolders; without this command some default is used that ignores subfolders):
+# [note that Writing R Extensions currently claims clean is only run by RMD BUILD]
+# 1. R CMD BUILD (does not remove objects in raw src directory, but omits them in src directory of the built package) 
+# 2. R CMD INSTALL --preclean (remove objects (from previous run) in raw src directory, *then* install --> creates new objects)
+# 3. R CMD INSTALL --clean (install, *then* remove objects in raw src directory --> leaves src directory clean)
+
+# The following is called by R CMD INSTALL --preclean and R CMD INSTALL --clean (according to Writing R Extensions)
+# (and probably not R CMD BUILD). However, since for me R CMD INSTALL --clean and --preclean also use the above clean
+# target this seems rather useless.
+# shlib-clean:
+#	  @rm -f $(OBJECTS)
+

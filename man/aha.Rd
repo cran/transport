@@ -22,7 +22,7 @@ transport_error(a, b, tplan)
     an \eqn{m \times n}{m x n} matrix. \code{a} is treated as a measure on \eqn{[0,m] \times [0,n]}{[0,m] x [0,n]} with constant density on each unit square \eqn{[i,i+1) \times [j,j+1)}{[i,i+1)x[j,j+1)}.
 }
   \item{b}{
-    either a matrix such that \code{dim(a)==dim(b)} and \code{sum(a)==sum(b)} or a list of three vectors of equal length, named \code{x}, \code{y} and \code{mass} such that \code{sum(a)==sum(b$mass)},
+    either a matrix such that \code{dim(a)==dim(b)} and \code{sum(a)==sum(b)} or a data frame with three variables named \code{x}, \code{y} and \code{mass} such that \code{sum(a)==sum(b$mass)},
     representing a discrete measure on \eqn{[0,m]) \times [0,n]}{[0,m]x[0,n]}.
 }
   \item{tplan}{

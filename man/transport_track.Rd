@@ -97,14 +97,16 @@
   \code{Function \link{transport}} for computing optimal transference plans.
 }
 \examples{
-tplan <- transport(random32a,random32b)
-series <- transport_track(random32a, random32b, tplan, scmult=3, create.file="none")
-dev.new(width=16,height=8)
-oldpar <- par(mfrow=c(5,10), mai=rep(0.01,4))
-for (i in 1:50) { 
-  image(series[,,i], col=grey(seq(0,1,0.005)), asp=1, axes=FALSE,zlim=c(min(series),max(series)))
+if (requireNamespace("ks", quietly = TRUE)) {
+  tplan <- transport(random32a,random32b)
+  series <- transport_track(random32a, random32b, tplan, scmult=3, create.file="none")
+  dev.new(width=16,height=8)
+  oldpar <- par(mfrow=c(5,10), mai=rep(0.01,4))
+  for (i in 1:50) { 
+    image(series[,,i], col=grey(seq(0,1,0.005)), asp=1, axes=FALSE,zlim=c(min(series),max(series)))
+  }
+  par(oldpar)
 }
-par(oldpar)
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

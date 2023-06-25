@@ -18,7 +18,7 @@ extern void aha_dphi(int *n, double *x, double *y, double *w, double *source_mea
 extern void aha_free(void);  // or void * in this case as functions here should only take pointers
                              // on the other hand void is not a variable either but just a "keyword", no?
 extern void aha_get_transport(int *size, double *from, double *to, double *mass);
-extern void aha_init(int *n, int *m, double *rect);
+extern void aha_init(int *n, int *m, double *rect, int *npoints);
 extern void aha_phi(int *n, double *x, double *y, double *w, double *source_measure, double *target_measure,
                     int *exact, double *res);
 extern void aha_wasserstein(int *n, double *x, double *y, double *w, double *source_measure, double *res);
@@ -55,7 +55,7 @@ static const R_CMethodDef CEntries[] = {
     {"aha_dphi",              (DL_FUNC) &aha_dphi,               8},
     {"aha_free",              (DL_FUNC) &aha_free,               0},
     {"aha_get_transport",     (DL_FUNC) &aha_get_transport,      4},
-    {"aha_init",              (DL_FUNC) &aha_init,               3},
+    {"aha_init",              (DL_FUNC) &aha_init,               4},
     {"aha_phi",               (DL_FUNC) &aha_phi,                8},
     {"aha_wasserstein",       (DL_FUNC) &aha_wasserstein,        6},
     {"auction",               (DL_FUNC) &auction,                6},

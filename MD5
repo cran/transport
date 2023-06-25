@@ -1,8 +1,8 @@
-dc68d0761ce950b35b4eea72b962b0dc *DESCRIPTION
+7d40c74fe1ade0a2916cbd628cd67b5e *DESCRIPTION
 b5719181d6d940c017bafe61c002580c *NAMESPACE
-b7919201b81293341fc1bf916b390b77 *NEWS
+f16ce48c0b0f3753b4bd510beb6fb75e *NEWS
 92ddb57c42d140bfc7a89e9a74f644e6 *R/RcppExports.R
-5e93ae5f1eda266c70424daf41ca85f9 *R/aha.R
+0ea66aba2756356ad83c7ca9dcb678f9 *R/aha.R
 3516f92f829835db4dbf4364eecf1424 *R/fix_odd.R
 57c07b30b6cc1d5e84e4a265ae415e5a *R/fundament.R
 2f2f79aeb4fc5dd5b98378446df1bdd9 *R/lilhelpers.R
@@ -19,7 +19,7 @@ c984f03bf1c745c0372f8a6c38302fde *R/unbalanced.R
 c5a3891801c545cfbbc63470dd2be753 *data/random64.rda
 6a52d66225501185ca65e336640b46e9 *inst/CITATION
 ae603b82d3b2b04815a2f3ace25455f5 *inst/INSTALL
-25e409313155163625c42339c898da85 *man/aha.Rd
+59ad6a817e4cedd231254e829ae365cf *man/aha.Rd
 62aff34e263e0f9754fc3ee4d5c50ab7 *man/all.equal.Rd
 55ffbf3e6dd21f7a379d6de95444d36d *man/compatible.Rd
 796cf4180540da22f1abdcedca20eb18 *man/matimage.Rd
@@ -41,8 +41,8 @@ a9eeaf180c0e3873a2eaf1e97cf73261 *man/starting_solutions.Rd
 4dcac61e2db15e50f615a44bd953e4a9 *man/subwasserstein.Rd
 2e29c2e9f3afaa09ac4797dbb61fb46f *man/transport-internal.Rd
 3327e5072c8a62ea097c6d6b7aba2487 *man/transport-package.Rd
-c228ff7ecb6c8ab985204650095daf40 *man/transport.Rd
-94a20d78887b10c1c37dc245806afa09 *man/transport_track.Rd
+ead4e1716aa3565cc4324785ffb28096 *man/transport.Rd
+bc0ee8966332944ac95d6499a8b7f161 *man/transport_track.Rd
 05eaa913476471b73eab4f16a7d02667 *man/trcontrol.Rd
 93b10b5da779d1bbb311d57badf24d1b *man/unbalanced.Rd
 ac25f2dcd1426956bccf75f2dbf67b85 *man/wasserstein.Rd
@@ -70,7 +70,7 @@ a312bd24011a0fe3b2f4f681e557bc82 *src/Common/TVarListHandler.cpp
 abd5d3ba5d289f6dab9aed7c709c4637 *src/Common/Verbose.h
 f58eab425c8547c35bc4f24e9177b8e3 *src/Common/tools.cpp
 cc85d8ab3d829acb70fa3129adac1709 *src/Common/tools.h
-3829bb912acdfd7b882277155376f5b0 *src/Makevars
+9008f1db0c9c165cd831082e3b66b425 *src/Makevars
 dfb4f76f8c47cfd22a18af8d193e5ebc *src/OT_CPLEX/TCPLEXNetSolver.cpp
 02ecc1168ed4d3b920619194793a95c4 *src/OT_CPLEX/TCPLEXNetSolver.h
 b8d78f87ce508ce963b0f32c2f98f524 *src/OT_SparseSimplex/TSparseSimplexSolver.cpp
@@ -92,7 +92,7 @@ f5509a733d09b6aa5c5efea215117edd *src/ShortCutSolver_CPLEX/Interfaces-CPLEX.cpp
 a3dee01216181209545dc5435d5151ab *src/ShortCutSolver_CPLEX/Interfaces-CPLEX.h
 4ec5acdbeb469209dfc08d1cce2a9591 *src/ShortCutSolver_SparseSimplex/Interfaces-SparseSimplex.cpp
 23f9a157118fc222eed1e376f933aa9d *src/ShortCutSolver_SparseSimplex/Interfaces-SparseSimplex.h
-02dfca7f2767a48f6eb19d5c1d3e1f15 *src/aha.c
+3b37a51c19beeaa75c91bce2f615d74e *src/aha.c
 714b29e13a1dd893a34378b8af9c37ee *src/auction.c
 35ea90d96ff99819e6586eb528b48f95 *src/auctionbf.c
 cf91951e0154237a8c786359fb802811 *src/create_diagram.cpp
@@ -118,7 +118,7 @@ db8da74d413c57e32de9b8a30d9d0d2c *src/semidiscrete_p1/arithmetic_sse_float.h
 1360036764323104ddf29f590e0e4ed5 *src/semidiscrete_p1/lbfgs.h
 46933ae2c55ac3af71352455ef960ea9 *src/shielding.cpp
 5d716d4e385feee8933486eca87aa340 *src/shortsimplex.c
-1236c236d1212b5458c2fa1c3e0e562c *src/transport_init.c
+2a4bac3655a60a4a2e2345dca0dafd2e *src/transport_init.c
 65de52fc7403c1269f961eb6ecd70dfb *tests/testthat.R
-e8eb0dc7e07b008c24360169b77d205c *tests/testthat/_snaps/main.md
-ec60b8a5c900f25a1b0ea23cdb9f9297 *tests/testthat/test-main.R
+d78c9249de9664eed01e2ee46ab5e0b2 *tests/testthat/_snaps/main.md
+8e18de7be7c45efcab0714b62d99549a *tests/testthat/test-main.R

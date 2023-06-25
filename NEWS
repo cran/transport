@@ -1,5 +1,38 @@
 ----------------------------------------------------------------
 
+	CHANGES IN transport VERSION 0.14-3  (2023-06-24)
+
+OVERVIEW
+
+    o  Replace broken link. 
+
+----------------------------------------------------------------
+
+	CHANGES IN transport VERSION 0.14-3  (2023-06-24)
+
+OVERVIEW
+
+    o  Bug fix in src/Makevars. Object files in subfolders were
+       not cleaned properly. This had no practical implications
+       for the most usual installation procedures, but has been
+       fixed now. 
+
+----------------------------------------------------------------
+
+	CHANGES IN transport VERSION 0.14-2  (2023-06-11)
+
+OVERVIEW
+
+    o  We thank Peter Jacobs for contributions.
+
+    o  Bug fixes: The C code underlying the functions computing
+       semidiscrete optimal transport for p=2 resulted in a
+       segmentation fault for certain (not so rare) input
+       combinations. Also there was a memory leak. Both are
+       fixed.
+
+---------------------------------------------------------------
+
 	CHANGES IN transport VERSION 0.14-1  (2023-05-21)
 
 OVERVIEW
@@ -48,7 +81,7 @@ OVERVIEW
 
 OVERVIEW
 
-    o  Adds WSGeometry to suggested packages.
+    o  Add WSGeometry to suggested packages.
 
 ----------------------------------------------------------------
 
