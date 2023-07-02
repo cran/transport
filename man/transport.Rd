@@ -152,8 +152,8 @@ N. Bonneel (2018). Fast Network Simplex for Optimal Transport. Github repository
 
 N. Bonneel, M. van de Panne, S. Paris and W. Heidrich (2011). Displacement interpolation using Lagrangian mass transport. ACM Transactions on Graphics (SIGGRAPH ASIA 2011) 30(6).
 
-Egervary Research Group on Combinatorial Optimization, EGRES (2014). LEMON Graph Library v1.3.1. Available at
-\href{https://github.com/tpet/lemon}{github.com/tpet/lemon}.
+Egervary Research Group on Combinatorial Optimization, EGRES (2014). LEMON Graph Library v1.3.1.
+\href{https://lemon.cs.elte.hu/trac/lemon}{lemon.cs.elte.hu/trac/lemon}.
 
 C. Gottschlich and D. Schuhmacher (2014). The shortlist method for fast computation of the earth mover's distance and finding optimal solutions to transportation problems. PLOS ONE 9(10), e110214. \doi{10.1371/journal.pone.0110214}
 

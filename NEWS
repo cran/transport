@@ -1,6 +1,27 @@
 ----------------------------------------------------------------
 
-	CHANGES IN transport VERSION 0.14-3  (2023-06-24)
+	CHANGES IN transport VERSION 0.14-6  (2023-07-01)
+
+OVERVIEW
+
+    o  Skip new semidiscrete test on CRAN as the special
+       configurations only give slightly perturbed results
+       (which seem random in spite of the seed). 
+       Re-reduce the tolerance everywhere else.
+
+----------------------------------------------------------------
+
+	CHANGES IN transport VERSION 0.14-5  (2023-06-28)
+
+OVERVIEW
+
+    o  Increase tolerance in new semidiscrete test. Previously,
+       it failed for some of the more special configurations,
+       in particular if there was no long double. 
+
+----------------------------------------------------------------
+
+	CHANGES IN transport VERSION 0.14-4  (2023-06-25)
 
 OVERVIEW
 

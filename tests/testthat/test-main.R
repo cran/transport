@@ -217,14 +217,23 @@ test_that("unbalanced all, different total mass, revsimplex (more serious exampl
 #
 test_that("semidiscrete, p=2", { 
   # introduced after reported segfault
+  skip_on_cran()   # although we set a seed, the result is not consistent on CRAN
+                   # *for the additional configurations*; apparently not even between
+                   # two checks of flavor "OpenBLAS". Deviations are small but 
+                   # it is not clear if there is a strict upper limit and what it is
   a = pgrid(matrix(c(0.7,1.5,0.8,1),2,2))
   n = 100
   set.seed(1111)
   b = wpp(matrix(runif(2*n),nrow=n), mass = rep(1/n,n))
-  res <- semidiscrete(a,b,p=2) 
-  expect_equal( res$wasserstein_dist, 0.112323776 )
+  res <- semidiscrete(a,b,p=2)
+  expect_equal( res$wasserstein_dist, 0.112323776)
+     # not only if !capabilities("long.double"), but also some other specially compiled variants
+     # (including the setup CRAN uses for M1mac does not satisfy the usual tolerance limits.)
+     # usually the "mean rel. difference" is of order of magnitude of (a little more than) 1e-6,
+     # which is surprising (but not of concern). It goes up to 8.902738e-06 for if !capabilities("long.double") 
   expect_snapshot_value( unclass(res), style="json2", tolerance=1e-7) # other styles don't seem to work, 
-                 # note that snapshot tests by default are set up to not run on cran
+                 # note that snapshot tests by default are set up to not run on cran (that's why we can keep
+                 # the tolerance smaller)
 })  
 
 
