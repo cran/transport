@@ -1,12 +1,20 @@
 ----------------------------------------------------------------
 
+	CHANGES IN transport VERSION 0.14-7  (2024-02-18)
+
+OVERVIEW
+
+    o  Maintenance update to fix a new note in CRAN checks.
+
+----------------------------------------------------------------
+
 	CHANGES IN transport VERSION 0.14-6  (2023-07-01)
 
 OVERVIEW
 
     o  Skip new semidiscrete test on CRAN as the special
        configurations only give slightly perturbed results
-       (which seem random in spite of the seed). 
+       (which seem random in spite of the seed).
        Re-reduce the tolerance everywhere else.
 
 ----------------------------------------------------------------
@@ -17,7 +25,7 @@ OVERVIEW
 
     o  Increase tolerance in new semidiscrete test. Previously,
        it failed for some of the more special configurations,
-       in particular if there was no long double. 
+       in particular if there was no long double.
 
 ----------------------------------------------------------------
 
@@ -25,7 +33,7 @@ OVERVIEW
 
 OVERVIEW
 
-    o  Replace broken link. 
+    o  Replace broken link.
 
 ----------------------------------------------------------------
 
@@ -36,7 +44,7 @@ OVERVIEW
     o  Bug fix in src/Makevars. Object files in subfolders were
        not cleaned properly. This had no practical implications
        for the most usual installation procedures, but has been
-       fixed now. 
+       fixed now.
 
 ----------------------------------------------------------------
 
