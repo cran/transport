@@ -50,7 +50,7 @@
     is \code{TRUE}.  
   }   
   \item{angle}{
-    the angle of the arrow head.  
+    the angle of the arrow heads.  
   }   
   \item{bcol}{
     the colour of the cell boundaries for a semidiscrete transport plan. Ignored

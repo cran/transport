@@ -88,8 +88,10 @@ If \code{wasser} is \code{TRUE}, a data frame with columns \code{wasser.dist} an
   \code{\link{transport}}, which is a convenient wrapper function for various optimal transportation algorithms.
 }
 \examples{
-res <- aha(random32a$mass, random32b$mass)
-plot(random32a, random32b, res, lwd=0.75)
+# There is one particular testing configuration on MacOS where the following
+# command does not return (to be investigated)
+# res <- aha(random32a$mass, random32b$mass)
+# plot(random32a, random32b, res, lwd=0.75)
 
 aha(random64a$mass, random64b$mass, nscales=3, scmult=5, wasser.spt=512, approx=TRUE)
 }

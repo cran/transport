@@ -1,5 +1,30 @@
 ----------------------------------------------------------------
 
+	CHANGES IN transport VERSION 0.15-0  (2024-03-26)
+
+OVERVIEW
+
+    o  unbalanced is now a generic function with methods for 
+       class pgrid (corresponding to the previous function
+       unbalanced) and wpp (new functionality).
+       
+    o  plot.ubtrans has been replaced by plot.ut_grid and there
+       is a new method plot.ut_wpp, where ut_grid and ut_wpp
+       are (now) the classes of the outputs of the two unbalanced
+       methods when setting output="all".
+ 
+----------------------------------------------------------------
+
+	CHANGES IN transport VERSION 0.14-8  (2024-03-09)
+
+OVERVIEW
+
+    o  Bug fix in function unbalanced. The function returned zero
+       even if only one of the measures was the zero measure
+       (for p=1, after reduction).
+
+----------------------------------------------------------------
+
 	CHANGES IN transport VERSION 0.14-7  (2024-02-18)
 
 OVERVIEW

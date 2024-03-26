@@ -1,10 +1,12 @@
-#' Unbalanced Optimal Transport between pgrid Objects
+#' Unbalanced Optimal Transport Between Two Objects
+#' 
+#' Compute optimal transport between unnormalized images / mass distributions on grids 
+#' (\code{pgrid} objects) or between mass distributions on general point patterns
+#' (\code{wpp} objects) under the option that mass can be dispose of. Transport cost
+#' per unit is the Euclidean distance of the transport to the \code{p}-th power.
+#' Disposal cost per unit is \code{C^p}.\cr 
 #'
-#' Compute optimal transport between unnormalized images / mass distributions (\code{pgrid} objects)
-#' under the option that mass can be dispose of. Transport cost per unit is distance of transport to 
-#' the \code{p}-th power. Disposal cost per unit is \code{C^p}.\cr 
-#'
-#' @param a,b objects of class \code{\link{pgrid}} that are compatible.
+#' @param a,b objects of class \code{\link{pgrid}} or \code{\link{wpp}} that are compatible.
 #' @param p a power \eqn{\geq 1} applied to the transport and disposal costs. The order
 #' of the resulting unbalanced Wasserstein metric.
 #' @param C The base disposal cost (without the power \code{p}) 
@@ -16,16 +18,18 @@
 #' The choice \code{output = "rawres"} is mainly intended for internal use.
 #' @param threads an integer specifying the number of threads for parallel computing in connection with
 #' the networkflow method.
-#'
-#' @details Given two non-negative mass distributions ("images") \eqn{a=(a_x)_{x \in G}}, \eqn{b=(a_y)_{y \in G}}
-#' on a grid \eqn{G}, this function minimizes the functional
-#' \deqn{\sum_{x,y \in G} \pi_{x,y} d(x,y)^p + C^p \bigl( \sum_{x \in G} (a_x - \pi^{(1)}_x) + \sum_{y \in G} (b_y - \pi^{(2)}_y) \bigr)}
-#' over all \eqn{(\pi_{x,y})_{x,y \in G}} satisfying
-#' \deqn{0 \leq \pi^{(1)}_x := \sum_{y \in G} \pi_{x,y} \leq a_x \ \textrm{and} \ 0 \leq \pi^{(2)}_y := \sum_{x \in G} \pi_{x,y} \leq b_y.}
+#' @param ... other arguments.
+#' 
+#' @details Given two non-negative mass distributions \eqn{a=(a_x)_{x \in S}}, \eqn{b=(a_y)_{y \in S}}
+#' on a set \eqn{S} (a pixel grid / image if \code{a}, \code{b} are of class \code{pgrid} or a more
+#' general weighted point pattern if \code{a}, \code{b} are of class \code{wpp}), this function minimizes the functional
+#' \deqn{\sum_{x,y \in S} \pi_{x,y} d(x,y)^p + C^p \bigl( \sum_{x \in S} (a_x - \pi^{(1)}_x) + \sum_{y \in S} (b_y - \pi^{(2)}_y) \bigr)}
+#' over all \eqn{(\pi_{x,y})_{x,y \in S}} satisfying
+#' \deqn{0 \leq \pi^{(1)}_x := \sum_{y \in S} \pi_{x,y} \leq a_x \ \textrm{and} \ 0 \leq \pi^{(2)}_y := \sum_{x \in S} \pi_{x,y} \leq b_y.}
 #' 
 #' Thus \eqn{\pi_{x,y}} denotes the amount of mass transported from \eqn{x} to \eqn{y}, whereas \eqn{\pi^{(1)}_x}
 #' and \eqn{\pi^{(2)}_y} are the total mass transported away from \eqn{x} and total mass transported to \eqn{y}, respectively.
-#' Accordingly \eqn{\sum_{x \in G} (a_x - \pi^{(1)}_x)} and \eqn{\sum_{y \in G} (b_y - \pi^{(2)}_y)} are the total
+#' Accordingly \eqn{\sum_{x \in S} (a_x - \pi^{(1)}_x)} and \eqn{\sum_{y \in S} (b_y - \pi^{(2)}_y)} are the total
 #' amounts of mass of \eqn{a} and \eqn{b}, respectively, that need to be disposed of.
 #' 
 #' The minimal value of the functional above taken to the \eqn{1/p} is what we refer to as unbalanced
@@ -34,31 +38,33 @@
 #' convention of the latter paper regarding the parametrization and the use of the term \emph{unbalanced Wasserstein metric}.
 #' 
 #' The practical difference between the two methods "networkflow" and "revsimplex" can 
-#' roughly described as follows. The former is typically faster for large examples (64x64
+#' roughly described as follows. The former is typically faster for large examples (for \code{pgrid} objects 64x64
 #' and beyond), especially if several threads are used. The latter is typically faster
 #' for smaller examples (which may be relevant if pairwise transports between many objects
-#' are computed) and it guarantees a sparse(r) solution, i.e. at most m+n+1 individual
-#' transports, where m and n are the number of non-zero masses in \code{a} and \code{b}, respectively).
+#' are computed) and it guarantees a sparse(r) solution, i.e. at most \eqn{m+n+1} individual
+#' transports, where \eqn{m} and \eqn{n} are the numbers of non-zero masses in \code{a} and \code{b}, respectively).
 #' Note however that due to the implementation the revsimplex algorithm is a little less
 #' precise (roughly within 1e-7 tolerance). For more details on the algorithms see \code{\link{transport}}.
-
+#'
 #' @return If \code{output = "dist"} a single numeric, the unbalanced \eqn{(p,C)}-Wasserstein distance.
-#' Otherwise a list. If \code{output = "all"} the list saves \code{a}, \code{b}, \code{p}, \code{C} as attributes and 
-#' has the following components:
+#' Otherwise a list. If \code{output = "all"} the list is of class \code{ut_pgrid} or \code{ut_wpp} according
+#' to the class of the objects \code{a} and \code{b}. It has \code{a}, \code{b}, \code{p}, \code{C} as attributes and 
+#' the following components:
 #' \item{dist}{same as for \code{output = "dist"}.}
 #' \item{plan}{an optimal transport plan. This is a data frame with columns \code{from}, \code{to} and \code{mass}
 #'  that specifies from which element of \code{a} to which element of \code{b} what amount of mass is sent.
 #'  \code{from} and \code{to} are specified as vector indices in terms of the usual column major enumeration
 #'  of the matrices a$mass and b$mass. The plan can be plotted via \code{plot.pgrid(a, b, plan)}.}
-#' \item{atrans, btrans}{matrices specifying the masses transported from each point and to each point,
-#'  respectively. Corresponds to \eqn{(\pi^{(1)}_x)_{x \in G}} and \eqn{(\pi^{(2)}_y)_{y \in G}} above.}
-#' \item{aextra, bextra}{matrices specifying the amount of mass at each point of \code{a} and \code{b},
+#' \item{atrans, btrans}{matrices (pgrid) or vectors (wpp) specifying the masses transported from each point and to each point,
+#'  respectively. Corresponds to \eqn{(\pi^{(1)}_x)_{x \in S}} and \eqn{(\pi^{(2)}_y)_{y \in S}} above.}
+#' \item{aextra, bextra}{matrices (pgrid) or vectors (wpp) specifying the amount of mass at each point of \code{a} and \code{b},
 #' respectively, that cannot be transported and needs to be disposed of. Corresponds to
-#' \eqn{(a_x - \pi^{(1)}_x)_{x \in G}} and \eqn{(b_y - \pi^{(2)}_y)_{y \in G}}.}
-#' \item{inplace}{a matrix specifying the amount of mass at each point that can stay in place. Corresponds
-#' to \eqn{(\pi_{x,x})_{x \in G}}.}
+#' \eqn{(a_x - \pi^{(1)}_x)_{x \in S}} and \eqn{(b_y - \pi^{(2)}_y)_{y \in S}}.}
+#' \item{inplace}{(pgrid only) a matrix specifying the amount of mass at each point that can stay in place. Corresponds
+#' to \eqn{(\pi_{x,x})_{x \in S}}.}
 #'  
-#' Note that \code{atrans + aextra + inplace} must be equal to \code{a$mass} and likewise for b.
+#' Note that \code{atrans + aextra + inplace} (pgrid) or \code{atrans + aextra} (wpp)must be equal
+#' to \code{a$mass} and likewise for b.
 #' A warning occurs if this is not the case (which may indeed happen from time to time for method
 #' revsimplex, but the error reported should be very small).
 #' 
@@ -72,12 +78,7 @@
 #'             Statistics and Computing 30, 953-972.\cr
 #'             \doi{10.1007/s11222-020-09932-y}
 #'             
-#'
-#' @seealso \code{\link[WSGeometry]{kr_dist}} in the package \code{WSGeometry}, which performs a similar task with more flexible input
-#' (may be image files or \code{\link{wpp-object}s}). The present function gives more informative output and is currently better
-#' optimized for images if \code{p=1} or if the image has many zeros.
-#' 
-#' @seealso \code{\link{plot.ubtrans}}, which can plot the various components of the list obtained for \code{output="all"}.
+#' @seealso \code{\link{plot.ut_pgrid}} and \code{\link{plot.ut_wpp}}, which can plot the various components of the list obtained for \code{output="all"}.
 #'
 #' @export
 #'
@@ -92,8 +93,25 @@
 #' matimage(res2$aextra, x = a$generator[[1]], y = a$generator[[2]])
 #' matimage(res2$bextra, x = b$generator[[1]], y = b$generator[[2]])
 #' 
-unbalanced <- function(a, b, p = 1, C = NULL, method = c("networkflow", "revsimplex"),
-                       output = c("dist", "all", "rawres"), threads=1) {
+#' set.seed(31)
+#' a <- wpp(matrix(runif(8),4,2), 3:6)
+#' b <- wpp(matrix(runif(10),5,2), 1:5)
+#' res1 <- unbalanced(a, b, 1, 0.5, output="all")
+#' res2 <- unbalanced(a, b, 1, 0.3, output="all")
+#' plot(a, b, res1$plan)
+#' plot(a, b, res2$plan)
+#'
+#' @export
+unbalanced <- function(a, b, ...) {
+  stopifnot(class(a) == class(b))	
+  UseMethod("unbalanced")
+}
+
+
+#' @rdname unbalanced
+#' @export
+unbalanced.pgrid <- function(a, b, p = 1, C = NULL, method = c("networkflow", "revsimplex"),
+                       output = c("dist", "all", "rawres"), threads=1, ...) {
   stopifnot(is(a, "pgrid") && is(b, "pgrid"))
   stopifnot(compatible(a,b))
   if (a$dimension < 2) stop("pixel grids of dimension >= 2 required")
@@ -103,10 +121,14 @@ unbalanced <- function(a, b, p = 1, C = NULL, method = c("networkflow", "revsimp
   method <- match.arg(method)
   output <- match.arg(output)
   
-  if (is.null(C)) C <- (sqrt((a$boundary[2]-a$boundary[1])^2 + (a$boundary[4]-a$boundary[3])^2) / 2)^(1/p)
-    # so that tunnelling of points (deleting units of mass and adding them again somewhere else) is
-    # is never worth it. Notice that since pixels are inside the boundary C is a bit larger than 
+  if (is.null(C)) {
+    d <- length(a$boundary)
+    span <- a$boundary[seq(2, d, 2)] - a$boundary[seq(1, d, 2)]  # for some reason boundary is sequential
+    C <- (sqrt(sum(span^2)) / 2)^(1/p)
+    # so that tunneling of points (deleting units of mass and adding them again somewhere else) is
+    # never worth it. Notice that since pixels are inside the boundary C is a bit larger than 
     # theoretically necessary (for numerical reasons)
+  }
   
   # if p==1 remove pointwise minimum to legally get more zero mass points
   if (p == 1) {
@@ -128,7 +150,7 @@ unbalanced <- function(a, b, p = 1, C = NULL, method = c("networkflow", "revsimp
   m <- sum(wha)
   n <- sum(whb)
   # The following catches the case that after the reduction procedure nothing is left, i.e. the two measures were equal
-  if (m==0 || n==0) {
+  if (m==0 && n==0) {
     if (output == "dist") {
       return(0)
     }
@@ -200,7 +222,7 @@ unbalanced <- function(a, b, p = 1, C = NULL, method = c("networkflow", "revsimp
     dualcost <- sum(rawres$potential * c(aplus, bplus))
     if (!isTRUE(all.equal(primalcost, dualcost)) || !isTRUE(all.equal(primalcost, rawres$dist))) {  # dist is cost (dist^p)
       warning("Primal-dual gap is ", rawres$dist - dualcost, "\n", "Primal cost: ", primalcost, 
-            "; dual cost: ", dualcost, "; rawres$cost: ", rawres$dist)
+              "; dual cost: ", dualcost, "; rawres$cost: ", rawres$dist)
     }
   } else {
     rawres <- unbalanced_revsimplex_core(aplus, bplus, costm, p, C)   # this rawres does not have a component potential
@@ -208,7 +230,7 @@ unbalanced <- function(a, b, p = 1, C = NULL, method = c("networkflow", "revsimp
   }
   
   if (output == "dist") {
-    return(rawres$dist^(1/p)) # recall that rawres$dist is actually the p-th power of the unbalanced Wasserstein dist
+    return(rawres$dist^(1/p)) # rawres$dist is actually the p-th power of the unbalanced Wasserstein dist
   }
   
   # emulates the output of transport with networkflow and fullreturn=TRUE (trashcan states added)
@@ -293,13 +315,13 @@ unbalanced <- function(a, b, p = 1, C = NULL, method = c("networkflow", "revsimp
   attr(result, "b") <- b
   attr(result, "p") <- p
   attr(result, "C") <- C
-  class(result) <- "ubtrans"
+  class(result) <- "ut_pgrid"
   return(result)
 }
 
 
 
-# revsimplex
+# revsimplex (also used for unbalanced.wpp)
 unbalanced_revsimplex_core <- function(aplus, bplus, costm, p, C) {
   m <- length(aplus)
   n <- length(bplus)
@@ -369,7 +391,8 @@ unbalanced_revsimplex_core <- function(aplus, bplus, costm, p, C) {
 #' plot( res, what="inplace" )}
 # in the long run we might do something fancier here (e.g. that depicts all the info in one plot,
 # and we should definitely switch to ggplot2)
-plot.ubtrans <- function(x, what=c("plan", "extra", "trans", "inplace"), axes=FALSE, ...) {
+plot.ut_pgrid <- function(x, what=c("plan", "extra", "trans", "inplace"), axes=FALSE, ...) {
+  stopifnot(is(x, "ut_pgrid"))
   what <- match.arg(what)
   
   a <- attr(x, "a")
@@ -428,4 +451,4 @@ plot.ubtrans <- function(x, what=c("plan", "extra", "trans", "inplace"), axes=FA
   invisible()
 }
 
-# TO DO: print method for ubtrans
+# TO DO: print method for ut_pgrid

@@ -334,8 +334,8 @@ wpp <- function(coordinates, mass){
   stopifnot(totmass > 0)
   massnonzero <- (mass != 0)
   mass <- mass[massnonzero]
-  zeropoints <- coordinates[!massnonzero,]
-  coordinates <- coordinates[massnonzero,]
+  zeropoints <- coordinates[!massnonzero,,drop=FALSE]
+  coordinates <- coordinates[massnonzero,,drop=FALSE]
   N <- dim(coordinates)[1]
   res <- list(dimension = dimension, N=N, coordinates = coordinates, mass = mass, totmass = totmass)
   class(res) <- "wpp"
@@ -350,6 +350,7 @@ plot.wpp <- function(x,y=NULL,tplan=NULL,pmass=TRUE,tmass=TRUE,cols=c(4,2),cex=0
   stopifnot(is(x, "wpp"))  
   if (x$dimension != 2) stop("plot.wpp is currently only implemented for 2-d point patterns")  
   oldpars <- par(xpd=TRUE, xaxs="i", yaxs="i")
+  on.exit(par(oldpars))
 #  col1 <- heat.colors(128)[1:60]
 #  xorder <- order(x$mass)
 #  col1 <- col1[as.numeric(as.character(cut(x$mass,breaks=seq(0,max(x$mass),length.out =61),labels=1:60)))]
@@ -395,7 +396,6 @@ plot.wpp <- function(x,y=NULL,tplan=NULL,pmass=TRUE,tmass=TRUE,cols=c(4,2),cex=0
   	      toolarge <- (cexfac > 5)
   	      justright <- !(toosmall | toolarge)	
   	      cexfac <- cexfac[justright]  
-  	      plot(x$coordinates, type="n", xlab="", ylab="", asp=1, ...)	
   	      points(x$coordinates[toolarge,,drop=FALSE], col=cols[1], pch=16, cex=5*cex) 
   	      points(x$coordinates[toolarge,,drop=FALSE], col=grey(1), pch=10, cex=5*cex, lwd=2)
   	      # black contours vor better visibility if points overlapp:
@@ -488,7 +488,6 @@ plot.wpp <- function(x,y=NULL,tplan=NULL,pmass=TRUE,tmass=TRUE,cols=c(4,2),cex=0
       invisible()
     }
   }
-  par(oldpars)
 }
 
 

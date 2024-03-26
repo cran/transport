@@ -154,11 +154,6 @@ trcontrol <- function(method = c("networkflow", "revsimplex", "shortsimplex", "p
       }
     } else {
       newpara$factr <- 1e5 
-      
-          # /400 since after reduction about half of the N producers disappear
-      #newpara$slength <- min(b$N, newpara$slength)
-          # Can't choose the shortlist longer then the number of consumers
-          # This is caught now in transport functions
     }
     
     if (2 %in% done) {
@@ -192,19 +187,11 @@ trcontrol <- function(method = c("networkflow", "revsimplex", "shortsimplex", "p
 
     if (1 %in% done) {
       newpara$slength <- para[[which(done == 1)]]
-#      if (newpara$slength > b$N) {
-#      	warning("parameter 'slength' for shortlist algorithm was larger then no. of target points... Fixed.")
-#      	newpara$slength <- b$N
       if (newpara$slength < 1) {
       	stop("parameter 'slength' for shortlist algorithm has to be >= 1")
       }
     } else {
       newpara$slength <- min(N,15 + max(0, floor(15 * log(N/400)/log(2)))) 
-      
-          # /400 since after reduction about half of the N producers disappear
-      #newpara$slength <- min(b$N, newpara$slength)
-          # Can't choose the shortlist longer then the number of consumers
-          # This is caught now in transport functions
     }
     
     if (2 %in% done) {
@@ -233,12 +220,11 @@ trcontrol <- function(method = c("networkflow", "revsimplex", "shortsimplex", "p
 
   if (method == "auction" || method == "auctionbf") {
 
-  # lasteps Wert muss < 1/n sein fuer exaktes Ergebnis (an gewissen Stellen in altem Code steht = 1/n, aber ich sehe
-  # keinen guten Grund dafuer)
-  # lasteps und epsfac sind nur fuer auction und auctionbf relevant
-  # epsfac = NA bedeutet kein eps-scaling verwenden, habe experimentiert mit epsfac = 10 und = 80 
-  # Bertsekas empfiehlt 4-10, ist aber nach meiner Erfahrung fuer unsere Probleme zu klein
-  # ich faende einen eps-power natuerlicher als einen epsfac, aber das mit dem epsfac habe ich von Bertsekas
+  # lasteps value needs to be < 1/n for exact result (not = 1/n: correct if places saying so remain)
+  # lasteps und epsfac are only relevant for auction and auctionbf
+  # epsfac = NA means: don't use eps-scaling; experiments performed with epsfac = 10 und = 80 
+  # Bertsekas recommends 4-10, but these seems to small for our kind of problems;
+  # also, it seems eps-power would be more natural than epsfac, but we take epsfac as Bertsekas
 
     if (is.numeric(para) && length(para) == 2) {
       para = list(lasteps=para[1], epsfac=para[2])
@@ -255,9 +241,6 @@ trcontrol <- function(method = c("networkflow", "revsimplex", "shortsimplex", "p
 
     if (1 %in% done) {
       newpara$lasteps <- para[[which(done == 1)]]
-#      if (newpara$lasteps > 1) {
-#      	stop("parameter 'slength' for shortlist algorithm has to be >= 1")
-#      }
     } else {
       stopifnot(M==N)
       if (is.null(N)) { stop("Not enough information available to determine lasteps.") }
@@ -266,9 +249,6 @@ trcontrol <- function(method = c("networkflow", "revsimplex", "shortsimplex", "p
     
     if (2 %in% done) {
       newpara$epsfac <- para[[which(done == 2)]]
-#      if (newpara$kfound <= 1) {
-#      	stop("parameter 'kfound' for shortlist algorithm has to be >= 1")
-#      }
     } else {
       newpara$epsfac <- 10
     }
@@ -286,8 +266,8 @@ trcontrol <- function(method = c("networkflow", "revsimplex", "shortsimplex", "p
 
 
 transport.pgrid <- function(a, b, p = NULL, method = c("auto", "networkflow", "revsimplex", "shortsimplex", "shielding", "aha", "primaldual"),fullreturn=FALSE, control = list(), threads=1, ...) {
-  # returncoarse: gibt im Falle von nscales >= 2 an, ob groebere Probleme und deren Loesungen auch ausgegeben werden sollen;
-  # Anderenfalls wird nur die feinste Loesung (ohne Problem) zurueckgegeben
+  # returncoarse=TRUE means in case of nscales >= 2, we also return the coarser problems and their solutions;
+  # otherwise only the finest solution is returned (without the problem)
 
   # Check inputs
   # ======================================================================   
@@ -300,14 +280,12 @@ transport.pgrid <- function(a, b, p = NULL, method = c("auto", "networkflow", "r
   stopifnot(is(a, "pgrid") && is(b, "pgrid"))
   stopifnot(compatible(a,b))
   if (a$dimension < 2) stop("pixel grids of dimension >= 2 required")
-#  if (a$dimension > 2) warning("transport.pgrid for pixel grids of dimension > 2 is still somewhat experimental")
   if (!(a$structure %in% c("square", "rectangular")))
     stop("transport.pgrid is currently only implemented for rectangular pixel grids")
          
   ngrid <- a$n
   Ngrid <- a$N
 
-  # assuming of course the object is consistent
   if (!isTRUE(all.equal(a$totmass,b$totmass))) {
     warning("total mass in a and b differs. Normalizing a and b to probability measures (totcontmass=1).")
     atcm <- a$totcontmass
@@ -361,7 +339,7 @@ transport.pgrid <- function(a, b, p = NULL, method = c("auto", "networkflow", "r
 
   is.natural <-
     function(x, tol = .Machine$double.eps^0.5)  all((abs(x - round(x)) < tol) & x > 0.5)
-  # aus der Hilfe zu is.integer, checks for a vector whether all entries are approximately natural numbers
+  # frome man page of is.integer: checks for a vector whether all entries are approximately natural numbers
   is.naturalzero <-
     function(x, tol = .Machine$double.eps^0.5)  all((abs(x - round(x)) < tol) & x > -0.5)
   # same including 0
@@ -415,7 +393,7 @@ transport.pgrid <- function(a, b, p = NULL, method = c("auto", "networkflow", "r
      # Now method="shielding" can be used for small problems (although for size 3 and smaller I'm not sure).
      # measureScale is number of layers between root (1x1, not computed) and finest level, refinements
      # are by a factor of 2 and then there is a (potential) jump to the finest level. So for a 64x64 pic
-     # 2^0 is root 2^6 is finest level, i.e. the right nscales is 5. Bernhard recommends adding smthg like
+     # 2^0 is root 2^6 is finest level, i.e. the right nscales is 5. Bernhard recommends adding something like
      # 0.1, because there is a transition region.
     assignment <- res1[[4]]
     ind <- res1[[5]]
@@ -495,15 +473,10 @@ transport.pgrid <- function(a, b, p = NULL, method = c("auto", "networkflow", "r
     precision=9
     dd <- dd/max(dd)
     dd <- dd*(10^precision)
-    #cat(as.integer(ddpos), as.integer(apos), as.integer(bpos), as.integer(m), as.integer(n),
-             # flowmatrix = integer(m*n), sep="\n")
-    #stop("primaldual soon")
-  	# ti <- proc.time()
     res1 <- .C("primaldual", as.integer(dd), as.integer(apos), as.integer(bpos), as.integer(m), as.integer(n),
               flowmatrix = integer(m*n), DUP=TRUE, PACKAGE="transport")
-    # print(proc.time()-ti)
     temp <- list(assignment=res1$flowmatrix, basis=as.numeric(res1$flowmatrix > 0))
-     # make pretty output
+    # make pretty output
     nbasis <- sum(temp$basis)
     res <- data.frame(from = rep(0,nbasis), to = rep(0,nbasis), mass = rep(0,nbasis))
     ind <- which(matrix(as.logical(temp$basis),m,n), arr.ind=TRUE) 
@@ -515,15 +488,8 @@ transport.pgrid <- function(a, b, p = NULL, method = c("auto", "networkflow", "r
   }
 
   if (method == "aha") {
-    #cat(ddpos, apos, bpos, sep="\n")
-    #stop("aha soon")
-    # braucht noch Verfeinerung (wir moechten idealerweise auch nur apos, bpos verwenden, was direkt nicht geht;
-    # die Verwendung von ared, bred verlangsamt extrem (bei 32x32 ca. 5 sek versus 12 sek), was ok ist, denke ich)
-    # ti <- proc.time()
   	res <- aha(a$mass,b$mass,nscales=1,scmult=2,maxit=control$para$maxit,factr=control$para$factr,wasser=FALSE,wasser.spt=NA)
-  	# print(proc.time()-ti)
   	return(res)
-  	# Bring in right form
   }
 
   if (method == "revsimplex") {
@@ -566,15 +532,11 @@ transport.pgrid <- function(a, b, p = NULL, method = c("auto", "networkflow", "r
         initbasis <- temp$basis	
         startgiven <- 1
       }
-    # ti <- proc.time()
-    res <- .C("revsimplex", as.integer(m), as.integer(n), as.integer(apos), as.integer(bpos),
-	          as.double(dd), assignment = as.integer(initassig), basis = as.integer(initbasis), startgiven = as.integer(startgiven),
-	          DUP=TRUE, PACKAGE="transport")
-	# print(proc.time()-ti)           
-	temp <- list(assignment=res$assignment, basis=res$basis)
+      res <- .C("revsimplex", as.integer(m), as.integer(n), as.integer(apos), as.integer(bpos),
+	              as.double(dd), assignment = as.integer(initassig), basis = as.integer(initbasis), startgiven = as.integer(startgiven),
+	              DUP=TRUE, PACKAGE="transport")
+	    temp <- list(assignment=res$assignment, basis=res$basis)
     } else { 
-
-      # if (a$dimension != 2) stop("Multi-scale approach only implemented for pixel grids of dimension 2")
       x <- a$generator[[1]]
       y <- a$generator[[2]]
   	  # Compute coarser problems
@@ -611,8 +573,6 @@ transport.pgrid <- function(a, b, p = NULL, method = c("auto", "networkflow", "r
       	sol <- vector("list",nscales)
       }
   	  for (k in nscales:1) {
-  	  	# inputs
-  	  	# print(problem[[k]])
   	  	wha <- problem[[k]]$ared>0
   	    whb <- problem[[k]]$bred>0
         apos <- problem[[k]]$ared[wha]
@@ -653,12 +613,10 @@ transport.pgrid <- function(a, b, p = NULL, method = c("auto", "networkflow", "r
           startgiven <- 1      
         }  
         
-        # ti <- proc.time()
         res <- .C("revsimplex", as.integer(mcoarse), as.integer(ncoarse), as.integer(apos), as.integer(bpos),
 	              as.double(dd), assignment = as.integer(initassig), basis = as.integer(initbasis), startgiven = as.integer(startgiven),
 	              DUP=TRUE, PACKAGE="transport")
-	    # print(proc.time()-ti)           
-	    temp <- list(assignment=res$assignment, basis=res$basis)
+	      temp <- list(assignment=res$assignment, basis=res$basis)
         if (returncoarse) {
       	  nbasis <- sum(temp$basis)
           sol[[k]] <- data.frame(from = rep(0,nbasis), to = rep(0,nbasis), mass = rep(0,nbasis))
@@ -683,10 +641,8 @@ transport.pgrid <- function(a, b, p = NULL, method = c("auto", "networkflow", "r
       return(res)
     }
   }
-  # fi (method == "revsimplex") 
   
-  if (method == "shortsimplex") {
-  	
+  if (method == "shortsimplex") {   # cleaning of comments until here!!!!!!!!!!!!!!!!
   	# violating the first condition consistently tosses segfaults 
   	# didn't check non-squares, but the error clearly does not come from the number of sources/targets alone
   	#if (a$N <= 25 || any(a$n <= 5)) {
