@@ -170,15 +170,13 @@ unbalanced.pgrid <- function(a, b, p = 1, C = NULL, method = c("networkflow", "r
     # since the grid is always regular this wrong order does not matter, even with the selection we do in the next command 
   
   if (p == 1) {
-    costm <- gen_cost(gg[wha, , drop=FALSE], gg[whb, , drop=FALSE], threads=threads)^(1/2)
+    if (threads == 1) {
+      costm <- gen_cost0d(gg[wha, , drop=FALSE], gg[whb, , drop=FALSE])^(1/2)
+    } else {
+      costm <- gen_cost(gg[wha, , drop=FALSE], gg[whb, , drop=FALSE], threads=threads)^(1/2)
+    }
     ltunnel <- costm >= 2*C
     costm[ltunnel] <- 2*C
-    # costm <- gen_cost(gg[wha], gg[whb], threads=threads)^(1/2)  
-    # order of the arguments to pmin decisive for class of output  
-    # pmin is important here so that the extended space is still a metric space (otherwise removing of min in the actual
-    # space still ok (triangle inequality with middle point in R^2 still holds), but we have to add much more mass at the
-    # trash can state (see else), whereas here it is enough to remove the min at the trash can state and can remove the state
-    # for the smaller measure (or both if they have equal mass).
     acan <- bcan <- FALSE # are there trashcan states at the end of a and b (and the rows and cols of costm)
     aplus <- c(apos)  # matrix to vector
     bplus <- c(bpos)
@@ -200,7 +198,11 @@ unbalanced.pgrid <- function(a, b, p = 1, C = NULL, method = c("networkflow", "r
       }
     }
   } else {
-    costm <- gen_cost(gg[wha, , drop=FALSE], gg[whb, , drop=FALSE], threads=threads)^(p/2)  
+    if (threads == 1) {
+      costm <- gen_cost0d(gg[wha, , drop=FALSE], gg[whb, , drop=FALSE])^(p/2)
+    } else {
+      costm <- gen_cost(gg[wha, , drop=FALSE], gg[whb, , drop=FALSE], threads=threads)^(p/2)
+    }
       # could take pmin with 2*C^p, but not needed, let's see what is easier (since most probably the pmin is cheap)
     costm <- rbind(costm, C^p)  # we do *not* divide by two! (MSM not HKM)
     costm <- cbind(costm, C^p)
@@ -225,12 +227,12 @@ unbalanced.pgrid <- function(a, b, p = 1, C = NULL, method = c("networkflow", "r
               "; dual cost: ", dualcost, "; rawres$cost: ", rawres$dist)
     }
   } else {
-    rawres <- unbalanced_revsimplex_core(aplus, bplus, costm, p, C)   # this rawres does not have a component potential
-    # rawres$potential <- to be fixed
+    rawres <- unbalanced_revsimplex_core(aplus, bplus, costm, p, C)   
+    # this rawres does not have a component potential (to be fixed)
   }
   
   if (output == "dist") {
-    return(rawres$dist^(1/p)) # rawres$dist is actually the p-th power of the unbalanced Wasserstein dist
+    return(rawres$dist^(1/p)) # rawres$dist is the p-th power of the unbalanced Wasserstein dist
   }
   
   # emulates the output of transport with networkflow and fullreturn=TRUE (trashcan states added)
@@ -238,7 +240,7 @@ unbalanced.pgrid <- function(a, b, p = 1, C = NULL, method = c("networkflow", "r
     rawres$frame <- rawres$frame[rawres$frame[,3]>0,,drop=FALSE]
     if (a$N > m || b$N > n) {
       rawres <- zero_transform(rawres, wha, whb, wha, whb) 
-         # this is a bit a hack, so we can use the same zero_transform function (wha, whb just
+         # this is a bit of a hack, so we can use the same zero_transform function (wha, whb just
          # happen to have the right length and nothing else is needed)
     }
     df <- data.frame(from=rawres$frame[,1], to=rawres$frame[,2], mass=rawres$frame[,3])
@@ -254,18 +256,19 @@ unbalanced.pgrid <- function(a, b, p = 1, C = NULL, method = c("networkflow", "r
     rawres$plan[ltunnel] <- 0
     ind <- which(rawres$plan > 0, arr.ind=TRUE) 
     rawres$frame <- cbind(ind, rawres$plan[ind])   # trashcan states (if there were any) will not appear here
-                                                   # but we leave them in plan and in potential (currently for ever)
+                                                   # but we leave them in plan and in potential (currently forever)
     colnames(rawres$frame) <- NULL
   } else { # note: for p >= 2 we may or may not toss if transport is at distance exactly 2*C^p (for p=1 we always toss)
     rawres$aextra <- rawres$plan[1:m,n+1,drop=FALSE]
     rawres$bextra <- rawres$plan[m+1,1:n,drop=FALSE]
-    select <- (rawres$frame[,3] > 0) & # transports over dist 0 have to stay in for now (rawres$frame[,1] != rawres$frame[,2]) & 
+    select <- (rawres$frame[,3] > 0) & # we keep transports over dist 0 in current version (rawres$frame[,1] == rawres$frame[,2]) 
               (rawres$frame[,1] <= m) & (rawres$frame[,2] <= n)  # removes the trashcan states from frame
     rawres$frame <- rawres$frame[select, , drop=FALSE]
   }
   
   if (a$N > m || b$N > n){ # if any omission of zero mass points took place
-    # (changing whx to indx <- which(whx) from the beginning seems clearer and uses less memory for sparse images (or their diffs)) 
+    # (it seems that changing whx to indx <- which(whx) from the beginning would be
+    # clearer and uses less memory for sparse images) 
     result <- zero_transform_unbalanced(rawres, wha, whb, a$n[1], a$n[2], p)  
   } else {
     result <- list(dist=rawres$dist^(1/p), plan=rawres$frame)
@@ -289,15 +292,15 @@ unbalanced.pgrid <- function(a, b, p = 1, C = NULL, method = c("networkflow", "r
   where <- as.numeric(attr(atemp, "dimnames")[[1]])
   result$atrans <- matrix(0, a$n[1], a$n[2])
   result$atrans[where] <- atemp
-  
+  # fill result$btrans 
   btemp <- rowsum(result$plan[,3], result$plan[,2])
   where <- as.numeric(attr(btemp, "dimnames")[[1]])
   result$btrans <- matrix(0, b$n[1], b$n[2])
   result$btrans[where] <- btemp
   
   tol <- ifelse(method == "networkflow", sqrt(.Machine$double.eps), 1e-7)  
-    # for networkflow standard tolerance in what follows for revsimplex due to smaller precision
-    # somewhat larger (too many warnings otherwise)
+    # for networkflow standard tolerance, for revsimplex somewhat smaller due to
+    # smaller precision (too many spurious warnings otherwise)
   if (!isTRUE(all.equal(result$atrans + result$aextra + result$inplace, a$mass, tolerance=tol, check.attributes = FALSE))) {
     warning("atrans, aextra and inplace do not sum up to a$mass. ", 
             all.equal(result$atrans + result$aextra + result$inplace, a$mass))
@@ -355,9 +358,10 @@ unbalanced_revsimplex_core <- function(aplus, bplus, costm, p, C) {
   rawres <- list(frame = data.frame(from = rep(0,nbasis), to = rep(0,nbasis), mass = rep(0,nbasis)),
               plan = matrix(temp$assignment, m, n),
               potential = NA, dist = sum(temp$assignment * costm))  
-              # dist is actually cost (no ^(1/p)) as always in rawres
-  # we do not have easy access to the dual solution, but we simply do not return it for rawres with revsimplex
-  # and for computing the other output options in unbalanced, we do not need it 
+    # dist is actually cost (no ^(1/p)) as always in rawres
+    # we do not have easy access to the dual solution, but we simply do not
+    # return it for rawres with revsimplex, and for computing the other output options
+    # in unbalanced, we do not need it 
   
   ind <- which(matrix(as.logical(temp$basis),m,n), arr.ind=TRUE) 
   rawres$frame$from <- ind[,1]

@@ -1,15 +1,3 @@
-# Computes optimal transport or wasserstein distance between n*m matrices a and b
-# where sum(a)==sum(b) must be satisfied. [NO THIS IS FIXED] The algorithm treats matrix a as a
-# measure on [0,m-1]x[0,n-1] which is constant in each pixel [i,i+1)x[j,j+1),
-# while matrix b is interpreted as a discrete measure. In particular,
-# aha(a,a,wasser=T) != 0 if a!=0.
-#
-# nscales: determines the number of scales to be used
-# scmult: determines the multiplier (w.r.t. the number of support points) to get from one scale to the next
-#         in the case of nscales>1
-# maxit/factr: control the quality of approximation, see 'optim'.
-# wasser: if true, compute the wasserstein distance instead of optimal transport.
-# wasser.spt: number of support points used to compute the discretisation of b.
 aha <- function(a,b,nscales=1,scmult=2,factr=1e+05,maxit=10000,powerdiag=FALSE,
   wasser=FALSE,wasser.spt=NA,approx=FALSE,...) {
     n <- dim(a)[1] # y
@@ -26,8 +14,6 @@ aha <- function(a,b,nscales=1,scmult=2,factr=1e+05,maxit=10000,powerdiag=FALSE,
         target_mass <- as.vector(b)
         x <- as.vector(mapply(function(k) rep(k,n),1:m))-0.5
         y <- rev(rep(1:n,m))-0.5
-        # DS 27/09/16 moved the next two lines into the "else":
-        # now there is no jitter if wpp's are passed
         x <- x + runif(length(x),-1e-5,1e-5)
         y <- y + runif(length(y),-1e-5,1e-5)
         npoints <- m*n
@@ -54,9 +40,9 @@ aha <- function(a,b,nscales=1,scmult=2,factr=1e+05,maxit=10000,powerdiag=FALSE,
     pixel_density <- pixel_density/sum(pixel_density)
     target_mass <- target_mass/sum(target_mass)
     
-    # uses lloyd's algorithm to determine n points (x,y,m) such that
-    # sum(m)=sum(m0) and which are close to (x0,y0,m0) w.r.t. wasserstein distance
-    # p will represent the mapping between the points of (x,y) and (x0,y0), i.e.
+    # Use Lloyd's algorithm to determine n points (x,y,m) such that
+    # sum(m)=sum(m0) and which are close to (x0,y0,m0) w.r.t. Wasserstein distance.
+    # Output p represents the mapping between the points of (x,y) and (x0,y0), i.e.
     # p[i]=j means (x0[i],y0[i]) is mapped to (x[j],y[j])
     decompose <- function(n,x0,y0,m0) {
         n0 <- length(x0)
@@ -71,9 +57,9 @@ aha <- function(a,b,nscales=1,scmult=2,factr=1e+05,maxit=10000,powerdiag=FALSE,
             i <- sample.int(n0,size=n,prob=m0+1e-7)
         }
 
-        return(.C("decompose_c",as.integer(n),x=as.double(x0[i]),y=as.double(y0[i]),
-                       m=as.double(m0[i]),as.integer(n0),as.double(x0),as.double(y0),
-                       as.double(m0),p=integer(n0),as.double(0.01),PACKAGE="transport"))
+        return(.C("decompose_c", as.integer(n), x=as.double(x0[i]), y=as.double(y0[i]),
+                       m=as.double(m0[i]), as.integer(n0), as.double(x0), as.double(y0),
+                       as.double(m0), p=integer(n0), as.double(0.01), PACKAGE="transport"))
     }
 
     # recursively decompose the target measure and apply bfgs to get
@@ -116,13 +102,10 @@ aha <- function(a,b,nscales=1,scmult=2,factr=1e+05,maxit=10000,powerdiag=FALSE,
         # error bound
         error <- sqrt(target_mass%*%((x-v$x[v$p+1])^2+(y-v$y[v$p+1])^2))
 
-        # .C("aha_free",PACKAGE="transport")
-
         return(data.frame(wasser.dist=temp$res,error.bound=error))
     } else {
         w <- multiscale(length(x),x,y,target_mass,1)
         
-        # DS 27/09/16: option to return the parameters for the optimal powerdiag included
         if (powerdiag) {
         	  # plot(power_diagram(x,y,w,rect=rect))
         	  pd <- list(xi=x,eta=y,w=w,rect=c(0,m,0,n))
@@ -135,7 +118,6 @@ aha <- function(a,b,nscales=1,scmult=2,factr=1e+05,maxit=10000,powerdiag=FALSE,
                          as.double(w), as.double(as.vector(a)), res=integer(1),PACKAGE="transport")$res
           res <- .C("aha_get_transport", as.integer(tmemsize), from=double(tmemsize), 
                     to=double(tmemsize), mass=double(tmemsize),PACKAGE="transport")[2:4]
-          # .C("aha_free",PACKAGE="transport")
         
           tp <- data.frame(from=1+res$from,to=perm[1+res$to],mass=res$mass)
           if (!("mass" %in% names(b))) {
@@ -145,6 +127,7 @@ aha <- function(a,b,nscales=1,scmult=2,factr=1e+05,maxit=10000,powerdiag=FALSE,
         }
     }
 }
+
 
 transport_apply <- function(a,tplan) {
     n <- dim(a)[1]
@@ -157,6 +140,7 @@ transport_apply <- function(a,tplan) {
     return(matrix(av,n,m))
 }
 
+
 transport_error <- function(a,b,tplan) {
     if (all(c("x","y","mass") %in% names(b))) {
         return(sum(abs(aggregate(tplan$mass,by=list(tplan$to),sum)[2]-b$mass)))
@@ -165,9 +149,10 @@ transport_error <- function(a,b,tplan) {
     }
 }
 
+
 # Computes the power diagram of weigted points (x,y,w) in R^2,
-# intersected with the rectangle 'rect', which defaults to
-# rect=c(min(x),min(y),max(x),max(y))
+# intersected with the rectangle rect, which defaults to
+# rect = c(min(x), min(y), max(x), max(y))
 power_diagram <- function (xi,eta,w,rect=NA) {
 
     stopifnot(length(xi)==length(eta),length(eta)==length(w))
@@ -211,6 +196,7 @@ power_diagram <- function (xi,eta,w,rect=NA) {
     class(pd) <- c("power_diagram")
     return(pd)
 }
+
 
 plot.power_diagram <- function(x, weights=FALSE, add=FALSE, col=4, lwd=1.5, ...) {
     stopifnot(class(x) == "power_diagram")

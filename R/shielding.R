@@ -45,9 +45,9 @@
 #'
 #' @export
 shielding <- function(a,b,nscales=2,startscale=1,flood=0,measureScale=1e-6,verbose=FALSE,basisKeep=1,basisRefine=1) {
-  # measureScale is precision for the measures as they are entered, 1e-6 up to sixth digit behind decimal point
-  # the user has to take care that the sum of all masses in a and b separately if divided by measure scale
-  # is smaller equal the largest representable integer .Machine$integer.max
+  # measureScale is the precision for the measures as they are entered, 1e-6 means up to sixth digit behind decimal point.
+  # The user has to take care that the sum of all masses in a and b separately, if divided by measure scale,
+  # is smaller-equal the largest representable integer .Machine$integer.max
   # This should be changed: it can be done in such a way that only the max mass divided by measures scale has to be
   # smaller equal the sum
   stopifnot(is.array(a) && is.array(b))
@@ -59,7 +59,7 @@ shielding <- function(a,b,nscales=2,startscale=1,flood=0,measureScale=1e-6,verbo
   stopifnot(startscale >= 0)  # otherwise unfriendly termination
   stopifnot(startscale <= nscales+1)
   # WAS < +0, changed to <= +1 on 221012 because small examples did not work 
-  # nscales sets up layers from 0 to nscales, it seems startscale is really the layer no on which
+  # nscales sets up layers from 0 to nscales, it seems startscale is really the layer on which
   # the first problem is solved plus 1!! (if this confirms --> change use of startscale and/or doc)
 
   nocplex <- !as.logical(.Call('_transport_cplex_present', PACKAGE = 'transport'))

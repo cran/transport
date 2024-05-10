@@ -349,7 +349,11 @@ transport.pgrid <- function(a, b, p = NULL, method = c("auto", "networkflow", "r
       warning("multithreading request ignored. Package was not installed with openMP support")
     }
     x<-as.matrix(expand.grid(a$generator))
-    C<-gen_cost(x,x,threads)^(p/2)
+    if (threads == 1) {
+      C <- gen_cost0d(x, x)^(p/2)
+    } else {
+      C <- gen_cost(x, x, threads)^(p/2) 
+    }
     #disabled for now
     # if ((dim(C)[1]%%2==1) && (length(dim(C)[2])%%2==1)){
     #   result<-networkflow_odd(matrix(a$mass),matrix(b$mass),C,threads)
@@ -642,14 +646,7 @@ transport.pgrid <- function(a, b, p = NULL, method = c("auto", "networkflow", "r
     }
   }
   
-  if (method == "shortsimplex") {   # cleaning of comments until here!!!!!!!!!!!!!!!!
-  	# violating the first condition consistently tosses segfaults 
-  	# didn't check non-squares, but the error clearly does not come from the number of sources/targets alone
-  	#if (a$N <= 25 || any(a$n <= 5)) {
-  	#  stop("Execution halted. There is currently a bug in method 'shortsimplex' that causes segfaults on small
-  	#     grids (<= 5 points in any one dimension). Current workaround: choose method='revsimplex'")
-  	#}
-  	
+  if (method == "shortsimplex") {   
   	# Works currently only if nscale = 1
   	# (other values of nscale are ignored)
   	# we would have to adapt C-Program so that shortlist
@@ -663,21 +660,13 @@ transport.pgrid <- function(a, b, p = NULL, method = c("auto", "networkflow", "r
       	control$para$kfound <- n
       	warning("Shortlist parameter 'slength' too large...  decreased to maximal value.")
       }
-      #
-      #Starting solution not needed
-      #   cat(as.integer(control$para$slength), as.integer(control$para$kfound), as.double(control$para$psearched),
-      #   as.integer(m), as.integer(n), 
-      #   as.integer(apos), as.integer(bpos), as.double(ddpos), assignment = length(initassig), 
-      #   basis = length(initbasis), sep="\n")
-         # stop("test")
-      # ti <- proc.time()
+
       res <- .C("shortsimplex",
           as.integer(control$para$slength), as.integer(control$para$kfound), as.double(control$para$psearched),
           as.integer(m), as.integer(n), 
           as.integer(apos), as.integer(bpos), as.double(dd), assignment = as.integer(initassig), 
           basis = as.integer(initbasis), DUP = TRUE, PACKAGE="transport")
-	  # print(proc.time()-ti)           
-	  temp <- list(assignment=res$assignment, basis=res$basis)
+	    temp <- list(assignment=res$assignment, basis=res$basis)
     }    
     nbasis <- sum(temp$basis)
     res <- data.frame(from = rep(0,nbasis), to = rep(0,nbasis), mass = rep(0,nbasis))
@@ -693,8 +682,9 @@ transport.pgrid <- function(a, b, p = NULL, method = c("auto", "networkflow", "r
 
 
 
-# (der Vollstaendigkeit halber solllte spaeter auch der Fall m != n wieder dazu kommen)
-# vorlaeufig ohne Beobachtungsfenster
+# pp/wpp objects do not contain an observation window
+# (for plotting, automatic computation of cutoff values for metrics and/or unbalanced transport
+# this is a certain disadvantage)
 transport.pp <- function(a, b, p = 1, method = c("auction", "auctionbf", "networkflow", "shortsimplex", "revsimplex", "primaldual"),
                            fullreturn=FALSE, control = list(),threads=1, ...) {
   # Check inputs
@@ -721,13 +711,15 @@ transport.pp <- function(a, b, p = 1, method = c("auction", "auctionbf", "networ
   if (control$start != "auto") {
   	warning("control$start = ", sQuote(control), " is ignored for function transport.pp")
   }
-  # nwcorner gibt Identitaet (mit erster Nebendiag fuer Basis), Russell wohl was aehnlich Degeneriertes
-  # der Einfachheit halber Testen wir nur mal mit nwcorner 
 
   x <- a$coordinates
   y <- b$coordinates
-  
-  dd <- gen_cost(x,y,1)^(p/2)
+
+  if (a$dimension == 2) {
+    dd <- gen_cost0(x, y)^(p/2)  # this saves about 25-40% compared to gen_cost0d
+  } else {
+    dd <- gen_cost0d(x, y)^(p/2)
+  }
   maxdd <- max(dd)
   # catches a very special case:
   if (maxdd == 0) {
@@ -763,17 +755,15 @@ transport.pp <- function(a, b, p = 1, method = c("auction", "auctionbf", "networ
     dd <- dd/maxdd
     dd <- round(dd*(10^precision))
   }
-    # wir sollten mit unseren Berechnungen .Machine$integer.max nicht ueberschreiten, gemaess R-Hilfe ist dies 
-    # *auf jedem System* 2147483647 (4 Bytes)
-    #
-    # Beachte: wenn wir Distanz zurueckgeben wollen, muessen wir natuerlich mit urspruenglichem dd^p rechnen
+  # in our computations we should not exceed .Machine$integer.max, according to R help
+  # this is 2147483647 (4 Bytes) *on every system*
 
   if (method == "auction" || method == "auctionbf") {  
     maxdd <- max(dd)
     dupper <- maxdd/10
     lasteps <- control$para$lasteps
     epsvec <- lasteps
-    # Bertsekas von dupper/2 bis 1/(n+1) durch fortgesetzt konstante Zahl teilen
+    # Bertsekas proposes: go from dupper/2 to 1/(n+1), dividing at each step by a constant
     while (lasteps < dupper) {
       lasteps <- lasteps*control$para$epsfac
       epsvec <- c(epsvec,lasteps)
@@ -789,35 +779,27 @@ transport.pp <- function(a, b, p = 1, method = c("auction", "auctionbf", "networ
 
   if (method == "auction") {
   	desirem <- maxdd-dd
-  	# ti <- proc.time()
     temp <- .C("auction", as.integer(desirem), as.integer(N), pers_to_obj = as.integer(rep(-1,N)),
                price = as.double(rep(0,N)), as.integer(neps), as.double(epsvec), DUP=TRUE, PACKAGE="transport")
-    # print(proc.time()-ti)           
-    # make pretty output
     res <- data.frame(from = 1:N, to = temp$pers_to_obj+1, mass = rep(1,N))
     return(res)
   }
 
   if (method == "auctionbf") {
   	desirem <- maxdd-dd
-  	# ti <- proc.time()
     temp <- .C("auctionbf", as.integer(desirem), as.integer(N), pers_to_obj = as.integer(rep(-1,N)),
                price = as.double(rep(0,N)), profit = as.double(rep(0,N)), as.integer(neps), as.double(epsvec),
                DUP=TRUE, PACKAGE="transport")
-    # print(proc.time()-ti)           
-    # make pretty output
     res <- data.frame(from = 1:N, to = temp$pers_to_obj+1, mass = rep(1,N))
     return(res)
   }
 
   if (method == "primaldual") {
-  	# ti <- proc.time()
   	temp <- .C("primaldual", as.integer(dd), as.integer(rep.int(1,N)), as.integer(rep.int(1,N)),
   	           as.integer(N), as.integer(N), flowmatrix = as.integer(integer(N^2)), 
   	           DUP=TRUE, PACKAGE="transport")
-  	# print(proc.time()-ti) 
   	# flowmatrix is the old term for assignment   
-  	nassig <- sum(temp$flowmatrix)  # nassig sollte natuerlich gleich N sein, das ist nur zur Kontrolle
+  	nassig <- sum(temp$flowmatrix)  # of course, nassig should be equal to N (this is just for checking)
     res <- data.frame(from = rep(0,nassig), to = rep(0,nassig), mass = rep(1,nassig))
     ind <- which(matrix(as.logical(temp$flowmatrix),N,N), arr.ind=TRUE) 
     res$from <- ind[,1]
@@ -832,14 +814,12 @@ transport.pp <- function(a, b, p = 1, method = c("auction", "auctionbf", "networ
       control$para$kfound <- N
       warning("Shortlist parameter 'slength' too large...  decreased to maximal value.")
     }
-    # ti <- proc.time()
     temp <- .C("shortsimplex",
                 as.integer(control$para$slength), as.integer(control$para$kfound), as.double(control$para$psearched),
                 as.integer(N), as.integer(N), as.integer(rep.int(1,N)), as.integer(rep.int(1,N)),
 	            as.double(dd), assignment = as.integer(initassig), basis = as.integer(initbasis),
 	            DUP=TRUE, PACKAGE="transport")
-	# print(proc.time()-ti)           
-    nassig <- sum(temp$assignment)  # nassig sollte natuerlich gleich N sein, das ist nur zur Kontrolle
+    nassig <- sum(temp$assignment)  # of course, nassig should be equal to N (this is just for checking)
     res <- data.frame(from = rep(0,nassig), to = rep(0,nassig), mass = rep(1,nassig))
     ind <- which(matrix(as.logical(temp$assignment),N,N), arr.ind=TRUE) 
     res$from <- ind[,1]
@@ -852,12 +832,10 @@ transport.pp <- function(a, b, p = 1, method = c("auction", "auctionbf", "networ
     initassig <- initbasis <- diag(1,N,N)
     initbasis[cbind(2:N,1:(N-1))] <- 1
     startgiven <- 1  
-    # ti <- proc.time()
     temp <- .C("revsimplex", as.integer(N), as.integer(N), as.integer(rep.int(1,N)), as.integer(rep.int(1,N)),
 	            as.double(dd), assignment = as.integer(initassig), basis = as.integer(initbasis), startgiven = as.integer(startgiven),
 	            DUP=TRUE, PACKAGE="transport")
-	# print(proc.time()-ti)           
-    nassig <- sum(temp$assignment)  # nassig sollte natuerlich gleich N sein, das ist nur zur Kontrolle
+    nassig <- sum(temp$assignment)  # of course, nassig should be equal to N (this is just for checking)
     res <- data.frame(from = rep(0,nassig), to = rep(0,nassig), mass = rep(1,nassig))
     ind <- which(matrix(as.logical(temp$assignment),N,N), arr.ind=TRUE) 
     res$from <- ind[,1]
@@ -868,7 +846,10 @@ transport.pp <- function(a, b, p = 1, method = c("auction", "auctionbf", "networ
 }
 
 
-# new transport.wpp
+
+# pp/wpp objects do not contain an observation window
+# (for plotting, automatic computation of cutoff values for metrics and/or unbalanced transport
+# this is a certain disadvantage)
 transport.wpp <- function(a, b, p = 1, method = c("networkflow", "revsimplex", "shortsimplex", "primaldual"),
                           fullreturn=FALSE, control = list(), threads=1,...) {
   # Check inputs
@@ -896,10 +877,6 @@ transport.wpp <- function(a, b, p = 1, method = c("networkflow", "revsimplex", "
   	control <- do.call(trcontrol, control)
   }
 
-#  if (control$start != "auto") {
-#  	warning("control$start = ", sQuote(control), " is ignored for function transport.wpp")
-#  }
-
   x <- a$coordinates
   y <- b$coordinates
 
@@ -925,7 +902,16 @@ transport.wpp <- function(a, b, p = 1, method = c("networkflow", "revsimplex", "
     if (threads > 1 && !as.logical(openmp_present())) {
       warning("multithreading request ignored. Package was not installed with openMP support")
     }
-    C<-gen_cost(x,y,threads)^(p/2)
+    
+    if (threads == 1) {
+      if (a$dimension == 2) {
+        C <- gen_cost0(x, y)^(p/2)  # this saves about 25-40% compared to gen_cost0d
+      } else {
+        C <- gen_cost0d(x, y)^(p/2)
+      }
+    } else {
+      C <- gen_cost(x, y, threads)^(p/2)
+    }
     #disabled for now
     # if ((dim(C)[1]%%2==1) && (length(dim(C)[2])%%2==1)){
     #   result<-networkflow_odd(matrix(amass),matrix(bmass),C,threads)
@@ -946,7 +932,7 @@ transport.wpp <- function(a, b, p = 1, method = c("networkflow", "revsimplex", "
   
   is.natural <-
     function(x, tol = .Machine$double.eps^0.5)  all((abs(x - round(x)) < tol) & x > 0.5)
-  # aus der Hilfe zu is.integer, checks for a vector whether all entries are approximately natural numbers
+  # see man page for is.integer: checks for a vector whether all entries are approximately natural numbers
 
   fudgeN <- fudgesum <- 1 
   if (!is.natural(amass) || !is.natural(bmass) || asum != bsum) {
@@ -958,11 +944,6 @@ transport.wpp <- function(a, b, p = 1, method = c("networkflow", "revsimplex", "
     bmass <- fudge(bmass,fudgeN)
   } 
   
-  # having many zeroes in one of the patterns (especially b it seems?). Will lead to high
-  # probability of hitting a cycle where the improvement in the transport simplex will be 0 then.
-  # So the following step will not only make for faster computation, but is also necessary
-  # to avoid freezes due to infinite loops (we check for infinite loops in the revsimplex code now though)
-  # changed on 12/06/2019 to do this check only in the very end
   wha <- amass > 0
   whb <- bmass > 0
   apos <- amass[wha]
@@ -976,7 +957,11 @@ transport.wpp <- function(a, b, p = 1, method = c("networkflow", "revsimplex", "
     stop("Non-zero measures, but no mass left after pointwise rounding.")   	
   }
   
-  dd <- gen_cost(x[wha,],y[whb,],1)^(p/2)
+  if (a$dimension == 2) {
+    dd <- gen_cost0(x[wha,], y[whb,])^(p/2)  # this saves about 25-40% compared to gen_cost0d
+  } else {
+    dd <- gen_cost0d(x[wha,], y[whb,])^(p/2)
+  }
   maxdd <- max(dd)
   # catches a very special case:
   if (maxdd == 0) {
@@ -988,17 +973,12 @@ transport.wpp <- function(a, b, p = 1, method = c("networkflow", "revsimplex", "
   	precision=9
     dd <- dd/maxdd
     dd <- dd*(10^precision)
-    # wir sollten mit unseren Berechnungen .Machine$integer.max nicht ueberschreiten, gemaess R-Hilfe ist dies 
-    # *auf jedem System* 2147483647 (4 Bytes)
-    #
-    # Beachte: wenn wir Distanz zurueckgeben wollen, muessen wir natuerlich mit urspruenglichem dd^p rechnen
-
-  	# ti <- proc.time()
+    # in our computations we should not exceed .Machine$integer.max, according to R help
+    # this is 2147483647 (4 Bytes) *on every system*
+    
     res1 <- .C("primaldual", as.integer(dd), as.integer(apos), as.integer(bpos), as.integer(m), as.integer(n),
               flowmatrix = integer(m*n), DUP=TRUE, PACKAGE="transport")
-  	# print(proc.time()-ti) 
     temp <- list(assignment=res1$flowmatrix, basis=as.numeric(res1$flowmatrix > 0))
-     # make pretty output
     nbasis <- sum(temp$basis)
     res <- data.frame(from = rep(0,nbasis), to = rep(0,nbasis), mass = rep(0,nbasis))
     ind <- which(matrix(as.logical(temp$basis),m,n), arr.ind=TRUE) 
@@ -1017,20 +997,11 @@ transport.wpp <- function(a, b, p = 1, method = c("networkflow", "revsimplex", "
       control$para$kfound <- n
       warning("Shortlist parameter 'slength' too large...  decreased to maximal value.")
     }
-    #
-    #Starting solution not needed
-    #   cat(as.integer(control$para$slength), as.integer(control$para$kfound), as.double(control$para$psearched),
-    #   as.integer(m), as.integer(n), 
-    #   as.integer(apos), as.integer(bpos), as.double(ddpos), assignment = length(initassig), 
-    #   basis = length(initbasis), sep="\n")
-    # stop("test")
-    # ti <- proc.time()
     res <- .C("shortsimplex",
         as.integer(control$para$slength), as.integer(control$para$kfound), as.double(control$para$psearched),
         as.integer(m), as.integer(n), 
         as.integer(apos), as.integer(bpos), as.double(dd), assignment = as.integer(initassig), 
         basis = as.integer(initbasis), DUP = TRUE, PACKAGE="transport")
-    # print(proc.time()-ti)           
     temp <- list(assignment=res$assignment, basis=res$basis)  
     nbasis <- sum(temp$basis)
     res <- data.frame(from = rep(0,nbasis), to = rep(0,nbasis), mass = rep(0,nbasis))
@@ -1058,16 +1029,14 @@ transport.wpp <- function(a, b, p = 1, method = c("networkflow", "revsimplex", "
       initassig <- temp$assignment
       initbasis <- temp$basis	
       startgiven <- 1
-    } else if (start == "modrowmin"){   # modrowmin in C-Code
+    } else if (start == "modrowmin"){   # modrowmin is done in C-Code
       initassig <- rep(0L,m*n)
       initbasis <- rep(0L,m*n)
       startgiven <- 0
     } 
-    # ti <- proc.time()
     res <- .C("revsimplex", as.integer(m), as.integer(n), as.integer(apos), as.integer(bpos),
 	          as.double(dd), assignment = as.integer(initassig), basis = as.integer(initbasis), startgiven = as.integer(startgiven),
 	          DUP=TRUE, PACKAGE="transport")
-    # print(proc.time()-ti)           
     temp <- list(assignment=res$assignment, basis=res$basis)
     nbasis <- sum(temp$basis)
     res <- data.frame(from = rep(0,nbasis), to = rep(0,nbasis), mass = rep(0,nbasis))
@@ -1081,12 +1050,12 @@ transport.wpp <- function(a, b, p = 1, method = c("networkflow", "revsimplex", "
 }
 
 
+
 semidiscrete <- function(a, b, p=2, method = c("aha"), control = list(), ...) {
   stopifnot(is(a, "pgrid") && is(b, "wpp"))
   stopifnot(a$dimension == b$dimension)
   stopifnot(isTRUE(all.equal(a$totcontmass,b$totmass)))
   if (a$dimension < 2) stop("pixel grids of dimension >= 2 required")
-#  if (a$dimension > 2) warning("transport.pgrid for pixel grids of dimension > 2 is still somewhat experimental")
   if (!(a$structure %in% c("square", "rectangular")))
     stop("transport.pgrid is currently only implemented for rectangular pixel grids")
   n <- a$n[1]  # y
@@ -1117,7 +1086,6 @@ semidiscrete <- function(a, b, p=2, method = c("aha"), control = list(), ...) {
   	control <- do.call(trcontrol, control)
   }
   
-  #start <- control$start
   nscales <- control$nscales
   scmult <- control$scmult
   x <- b$coordinates[,1]
@@ -1147,7 +1115,7 @@ semidiscrete <- function(a, b, p=2, method = c("aha"), control = list(), ...) {
     # rotcoclock <- function(m) t(m)[ncol(m):1,]
     # it seems the rotclock is not needed after all
     # Note that aha normalizes both arguments to probability measure
-    # The fact that a$mass is interpreted on pixels of side lenght one may lead to a decrease (or increase) of mass
+    # The fact that a$mass is interpreted on pixels of side length one may lead to a decrease (or increase) of mass
     # but is corrected within aha
     res <- aha(a$mass, data.frame(x=magfac*x,y=magfac*y,mass=b$mass), nscales=nscales, scmult=scmult,
                factr=control$para$factr, maxit=control$para$maxit, powerdiag=TRUE, wasser=FALSE, wasser.spt=NA)
@@ -1162,19 +1130,18 @@ semidiscrete <- function(a, b, p=2, method = c("aha"), control = list(), ...) {
 
 
 
-# Achtung: laengerfristig unbedingt so aendern, dass auch eine Startloesung uebergeben werden kann!! 
+# For a future version it will be desirable to pass an explicit starting solution (rather than
+# only a way of computing one via the parameter control)!
 #
-# # Input ist ein m - Vektor von Produktionsmengen a, ein n - Vektor von Konsumationsmengen b,
-# # und eine m x n - Matrix von Transportkosten
-# # primal-dual gibt in der Regel keine Basisloesung zurueck (>= m+n-1 assignments, evtl. weniger bei Degeneriertheit)
-# # rev-simplex ergibt Basisloesung, immer (= m+n-1 assignments), bei Degeneriertheit ist es theoretisch in
-# # extrem seltenen Spezialfaellen moeglich, dass Endlosschleife entsteht (siehe Luenberger), sonst auch m+n-1 assignments 
+# Solves default transport problem for a and b mass vectors of lengths m and n, respectively
+# and costm a (m x n)-matrix of transport costs.
+# Methods "primaldual" and "networkflow" do usually not return a basic solution (i.e., solution
+# may have >= m+n-1 assignments; < m+n-1 also possible due to degeneration)
+# Method "revsimplex" does return a basic solution (i.e., m+n-1 assignments, also if degenerated;
+# in the latter case it is theoretically possible that there is an endless loop (see Luenberger);
+# practically, this is unheard of in the code below...)
 transport.default <- function(a, b, costm, method=c("networkflow", "shortsimplex", "revsimplex", "primaldual"),
                               fullreturn=FALSE, control = list(), threads=1, ...) {
-  # maxmass=1e6, precision=9, 	
-  # wir sollten mit unseren Berechnungen .Machine$integer.max nicht ueberschreiten, gemaess R-Hilfe ist dies 
-  # *auf jedem System* 2147483647 (4 Bytes)
-  # evtl. kann man bis maxmass=1e9 gehen
   method <- match.arg(method)
   
   if (threads > 1 && method != "networkflow") {
@@ -1188,23 +1155,8 @@ transport.default <- function(a, b, costm, method=c("networkflow", "shortsimplex
   	warning("Sums of a and b differ substantially. sum(a)-sum(b) = ", sum(a)-sum(b), ". Scaling to probability vectors.")
   	a <- a/sum(a)
   	b <- b/sum(b)
-  	# note: in general sum(a) == sum(b) will still be all FALSE (but that's ok)
   }
   stopifnot(all(dim(costm) == c(M,N)))
-  # init_given = ifelse(!(is.null(initassig) || is.null(initbasis)), TRUE, FALSE)
-  # if (init_given && method == "revsimplex") {
-  	# stopifnot(all(dim(initassig) == c(m,n)))
-    # stopifnot(all(dim(initbasis) == c(m,n)))
-    # if (!all(apply(initassig, 1, sum) == a) || !all(apply(initassig, 2, sum) == b)) {
-      # stop("Initial transference plan doesn't have the correct marginals.")
-    # }
-    # if (sum(initbasis) != m + n - 1) {
-      # stop("Not the correct number of basis vectors in initbasis")	
-    # }
-    # if (any((initassig > 0) & (initbasis == 0))) {
-      # stop("Positiv mass transfer via non-basis entry in initassig")
-    # }
-  # }
 
   if (!is(control, "trc")) {
   	control$method <- method
@@ -1256,12 +1208,6 @@ transport.default <- function(a, b, costm, method=c("networkflow", "shortsimplex
     if (threads > 1 && !as.logical(openmp_present())) {
       warning("multithreading request ignored. Package was not installed with openMP support")
     }
-    # if ((dim(costm)[1]%%2==1) && (length(dim(costm)[2])%%2==1)){
-    #   result<-networkflow(matrix(apos),matrix(bpos),costm,threads)
-    # }
-    # else{
-    #   result<-networkflow(matrix(apos),matrix(bpos),costm,threads)
-    # }
     result <- networkflow(matrix(apos),matrix(bpos),dd,threads)
     result$frame <- result$frame[result$frame[,3]>0,,drop=FALSE]
     if ((length(a)>length(apos)) || (length(b)>length(bpos))){
@@ -1290,15 +1236,9 @@ transport.default <- function(a, b, costm, method=c("networkflow", "shortsimplex
     precision=9
     dd <- dd/max(dd)
     dd <- dd*(10^precision)
-    #cat(as.integer(ddpos), as.integer(apos), as.integer(bpos), as.integer(m), as.integer(n),
-             # flowmatrix = integer(m*n), sep="\n")
-    #stop("primaldual soon")
-  	# ti <- proc.time()
     res1 <- .C("primaldual", as.integer(dd), as.integer(apos), as.integer(bpos), as.integer(m), as.integer(n),
               flowmatrix = integer(m*n), DUP=TRUE, PACKAGE="transport")
-    # print(proc.time()-ti)
     temp <- list(assignment=res1$flowmatrix, basis=as.numeric(res1$flowmatrix > 0))
-     # make pretty output
     nbasis <- sum(temp$basis)
     res <- data.frame(from = rep(0,nbasis), to = rep(0,nbasis), mass = rep(0,nbasis))
     ind <- which(matrix(as.logical(temp$basis),m,n), arr.ind=TRUE) 
@@ -1310,34 +1250,26 @@ transport.default <- function(a, b, costm, method=c("networkflow", "shortsimplex
   }
 
   if (method == "revsimplex") {
-      #
-      # Compute starting solution
-  	  if (start == "russell") {
-        temp <- russell(apos,bpos,dd)
-        initassig <- temp$assignment
-        initbasis <- temp$basis
-        startgiven <- 1
-      } else if (start == "nwcorner") {
-        temp <- northwestcorner(apos,bpos)
-        initassig <- temp$assignment
-        initbasis <- temp$basis	
-        startgiven <- 1
-      } else {   # modrowmin in C-Code
-      	initassig <- rep(0L,m*n)
-      	initbasis <- rep(0L,m*n)
-      	startgiven <- 0
-      }
-#        print(startgiven)
-#        cat(as.integer(m), as.integer(n), as.integer(apos), as.integer(bpos),
-#	    as.double(dd), "hello", assignment = as.integer(initassig),
-#       basis = as.integer(initbasis), as.integer(startgiven), sep="\n")
-#       stop("revsimplex soon")
-    # ti <- proc.time()
+    # Compute starting solution
+  	if (start == "russell") {
+      temp <- russell(apos,bpos,dd)
+      initassig <- temp$assignment
+      initbasis <- temp$basis
+      startgiven <- 1
+    } else if (start == "nwcorner") {
+      temp <- northwestcorner(apos,bpos)
+      initassig <- temp$assignment
+      initbasis <- temp$basis	
+      startgiven <- 1
+    } else {   # modrowmin is done in C-Code
+    	initassig <- rep(0L,m*n)
+    	initbasis <- rep(0L,m*n)
+    	startgiven <- 0
+    }
     res <- .C("revsimplex", as.integer(m), as.integer(n), as.integer(apos), as.integer(bpos),
 	          as.double(dd), assignment = as.integer(initassig), basis = as.integer(initbasis), startgiven = as.integer(startgiven),
 	          DUP=TRUE, PACKAGE="transport")
-	# print(proc.time()-ti)           
-	temp <- list(assignment=res$assignment, basis=res$basis)
+	  temp <- list(assignment=res$assignment, basis=res$basis)
 	
     nbasis <- sum(temp$basis)
     res <- data.frame(from = rep(0,nbasis), to = rep(0,nbasis), mass = rep(0,nbasis))
@@ -1350,7 +1282,6 @@ transport.default <- function(a, b, costm, method=c("networkflow", "shortsimplex
   }
   
   if (method == "shortsimplex") {
-  	#
     initassig <- rep(0,m*n)
     initbasis <- rep(0,m*n)
     if (control$para$slength > n) {
@@ -1358,20 +1289,12 @@ transport.default <- function(a, b, costm, method=c("networkflow", "shortsimplex
       control$para$kfound <- n
       warning("Shortlist parameter 'slength' too large...  decreased to maximal value.")
     }
-    #
-    # Starting solution not needed
-    #cat(as.integer(control$para$slength), as.integer(control$para$kfound), as.double(control$para$psearched),
-    #as.integer(m), as.integer(n), 
-    #as.integer(apos), as.integer(bpos), as.double(ddpos), assignment = as.integer(initassig), basis = as.integer(initbasis), sep="\n")
-    #stop("shortsimplex soon")
-    # ti <- proc.time()
     res <- .C("shortsimplex",
         as.integer(control$para$slength), as.integer(control$para$kfound), as.double(control$para$psearched),
         as.integer(m), as.integer(n), 
         as.integer(apos), as.integer(bpos), as.double(dd), assignment = as.integer(initassig), 
         basis = as.integer(initbasis), DUP = TRUE, PACKAGE="transport")
-	# print(proc.time()-ti)           
-	temp <- list(assignment=res$assignment, basis=res$basis)
+	  temp <- list(assignment=res$assignment, basis=res$basis)
      
     nbasis <- sum(temp$basis)
     res <- data.frame(from = rep(0,nbasis), to = rep(0,nbasis), mass = rep(0,nbasis))
@@ -1382,20 +1305,18 @@ transport.default <- function(a, b, costm, method=c("networkflow", "shortsimplex
     res$mass <- res$mass * fudgesum / fudgeN
     return(res)    
   }
-  # fi (method == "shortsimplex") 
 }
 
 
 
-# sum(a) == sum(b) has to be checked in external function 
-# this function should deal correctly with any zeros in a and b
-# always producing exactly m+n-1 basis vectors
+# sum(a) == sum(b) has to be checked in external function! 
+# northwestcorner deals correctly with zeros in a and b and produces always
+# exactly m+n-1 basis vectors
 northwestcorner <- function(a,b) {
   m <- length(a)
   n <- length(b)
   assignment <- matrix(0,m,n)
   basis <- matrix(0,m,n)
-#  rowrules <- TRUE
   icur <- jcur <- 1
   aleft <- a
   bleft <- b
@@ -1407,9 +1328,6 @@ northwestcorner <- function(a,b) {
     bleft[jcur] <- bleft[jcur] - mm
     if (aleft[icur] == 0) {
       basis[icur,jcur] <- 1  
-      # this is the best place for assigning the basis
-      # avoids out-of-bounds index an deals correctly with the
-      # degenerate case
       icur <- icur+1
     } 
     if (bleft[jcur] == 0 && icur < m+1) {
@@ -1427,7 +1345,8 @@ northwestcorner <- function(a,b) {
   	  jcur <- jcur+1
   	}
   } else {  # icur < m+1 meaning trailing zeros in a
-  	while (icur < m) {  # deal with them if more than one (first one was alredy dealt with in final bleft-step above)
+  	while (icur < m) {  # deal with them if more than one (first one was already
+  	                    # dealt with in final bleft-step above)
   	  icur <- icur+1
   	  basis[icur,jcur-1] <- 1
   	}
@@ -1438,15 +1357,11 @@ northwestcorner <- function(a,b) {
   }
   rownames(assignment) <- paste(a,"*",sep="")
   colnames(assignment) <- paste("*",b,sep="")
-#  if (!all(as.logical(basis)==(assignment > 0))) {
-#    warning("Starting solution is degenerate. Nothing to worry about!")
-#  }
   if (sum(basis) != m+n-1) {
     stop("Basis contains only ", sum(basis), " != m+n-1 = ", m+n-1, " vectors")
   }
   return(list(assignment=assignment,basis=basis))
 }
-
 
 
 
@@ -1496,10 +1411,6 @@ russell <- function(a,b,costm) {
     }
   }
 
-#  if (!all(as.logical(basis)==(assignment > 0))) {
-#    warning("Starting solution is degenerate. Nothing to worry about!")
-#  }  
-
   if (sum(basis) < mm+nn-1) {
   	cat("Russell produced too few basis vectors. Is ", sum(basis), ", should be ", mm+nn-1,
   	        ".\n Trying to fix this...  ", sep="")
@@ -1514,12 +1425,12 @@ russell <- function(a,b,costm) {
 }
 
 
-# THIS FUNCTION NEEDS MUCH IMPROVEMENT!!!!
+# Function needs much improvement!
 # a1 ist "a_old", a2 is "a_new"
 refinesol <- function(a1,b1,a2,b2, assig1, basis1, mult=2) {
-  a1 <- as.vector(a1)   # Laenge 16
-  b1 <- as.vector(b1)   # Laenge 16
-  a2 <- as.vector(a2)   # Laenge 64
+  a1 <- as.vector(a1) 
+  b1 <- as.vector(b1) 
+  a2 <- as.vector(a2) 
   b2 <- as.vector(b2)
   Ngrid1 <- length(a1)
   ngrid1 <- sqrt(Ngrid1)
@@ -1537,9 +1448,7 @@ refinesol <- function(a1,b1,a2,b2, assig1, basis1, mult=2) {
   assig2 <- matrix(0,m2,n2)
   basis2 <- matrix(0,m2,n2)
 
-  # print(paste("REFINESOL IN:", "bvecs", sum(basis1), " ---- ", "expected", m1+n1-1))
-
-  # Hilfsgroessen  
+  # auxiliary quantities
   multiple <- function(v,mult2) {
     n <- sqrt(length(v))
     stopifnot(isTRUE(all.equal(round(n), n)))
@@ -1576,10 +1485,10 @@ refinesol <- function(a1,b1,a2,b2, assig1, basis1, mult=2) {
   # isprod1 is all TRUE, and pcnum1 = 1:m2 (could be a problem)
 
   # --------------------------------
-  # ab hier: fuelle assig2 / basis2
+  # from here on: fill in assig2 / basis2
   # -------------------------------- 
 
-  # loese das +- Problem in einzelnen Feldern der groben Matrix
+  # solve the +- problem in the entries/blocks of the coarse matrix
   a2left <- a2
   b2left <- b2
 
@@ -1588,7 +1497,7 @@ refinesol <- function(a1,b1,a2,b2, assig1, basis1, mult=2) {
   for (j in 1:Mult) {
   k <- bybox[(i-1)*Mult + j]
   # current index in the finer grid
-  # zuerst lokalen Bedarf stillen
+  # satisfy local demand first
   if (isprod2old[k] && !isprod2[k]) {
   	# k needs stuff
   	for (jj in 1:Mult) {
@@ -1603,7 +1512,7 @@ refinesol <- function(a1,b1,a2,b2, assig1, basis1, mult=2) {
   	    assig2[ pcnum2[l] , pcnum2[k] ] <- amount
   	  }	
   	}
-  # dann lokalen UEberschuss abbauen	
+  # then remove local excess supply	
   } else if (!isprod2old[k] && isprod2[k]) {
   	# k gives stuff
   	for (jj in 1:Mult) {
@@ -1622,7 +1531,7 @@ refinesol <- function(a1,b1,a2,b2, assig1, basis1, mult=2) {
   }
   }
 
-  # Emuliere grobe Loesung auf feiner Matrix
+  # bring coarse solution to fine matrix
   for (i in 1:m1) {
     transfrom1 <- which(isprod1)[i]
     transto1 <- which(!isprod1)[basis1[i,] == 1]
@@ -1630,29 +1539,25 @@ refinesol <- function(a1,b1,a2,b2, assig1, basis1, mult=2) {
     # (careful: transto1 is a vector)
     # and the following are the amounts
     transmass <- assig1[i,][basis1[i,] == 1]
-    #cat("i =",i,"\n")
-    #cat(transfrom1, "---", transto1, "---", transmass, "\n")
     for (r in 1:length(transto1)) {
       if (transmass[r] == 0) {
       	print(paste("input to refinesol degenerate:",i,r))
-      	# degenerierter Fall
-      	# noch nicht getestet, auch nicht 100%ig klar, ob die Mult+j unten genau das richtige sind
+      	# degenerate case
+      	# not tested; not 100% clear if Mult+j below is exactly the right thing
       	for (j in 1:Mult) {
       	  k <- bybox[(transfrom1-1)*Mult+j]
   	      l <- bybox[(transto1[r]-1)*Mult+j]
       	  basis2[ pcnum2[k] , pcnum2[l] ] <- 1
       	  stopifnot(assig2[ pcnum2[k] , pcnum2[l] ] == 0)
-      	  # sanity check, remove asap!!
+      	  # sanity check, remove at some point
       	}
       } else {
         for (j in 1:Mult) {
         for (jj in 1:Mult) {
-          # das ist im Prinzip nix anderes als lokale Northwest-Corner-Rule (mit Loechern
-          # wegen internen Verschiebungen innerhalb der Pixel), geht vermutlich eleganter
-          # beides die NW-Corner-Rule und ohne diese
+          # the following is just a local northwest corner rule with holes due to
+          # internal shifts within the pixels
   	      k <- bybox[(transfrom1-1)*Mult+j]
   	      l <- bybox[(transto1[r]-1)*Mult+jj]
-  	      #cat(k, l, a2left[k],b2left[l],"\n")
   	      if (a2left[k] > 0 && b2left[l] > 0 && transmass[r] > 0) {  	      	
   	        amount <- min(a2left[k],b2left[l],transmass[r])
   	        a2left[k] <- a2left[k]-amount
@@ -1667,8 +1572,8 @@ refinesol <- function(a1,b1,a2,b2, assig1, basis1, mult=2) {
     }
   }
   
-  # Das folgende ist ein rechtes Gebastel und es sollte besser im Hauptteil von refinesol dagegen vorgebeugt werden
-  # dedegenerate ist wahrsch. nicht noetig, Basisvektoren zufaellig hinzufuegen, sollte fast so gut sein...?
+  # The following is a bit of a hack. Better to take measures against it in the main part of refinesol.
+  # dedegenerate seems rather unnecessary, adding basis vectors randomly should be almost as good ...?
   if (sum(basis2) < m2+n2-1) {
   	cat("Refinesol produced too few basis vectors. Is ", sum(basis2), ", should be ", m2+n2-1,
   	        ".\n Trying to fix this...  ", sep="")
@@ -1690,23 +1595,23 @@ refinesol2 <- function(a1,b1,a2,b2, assig1, basis1, mult=2) {
 }
 
 
-# vorlaeufig nur fuer quadratische Matrizen
-# das folgende ist eh alles viel zu muehsam, koennte aber mal noch nuetzlich sein
+# so far only for square matrices
+# the following is much too cumbersome anyway, keeping it because it could become
+# useful at some point
 triangulate <- function(basis) {
   n <- dim(basis)[1]
   stopifnot(dim(basis)[2] == n)
   stopifnot(sum(basis) <= 2*n -1)
   stopifnot(min(apply(basis,1,sum)) > 0 && min(apply(basis,2,sum)) > 0)
-  # spaetere Zeilen/Spaltensummen duerfen 0 sein
+  # row/column sums that come later are allowed be zero
   roworder <- rep(0,n)
   colorder <- rep(0,n)
   rowleft <- 1:n
   colleft <- 1:n
   for (k in 1:(n-1)) {
-  	# print(k)
     rsum <- apply(basis[rowleft,colleft],1,sum)
-    # wir legen hier Wert auf "moeglichst viele" Einsen auf der Diagonalen
-    # rein, weil es uebersichtlicher aussieht
+    # we'd like to have "as many ones as possible" on the diagonal for the
+    # sole reason that it looks nicer
     wh <- which(rsum == 1)[1]
     target <- 1
     if (is.na(wh)) {
@@ -1721,12 +1626,12 @@ triangulate <- function(basis) {
   }
   roworder[n] <- rowleft
   colorder[n] <- colleft
-  #print(basis[roworder,colorder])
   return(list(roworder=roworder,colorder=colorder,tbasis=basis[roworder,colorder]))
 }
 
-# sollte auch ohne Triangulierung funktionieren
-# Vor allem koennen wir hier quadratisch gar nicht brauchen
+
+# should also work without triangulate
+# in particular, square matrices cannot be a requirement here
 findblocks <- function(tbasis) {
   blocks <- vector("list",0)
   bb <- 0
@@ -1775,7 +1680,6 @@ dedegenerate <- function(basis) {
   for (i in 1:(ll-1)) {
   	k <- res[[i+1]]$row[1]
   	l <- res[[i]]$col[length(res[[i]]$col)]
-  	# print(paste(k,l))
   	basis2[k,l] <- 1
   }
   return(basis2)
@@ -1783,9 +1687,8 @@ dedegenerate <- function(basis) {
 
 
 # the following function *should* be able to deal with all kinds of degeneracies;
-# even zeros in aredf,bredf, but this is not (well) tested 
+# even zeros in aredf,bredf, but this is not well tested 
 scalestart <- function(aredf,bredf,genf,n1f,n2f,p=1,scmult=2) { 
-#  stopifnot(all(aredf>0, bredf>0))   # no longer necessary I leave it for the moment
   stopifnot(all(dim(aredf) == c(n1f,n2f)) && all(dim(bredf) == c(n1f,n2f)))
   is.natural <- function(x, tol = .Machine$double.eps^0.5)  all((abs(x - round(x)) < tol) & x > 0.5)
   stopifnot(is.natural(scmult) && is.natural(n1f) && is.natural(n2f) && is.natural(n1f/scmult) && is.natural(n2f/scmult))
@@ -1847,24 +1750,21 @@ scalestart <- function(aredf,bredf,genf,n1f,n2f,p=1,scmult=2) {
   # in what follows we basically use nwcorner rule for each row of blocks (later improvement: use rowmostneg)
   # i is the block row number, icur is the row number (in the fine grid)
   for (i in 1:Nc) {   
-#  	cat("i: ", i, "\n", sep="")
   	allifs <- byblock[qmult*(i-1) + 1:qmult]  # the qmult if-values that make up block i
   	icurpos <- aremfpos[i]
   	icur <- allifs[icurpos]
     alljcs <- which(basisc[i,] == 1)   # numbers of the to-blocks in row i
     lenjcs <- length(alljcs)
-    for (jpos in 1:lenjcs) {    # ipos = i = 1 automatically, but we need icurs because enumeration along i not linear 
-#      cat("jpos: ", jpos, "\n", sep="")   	
+    for (jpos in 1:lenjcs) {
+      # ipos = i = 1 automatically, but we need icurs because enumeration along i not linear 
       j <- alljcs[jpos]
       alljfs <- which(whblock == j)  # all jf-indices to which we can transport
       jcurpos <- bremfpos[j]   
       jcur <- alljfs[jcurpos]
-#    bcrowleft <- rep(0,Nc)   # how much mass is left for the various blocks in the i-th row
-#    bcrowleft[alljcs] <- assigc[1,alljcs] 
       massleft <- assigc[i,j]
       repeat {   # break condition massleft == 0
         mass <- min(afleft[icur],bfleft[jcur],massleft)
-        # whenever two of the three above terms coincide as minima, we degeneration occurs and we have to add
+        # whenever two of the three above terms coincide as minima, degeneration occurs and we have to add
         # a basic vector with zero transport (if all three coincide, we have to add two basis vectors)
         assigf[icur,jcur] <- mass
         basisf[icur,jcur] <- 1
@@ -1911,7 +1811,7 @@ scalestart <- function(aredf,bredf,genf,n1f,n2f,p=1,scmult=2) {
         aremfpos[i] <- qmult   # = icurpos
         bremfpos[j] <- qmult   # = jcurpos
       } else if (acleft[i] == 0) {  # hence bcleft[j] > 0, hence we know that
-        	                        # there must be another block in the same col
+        	                          # there must be another block in the same col
         if (bfleft[jcur] == 0) {
           jcurpos <- jcurpos+1
           jcur <- alljfs[jcurpos]
@@ -1925,7 +1825,7 @@ scalestart <- function(aredf,bredf,genf,n1f,n2f,p=1,scmult=2) {
         aremfpos[i] <- qmult    # = icurpos
         bremfpos[j] <- jcurpos
       } else if (bcleft[j] == 0) {  # hence acleft[i] > 0, hence we know that
-        	                        # there must be another block in the same row
+        	                          # there must be another block in the same row
         if (afleft[icur] == 0) {
           icurpos <- icurpos+1
           icur <- allifs[icurpos]

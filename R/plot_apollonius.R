@@ -73,7 +73,6 @@ resolution <- 1000
 EPS = 1e-6;
 PSEUDOINF = EPS^-1;
 
-# dist1 <- function(x,y) {as.numeric(dist(rbind(x,y)))}
 dist1 <- function(x,y) {sqrt((x[1]-y[1])^2+(x[2]-y[2])^2)}
 
 if (!add) {

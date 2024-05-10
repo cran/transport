@@ -1,9 +1,6 @@
-# argument output does currently nothing, threads may or may not do something
-# default C minimal so that no cutoffs take place under the assumtion that points in R^2
-# not sure if something goes wrong if not all entries of a are positive
-
 #' @rdname unbalanced
 #' @export
+# default C minimal so that no cutoffs take place under the assumption that points in R^2
 unbalanced.wpp <- function(a, b, p = 1, C = NULL, method = c("networkflow", "revsimplex"),
                            output = c("dist", "all", "rawres"), threads=1, ...) {
   stopifnot(is(a, "wpp") && is(b, "wpp"))
@@ -28,14 +25,22 @@ unbalanced.wpp <- function(a, b, p = 1, C = NULL, method = c("networkflow", "rev
   bmass <- b$mass
   btotmass <- b$totmass
  
-  if (m == 0 && n == 0) return(0)  # this line is not needed (if a is consistent), but makes things clearer
+  if (m == 0 && n == 0) return(0)  # this line is not needed (if a is consistent) but makes things clearer
  
   if (m == 0) return(btotmass)  # atotmass = 0
     
   if (n == 0) return(atotmass)  # btotmass = 0
     
-  costm <- gen_cost(a$coordinates, b$coordinates, threads=threads)^(p/2) 
-  # could take pmin with 2*C^p, but not needed, let's see what is easier (since most probably the pmin is cheap)
+  if (threads == 1) {
+    if (a$dimension == 2) {
+      costm <- gen_cost0(a$coordinates, b$coordinates)^(p/2)  # this saves about 25-40% compared to gen_cost0d
+    } else {
+      costm <- gen_cost0d(a$coordinates, b$coordinates)^(p/2)
+    }
+  } else {
+    costm <- gen_cost(a$coordinates, b$coordinates, threads=threads)^(p/2) 
+  }
+  # could take pmin with 2*C^p, but not needed
   costm <- rbind(costm, C^p)  # we do *not* divide by two! (MSM not HKM)
   costm <- cbind(costm, C^p)
   costm[m+1, n+1] <- 0
@@ -44,7 +49,7 @@ unbalanced.wpp <- function(a, b, p = 1, C = NULL, method = c("networkflow", "rev
 
   if (method == "networkflow") {
     rawres <- networkflow(matrix(amassplus), matrix(bmassplus), costm, threads=threads) # m x 1 and n x 1 matrices for the masses 
-    # sanity check (not sure if already performed inside networkflow)
+    # sanity check (not sure if already performed inside networkflow):
     primalcost <- sum(costm * rawres$plan)   
     dualcost <- sum(rawres$potential * c(amassplus, bmassplus))
     if (!isTRUE(all.equal(primalcost, dualcost)) || !isTRUE(all.equal(primalcost, rawres$dist))) {  # dist is cost (dist^p)
@@ -53,14 +58,12 @@ unbalanced.wpp <- function(a, b, p = 1, C = NULL, method = c("networkflow", "rev
     }
   } else {
     rawres <- unbalanced_revsimplex_core(amassplus, bmassplus, costm, p, C) 
-    # unbalanced_revsimplex_core is exactly the same function as for pgrid
-    # see in unbalanced.R
-    # this rawres does not have a component potential
-    # rawres$potential <- to be fixed
+    # unbalanced_revsimplex_core --> unbalanced.R
+    # this rawres does not have a component potential (to be fixed)
   }
   
   if (output == "dist") {
-    return(rawres$dist^(1/p)) # rawres$dist is actually the p-th power of the unbalanced Wasserstein dist
+    return(rawres$dist^(1/p)) # rawres$dist is the p-th power of the unbalanced Wasserstein dist
   }
   
   # emulates the output of transport with networkflow and fullreturn=TRUE (trashcan states added)
@@ -74,7 +77,7 @@ unbalanced.wpp <- function(a, b, p = 1, C = NULL, method = c("networkflow", "rev
   # output = "all"
   rawres$aextra <- rawres$plan[1:m,n+1,drop=FALSE]
   rawres$bextra <- rawres$plan[m+1,1:n,drop=FALSE]
-  select <- (rawres$frame[,3] > 0) & # transports over dist 0 have to stay in for now (rawres$frame[,1] != rawres$frame[,2]) & 
+  select <- (rawres$frame[,3] > 0) & # we keep transports over dist 0 in current version (rawres$frame[,1] == rawres$frame[,2]) 
             (rawres$frame[,1] <= m) & (rawres$frame[,2] <= n)  # removes the trashcan states from frame
   rawres$frame <- rawres$frame[select, , drop=FALSE]
   
@@ -87,20 +90,20 @@ unbalanced.wpp <- function(a, b, p = 1, C = NULL, method = c("networkflow", "rev
   # The reason why atrans,btrans is computed after aextra,bextra (and then switched) is only to keep
   # the same order as in unbalanded.pgrid
   
-  # fill result$atrans 
+  # fill result$atrans: 
   atemp <- rowsum(result$plan[,3], result$plan[,1])
   where <- as.numeric(attr(atemp, "dimnames")[[1]])
   result$atrans <- rep(0, m)
   result$atrans[where] <- atemp
-  
+  # fill result$btrans: 
   btemp <- rowsum(result$plan[,3], result$plan[,2])
   where <- as.numeric(attr(btemp, "dimnames")[[1]])
   result$btrans <- rep(0, n)
   result$btrans[where] <- btemp
   
   tol <- ifelse(method == "networkflow", sqrt(.Machine$double.eps), 1e-7)  
-  # for networkflow standard tolerance in what follows for revsimplex due to smaller precision
-  # somewhat larger (too many warnings otherwise)
+  # for networkflow standard tolerance, for revsimplex somewhat smaller due to
+  # smaller precision (too many spurious warnings otherwise)
   if (!isTRUE(all.equal(result$atrans + result$aextra, a$mass, tolerance=tol, check.attributes = FALSE))) {
     warning("atrans and aextra do not sum up to a$mass. ", 
             all.equal(result$atrans + result$aextra, a$mass))

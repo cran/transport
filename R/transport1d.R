@@ -36,9 +36,10 @@ wasserstein1d <- function(a, b, p=1, wa=NULL, wb=NULL) {
   cub <- c(cumsum(ub))  
   arep <- hist(cub, breaks = c(-Inf, cua, Inf), plot = FALSE)$counts + 1
   brep <- hist(cua, breaks = c(-Inf, cub, Inf), plot = FALSE)$counts + 1
-  # we sum over rectangles with cuts on the vertical axis each time one of the two ecdfs makes a jump
-  # arep and brep tell us how many times each of the a and b data have to be repeated in order to get the points on the horizontal axis
-  # note that sum(arep)+sum(brep) = m+n-1 (we do not count the height-zero final rectangle where both ecdfs jump to 1)
+  # We sum over rectangles with cuts on the vertical axis each time one of the two ecdfs makes a jump.
+  # arep and brep tell us how many times each of the a and b data have to be repeated in order to get
+  # the points on the horizontal axis.
+  # Note that sum(arep)+sum(brep) = m+n-1 (we do not count the height-zero final rectangle where both ecdfs jump to 1)
 
   aa <- rep(a, times=arep)
   bb <- rep(b, times=brep)
@@ -47,7 +48,6 @@ wasserstein1d <- function(a, b, p=1, wa=NULL, wb=NULL) {
   uu0 <- c(0,uu)
   uu1 <- c(uu,1)
   areap <- sum((uu1-uu0)*abs(bb-aa)^p)^(1/p)
-#  print(rbind(uu1-uu0, pmax(aa,bb)-pmin(aa,bb)))
   return(areap)
 }
 
